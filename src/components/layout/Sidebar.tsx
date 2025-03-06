@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);

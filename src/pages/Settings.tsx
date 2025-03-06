@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,10 +17,10 @@ import { toast } from '@/lib/toast';
 const Settings = () => {
   const { currentUser } = useAppContext();
   const [profileForm, setProfileForm] = useState({
-    name: currentUser?.name || '',
+    name: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`,
     email: currentUser?.email || '',
-    phone: currentUser?.phone || '',
-    bio: currentUser?.bio || '',
+    phone: '',
+    bio: '',
   });
   
   const [churchForm, setChurchForm] = useState({

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Filter, Grid3X3, List } from 'lucide-react';
@@ -12,13 +13,13 @@ const Members = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  const { data: members, isLoading } = useQuery({
+  const { data: members = [], isLoading } = useQuery({
     queryKey: ['members'],
     queryFn: getMembers
   });
 
-  const filteredMembers = members?.filter(member => 
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredMembers = members.filter(member => 
+    `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

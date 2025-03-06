@@ -1,25 +1,25 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Download, Search, Filter, DollarSign, TrendingUp, TrendingDown, CreditCard } from 'lucide-react';
+import { Plus, Download, Search, Filter, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getTransactions } from '@/data/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Transaction } from '@/types';
 
 const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('all-time');
   
-  const { data: transactions, isLoading } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: getTransactions
   });
 
   // Calculate summary metrics
-  const summary = transactions?.reduce((acc, transaction) => {
+  const summary = transactions.reduce((acc, transaction) => {
     if (transaction.type === 'income') {
       acc.income += transaction.amount;
     } else {
@@ -40,20 +40,20 @@ const Finance = () => {
 
   // Generate expense by category data for pie chart
   const expenseCategories = transactions
-    ?.filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense')
     .reduce((acc, transaction) => {
-      const existingCategory = acc.find(c => c.name === transaction.category);
+      const existingCategory = acc.find(c => c.name === transaction.categoryId);
       if (existingCategory) {
         existingCategory.value += transaction.amount;
       } else {
-        acc.push({ name: transaction.category, value: transaction.amount });
+        acc.push({ name: transaction.categoryId, value: transaction.amount });
       }
       return acc;
-    }, [] as { name: string; value: number }[]) || [];
+    }, [] as { name: string; value: number }[]);
 
   // Generate monthly data for bar chart
   const monthlyData = transactions
-    ?.reduce((acc, transaction) => {
+    .reduce((acc, transaction) => {
       const date = new Date(transaction.date);
       const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
       
@@ -72,7 +72,7 @@ const Finance = () => {
         });
       }
       return acc;
-    }, [] as { name: string; income: number; expense: number }[]) || [];
+    }, [] as { name: string; income: number; expense: number }[]);
 
   // Sort monthly data chronologically
   monthlyData.sort((a, b) => {
@@ -229,45 +229,7 @@ const Finance = () => {
               <div className="text-right">Amount</div>
             </div>
             <div className="divide-y">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-5 px-4 py-3 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-4 bg-gray-200 rounded w-32"></div>
-                    <div className="h-4 bg-gray-200 rounded w-16"></div>
-                    <div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div>
-                  </div>
-                ))
-              ) : transactions?.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-muted-foreground">No transactions found</p>
-                </div>
-              ) : (
-                transactions?.map((transaction) => (
-                  <div key={transaction.id} className="grid grid-cols-5 px-4 py-3">
-                    <div>{new Date(transaction.date).toLocaleDateString()}</div>
-                    <div>{transaction.category}</div>
-                    <div>{transaction.description}</div>
-                    <div className={transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}>
-                      {transaction.type === 'income' ? (
-                        <span className="inline-flex items-center">
-                          <TrendingUp className="mr-1 h-4 w-4" />
-                          Income
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center">
-                          <TrendingDown className="mr-1 h-4 w-4" />
-                          Expense
-                        </span>
-                      )}
-                    </div>
-                    <div className={`text-right ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                    </div>
-                  </div>
-                ))
-              )}
+              {renderTransactionList()}
             </div>
           </div>
         </CardContent>

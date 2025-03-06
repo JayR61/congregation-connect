@@ -1,4 +1,3 @@
-
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Edit, Trash } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -67,6 +66,45 @@ const MemberDetail = () => {
     );
   }
 
+  // Helper to get member's full name
+  const getMemberName = (member: any) => {
+    return `${member.firstName} ${member.lastName}`;
+  };
+
+  // Add this helper function to render member cards
+  const renderMemberInfo = () => {
+    if (!member) return null;
+
+    return (
+      <div className="flex flex-col items-center">
+        <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-4xl text-primary-foreground">
+          {member.firstName.charAt(0)}
+        </div>
+        <h2 className="mt-4 text-xl font-bold">{getMemberName(member)}</h2>
+        <p className="text-muted-foreground">{member.roles.join(', ') || 'Member'}</p>
+        
+        <div className="w-full mt-6 space-y-4">
+          <div className="flex items-center">
+            <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+            <span>{member.email}</span>
+          </div>
+          <div className="flex items-center">
+            <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+            <span>{member.phone}</span>
+          </div>
+          <div className="flex items-center">
+            <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+            <span>{`${member.address}, ${member.city}, ${member.state} ${member.zip}` || 'No address provided'}</span>
+          </div>
+          <div className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+            <span>Member since {new Date(member.joinDate).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -88,32 +126,7 @@ const MemberDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="md:col-span-1">
           <CardContent className="pt-6">
-            <div className="flex flex-col items-center">
-              <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-4xl text-primary-foreground">
-                {member.name.charAt(0)}
-              </div>
-              <h2 className="mt-4 text-xl font-bold">{member.name}</h2>
-              <p className="text-muted-foreground">{member.role || 'Member'}</p>
-              
-              <div className="w-full mt-6 space-y-4">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{member.email}</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{member.phone}</span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{member.address || 'No address provided'}</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>Member since {new Date(member.joinDate || Date.now()).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </div>
+            {renderMemberInfo()}
           </CardContent>
         </Card>
 

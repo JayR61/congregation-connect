@@ -1,4 +1,3 @@
-
 import { 
   Task, 
   TaskCategory, 
@@ -592,4 +591,54 @@ export const emptyState = {
     description: "There are no documents in this folder. Upload a new document to get started.",
     action: "Upload Document"
   }
+};
+
+// Data retrieval functions
+export const getTasks = (): Task[] => {
+  return tasks;
+};
+
+export const getTaskCategories = (): TaskCategory[] => {
+  return taskCategories;
+};
+
+export const getTransactions = (): Transaction[] => {
+  return transactions;
+};
+
+export const getFinanceCategories = (): FinanceCategory[] => {
+  return financeCategories;
+};
+
+export const getMembers = (): Member[] => {
+  return members;
+};
+
+export const getDocuments = (folderId: string | null = null): Document[] => {
+  if (folderId === 'root' || folderId === null) {
+    return documents.filter(doc => doc.folderId === null);
+  }
+  return documents.filter(doc => doc.folderId === folderId);
+};
+
+export const getFolders = (parentId: string | null = null): Folder[] => {
+  if (parentId === 'root' || parentId === null) {
+    return folders.filter(folder => folder.parentId === null);
+  }
+  return folders.filter(folder => folder.parentId === parentId);
+};
+
+// Helper function to add folder item count
+export const getFoldersWithItemCount = (parentId: string | null = null): (Folder & { itemCount: number })[] => {
+  const filteredFolders = getFolders(parentId);
+  
+  return filteredFolders.map(folder => {
+    const subfolderCount = folders.filter(f => f.parentId === folder.id).length;
+    const documentCount = documents.filter(d => d.folderId === folder.id).length;
+    
+    return {
+      ...folder,
+      itemCount: subfolderCount + documentCount
+    };
+  });
 };

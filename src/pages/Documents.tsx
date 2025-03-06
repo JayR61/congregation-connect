@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, Plus, Filter, Grid3X3, List, File, FileText, 
-  FilePdf, FileImage, Folder, Share, Download, MoreVertical, 
+  FileImage, Folder, Share, Download, MoreVertical, 
   ChevronRight
 } from 'lucide-react';
 import { 
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
-import { getDocuments, getFolders } from '@/data/mockData';
+import { getDocuments, getFolders, getFoldersWithItemCount } from '@/data/mockData';
 
 const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +29,7 @@ const Documents = () => {
 
   const { data: folders, isLoading: foldersLoading } = useQuery({
     queryKey: ['folders', currentFolder],
-    queryFn: () => getFolders(currentFolder)
+    queryFn: () => getFoldersWithItemCount(currentFolder)
   });
 
   const isLoading = documentsLoading || foldersLoading;
@@ -50,9 +50,14 @@ const Documents = () => {
 
   const getIconForFileType = (fileType: string) => {
     switch (fileType) {
-      case 'pdf': return <FilePdf className="h-10 w-10 text-red-500" />;
-      case 'image': return <FileImage className="h-10 w-10 text-blue-500" />;
-      case 'doc': return <FileText className="h-10 w-10 text-blue-700" />;
+      case 'pdf':
+      case 'application/pdf': return <FileText className="h-10 w-10 text-red-500" />;
+      case 'image':
+      case 'image/jpeg':
+      case 'image/png':
+      case 'image/gif': return <FileImage className="h-10 w-10 text-blue-500" />;
+      case 'doc':
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': return <FileText className="h-10 w-10 text-blue-700" />;
       default: return <File className="h-10 w-10 text-gray-500" />;
     }
   };

@@ -156,7 +156,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="flex justify-center">
                 <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={financeData}>
+                  <BarChart data={financeData} barSize={30}>
                     <XAxis dataKey="name" stroke="#888888" />
                     <YAxis tickFormatter={(value) => `$${value}`} stroke="#888888" />
                     <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, ""]} />

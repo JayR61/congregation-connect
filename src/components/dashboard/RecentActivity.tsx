@@ -1,97 +1,112 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDistance } from "date-fns";
-import { useAppContext } from "@/context/AppContext";
-import { CheckCircle, AlertCircle, Clock, FileText, DollarSign } from "lucide-react";
+import React from 'react';
+import { useAppContext } from '@/context/AppContext';
+import { CheckSquare, DollarSign, FileText, UserPlus, MessageSquare } from 'lucide-react';
 
-type ActivityType = "task" | "finance" | "document" | "member";
+const RecentActivity = () => {
+  const { tasks, transactions, documents, members } = useAppContext();
 
-interface Activity {
-  id: string;
-  type: ActivityType;
-  title: string;
-  description: string;
-  date: Date;
-  icon?: React.ReactNode;
-}
+  // Get recent activities by combining and sorting tasks, transactions, and documents
+  const getActivities = () => {
+    const taskActivities = tasks.map(task => ({
+      id: task.id,
+      type: 'task',
+      title: task.title,
+      status: task.status,
+      date: task.updatedAt,
+      icon: <CheckSquare className="h-4 w-4" />,
+      description: `Task "${task.title}" was ${task.status}`
+    }));
 
-const RecentActivity: React.FC = () => {
-  const { tasks, transactions, documents } = useAppContext();
-  
-  // Create a list of recent activities from different sources
-  const generateActivities = (): Activity[] => {
-    const taskActivities = tasks
-      .slice(0, 3)
-      .map(task => ({
-        id: `task-${task.id}`,
-        type: "task" as ActivityType,
-        title: `Task ${task.status === "completed" ? "Completed" : "Updated"}`,
-        description: task.title,
-        date: task.updatedAt,
-        icon: task.status === "completed" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Clock className="h-4 w-4 text-amber-500" />
-      }));
-      
-    const transactionActivities = transactions
-      .slice(0, 3)
-      .map(transaction => ({
-        id: `transaction-${transaction.id}`,
-        type: "finance" as ActivityType,
-        title: `${transaction.type === "income" ? "Income" : "Expense"} Recorded`,
-        description: transaction.description,
-        date: transaction.createdAt,
-        icon: <DollarSign className="h-4 w-4 text-primary" />
-      }));
-      
-    const documentActivities = documents
-      .slice(0, 2)
-      .map(document => ({
-        id: `document-${document.id}`,
-        type: "document" as ActivityType,
-        title: "Document Uploaded",
-        description: document.name,
-        date: document.createdAt,
-        icon: <FileText className="h-4 w-4 text-blue-500" />
-      }));
-      
-    // Combine all activities, sort by date (newest first) and take the 5 most recent
-    return [...taskActivities, ...transactionActivities, ...documentActivities]
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-      .slice(0, 5);
+    const transactionActivities = transactions.map(transaction => ({
+      id: transaction.id,
+      type: 'transaction',
+      title: transaction.description,
+      amount: transaction.amount,
+      transactionType: transaction.type,
+      date: transaction.createdAt,
+      icon: <DollarSign className="h-4 w-4" />,
+      description: `${transaction.type === 'income' ? 'Received' : 'Spent'} $${transaction.amount} for ${transaction.description}`
+    }));
+
+    const documentActivities = documents.map(document => ({
+      id: document.id,
+      type: 'document',
+      title: document.name,
+      date: document.createdAt,
+      icon: <FileText className="h-4 w-4" />,
+      description: `Document "${document.name}" was uploaded`
+    }));
+
+    const commentActivities = tasks
+      .flatMap(task => 
+        task.comments.map(comment => ({
+          id: comment.id,
+          type: 'comment',
+          taskId: task.id,
+          taskTitle: task.title,
+          content: comment.content,
+          date: comment.createdAt,
+          icon: <MessageSquare className="h-4 w-4" />,
+          description: `New comment on task "${task.title}"`
+        }))
+      );
+
+    // Combine all activities
+    const allActivities = [
+      ...taskActivities,
+      ...transactionActivities,
+      ...documentActivities,
+      ...commentActivities
+    ];
+
+    // Sort by date (most recent first)
+    return allActivities.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6);
   };
-  
-  const activities = generateActivities();
+
+  const activities = getActivities();
+
+  const formatDate = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      if (diffHours === 0) {
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        return diffMinutes === 0 ? 'Just now' : `${diffMinutes}m ago`;
+      }
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {activities.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No recent activity
-          </div>
-        ) : (
-          activities.map((activity) => (
-            <div key={activity.id} className="flex items-start space-x-3">
-              <div className="mt-1">
-                {activity.icon}
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <p className="font-medium text-sm">{activity.title}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistance(new Date(activity.date), new Date(), { addSuffix: true })}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-0.5">{activity.description}</p>
-              </div>
+    <div className="space-y-4">
+      {activities.length > 0 ? (
+        activities.map((activity, index) => (
+          <div key={`${activity.id}-${index}`} className="flex items-start space-x-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+              {activity.icon}
             </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{activity.description}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(activity.date)}</p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="text-center text-muted-foreground py-8">
+          No recent activity
+        </div>
+      )}
+    </div>
   );
 };
 

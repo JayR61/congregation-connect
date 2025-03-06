@@ -1,70 +1,48 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
-  value: string | number;
-  icon?: React.ReactNode;
-  description?: string;
+  value: string;
+  description: string;
+  icon: React.ReactNode;
   trend?: {
     value: number;
-    isPositive: boolean;
+    label: string;
+    isCurrency?: boolean;
   };
-  className?: string;
-  onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  icon,
-  description,
-  trend,
-  className,
-  onClick,
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  description, 
+  icon, 
+  trend 
 }) => {
   return (
-    <Card 
-      className={cn(
-        "overflow-hidden transition-all duration-200",
-        onClick && "cursor-pointer hover:shadow-md hover:border-primary/30",
-        className
-      )}
-      onClick={onClick}
-    >
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-bold mt-1">{value}</h3>
-            
-            {description && (
-              <p className="text-sm text-muted-foreground mt-1">{description}</p>
-            )}
-            
-            {trend && (
-              <div className="flex items-center mt-2">
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    trend.isPositive ? "text-green-500" : "text-red-500"
-                  )}
-                >
-                  {trend.isPositive ? "+" : "-"}{Math.abs(trend.value)}%
-                </span>
-                <span className="text-xs text-muted-foreground ml-1">from last month</span>
-              </div>
-            )}
-          </div>
-          
-          {icon && (
-            <div className="p-2 rounded-full bg-primary/10">
-              {icon}
-            </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">
+          {title}
+        </CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">
+          {description}
+          {trend && (
+            <span className={cn(
+              "ml-1",
+              trend.value > 0 ? "text-emerald-500" : "text-red-500"
+            )}>
+              ({trend.isCurrency ? '$' : ''}{trend.value.toLocaleString()} {trend.label})
+            </span>
           )}
-        </div>
+        </p>
       </CardContent>
     </Card>
   );

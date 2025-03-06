@@ -1,112 +1,125 @@
 
 import React, { useState } from "react";
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Bell, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAppContext } from "@/context/AppContext";
-import { formatDistance } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const Topbar: React.FC = () => {
-  const { notifications, markNotificationAsRead, currentUser } = useAppContext();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const navigate = useNavigate();
+const Topbar = () => {
+  const { currentUser, notifications, markNotificationAsRead } = useAppContext();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadNotifications = notifications.filter(n => !n.read);
 
-  const handleNotificationClick = (notification: any) => {
-    markNotificationAsRead(notification.id);
-    setShowNotifications(false);
-    if (notification.targetUrl) {
-      navigate(notification.targetUrl);
-    }
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
   };
 
+  const userInitials = getInitials(`${currentUser.firstName} ${currentUser.lastName}`);
+
   return (
-    <header className="h-16 border-b border-border flex items-center px-6 bg-background">
-      <div className="flex-1">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search..." 
-            className="pl-10 h-9 w-60 lg:w-80 bg-muted/60"
-          />
-        </div>
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 py-2">
+      <div className="flex items-center">
+        {isSearchOpen ? (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="border border-input rounded-md pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 w-[300px]"
+              autoFocus
+              onBlur={() => setIsSearchOpen(false)}
+            />
+          </div>
+        ) : (
+          <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>
+            <Search size={20} />
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center space-x-4">
-        <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
-                  {unreadCount}
+              <Bell size={20} />
+              {unreadNotifications.length > 0 && (
+                <span className="absolute top-0 right-0 w-4 h-4 bg-destructive text-white text-xs rounded-full flex items-center justify-center">
+                  {unreadNotifications.length}
                 </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 max-h-[calc(100vh-10rem)] overflow-y-auto">
-            <div className="p-2 font-medium">Notifications</div>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                No notifications
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <DropdownMenuItem 
+            {notifications.length > 0 ? (
+              notifications.slice(0, 5).map((notification) => (
+                <DropdownMenuItem
                   key={notification.id}
-                  className="p-3 cursor-pointer"
-                  onClick={() => handleNotificationClick(notification)}
+                  className={`cursor-pointer ${!notification.read ? 'bg-accent/10 font-medium' : ''}`}
+                  onClick={() => markNotificationAsRead(notification.id)}
                 >
-                  <div className="flex items-start">
-                    <div className={`h-2 w-2 mt-1.5 rounded-full mr-2 ${notification.read ? 'bg-transparent' : 'bg-primary'}`} />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div className="font-medium">{notification.title}</div>
-                        <div className="text-xs text-muted-foreground ml-2">
-                          {formatDistance(new Date(notification.createdAt), new Date(), { addSuffix: true })}
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">{notification.message}</div>
+                  <div className="flex flex-col space-y-1 w-full">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(notification.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
+                    <p className="text-sm text-muted-foreground">{notification.message}</p>
                   </div>
                 </DropdownMenuItem>
               ))
+            ) : (
+              <div className="p-4 text-center text-muted-foreground">
+                No notifications
+              </div>
+            )}
+            {notifications.length > 5 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer text-center text-primary">
+                  View all notifications
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full overflow-hidden">
-                <img 
-                  src={currentUser.avatar || "https://i.pravatar.cc/150?img=1"} 
-                  alt={`${currentUser.firstName} ${currentUser.lastName}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <span className="hidden md:inline-block">{currentUser.firstName}</span>
-              <ChevronDown className="h-4 w-4" />
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar>
+                <AvatarImage src={currentUser.avatar || undefined} alt={`${currentUser.firstName} ${currentUser.lastName}`} />
+                <AvatarFallback>{userInitials}</AvatarFallback>
+              </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              Profile Settings
-            </DropdownMenuItem>
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span>{`${currentUser.firstName} ${currentUser.lastName}`}</span>
+                <span className="text-xs text-muted-foreground">{currentUser.email}</span>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500">
-              Sign out
-            </DropdownMenuItem>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

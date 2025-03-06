@@ -2,6 +2,7 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import { useAppContext } from "@/context/AppContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,13 +10,13 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 bg-background">
+    <div className="app-container">
+      <Topbar />
+      <div className="app-content">
+        <Sidebar />
+        <div className="page-container">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );

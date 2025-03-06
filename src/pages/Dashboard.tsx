@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,7 +50,7 @@ const Dashboard = () => {
     .reduce((sum, transaction) => sum + transaction.amount, 0);
   
   const currentBalance = totalIncome - totalExpenses;
-  const percentChange = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(1) : 0;
+  const percentChange = totalIncome > 0 ? Number(((totalIncome - totalExpenses) / totalIncome * 100).toFixed(1)) : 0;
   
   // Calculate team performance data
   const memberPerformance = members.map(member => {
@@ -140,7 +139,7 @@ const Dashboard = () => {
           description="Current balance" 
           icon={<DollarSign className="h-5 w-5 text-muted-foreground" />}
           trend={{ 
-            value: parseFloat(percentChange), 
+            value: percentChange, 
             label: `${percentChange > 0 ? '+' : ''}${percentChange}%`, 
             icon: percentChange > 0 ? 
               <TrendingUp className="h-3 w-3" /> : 
@@ -180,7 +179,7 @@ const Dashboard = () => {
                   <LineChart data={monthlyData}>
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} />
                     <YAxis stroke="#888888" fontSize={12} tickFormatter={(value) => `$${value}`} />
-                    <Tooltip formatter={(value) => [`$${value}`, ""]} />
+                    <Tooltip formatter={(value) => [value, ""]} />
                     <Legend />
                     <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} activeDot={{ r: 8 }} name="Income" />
                     <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
@@ -551,7 +550,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <div className="font-medium">{member.firstName} {member.lastName}</div>
-                      <div className="text-sm text-muted-foreground">{member.role}</div>
+                      <div className="text-sm text-muted-foreground">{member.roles.join(', ')}</div>
                       <div className="mt-2 flex items-center text-xs">
                         <div className={`w-2 h-2 rounded-full ${member.isActive ? 'bg-green-500' : 'bg-gray-300'} mr-1`}></div>
                         <span>{member.isActive ? 'Active' : 'Inactive'}</span>

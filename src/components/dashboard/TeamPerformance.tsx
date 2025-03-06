@@ -45,7 +45,7 @@ const TeamPerformance = () => {
             <YAxis />
             <Tooltip formatter={(value, name) => {
               if (name === 'completionRate') return [`${value}%`, 'Completion Rate'];
-              return [value, name.charAt(0).toUpperCase() + name.slice(1)];
+              return [value, typeof name === 'string' ? name.charAt(0).toUpperCase() + name.slice(1) : name];
             }} />
             <Legend />
             <Bar dataKey="completed" stackId="a" fill="#10b981" name="Completed" />

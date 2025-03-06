@@ -66,12 +66,10 @@ const MemberDetail = () => {
     );
   }
 
-  // Helper to get member's full name
   const getMemberName = (member: any) => {
     return `${member.firstName} ${member.lastName}`;
   };
 
-  // Add this helper function to render member cards
   const renderMemberInfo = () => {
     if (!member) return null;
 
@@ -149,15 +147,15 @@ const MemberDetail = () => {
                     <div>
                       <h3 className="font-medium">About</h3>
                       <p className="text-muted-foreground mt-1">
-                        {member.bio || 'No bio information provided.'}
+                        {member?.notes || 'No bio information provided.'}
                       </p>
                     </div>
                     
                     <div>
                       <h3 className="font-medium">Family</h3>
                       <p className="text-muted-foreground mt-1">
-                        {member.family 
-                          ? `Family members: ${member.family.join(', ')}` 
+                        {member?.familyId 
+                          ? `Family ID: ${member.familyId}` 
                           : 'No family information provided.'}
                       </p>
                     </div>
@@ -165,9 +163,9 @@ const MemberDetail = () => {
                     <div>
                       <h3 className="font-medium">Skills & Interests</h3>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {member.skills?.map((skill) => (
-                          <span key={skill} className="bg-muted px-2 py-1 rounded text-sm">
-                            {skill}
+                        {member?.roles?.map((role) => (
+                          <span key={role} className="bg-muted px-2 py-1 rounded text-sm">
+                            {role}
                           </span>
                         )) || 'No skills or interests listed.'}
                       </div>
@@ -176,7 +174,7 @@ const MemberDetail = () => {
                     <div>
                       <h3 className="font-medium">Notes</h3>
                       <p className="text-muted-foreground mt-1">
-                        {member.notes || 'No additional notes.'}
+                        {member?.notes || 'No additional notes.'}
                       </p>
                     </div>
                   </div>

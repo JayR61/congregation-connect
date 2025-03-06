@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,12 +34,10 @@ const Documents = () => {
   const isLoading = documentsLoading || foldersLoading;
 
   const handleShareDocument = (documentId: string) => {
-    // In a real application, this would generate a shareable link
     toast.success("Link copied to clipboard");
   };
 
   const handleDownloadDocument = (documentId: string) => {
-    // In a real application, this would trigger a download
     toast.success("Document download started");
   };
 
@@ -70,7 +67,7 @@ const Documents = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: Date) => {
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -197,7 +194,6 @@ const Documents = () => {
             )
           ) : (
             <>
-              {/* Display folders first */}
               {folders && folders.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-lg font-medium mb-3">Folders</h3>
@@ -246,7 +242,6 @@ const Documents = () => {
                 </div>
               )}
               
-              {/* Display documents */}
               {documents && documents.length > 0 ? (
                 <div>
                   <h3 className="text-lg font-medium mb-3">Documents</h3>
@@ -259,7 +254,7 @@ const Documents = () => {
                               {getIconForFileType(document.fileType)}
                               <h3 className="font-medium mt-2">{document.name}</h3>
                               <p className="text-xs text-muted-foreground">
-                                {formatFileSize(document.size)} • {formatDate(document.dateModified)}
+                                {formatFileSize(document.fileSize)} • {formatDate(document.updatedAt)}
                               </p>
                               <div className="flex items-center space-x-2 mt-4">
                                 <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(document.id)}>
@@ -296,7 +291,7 @@ const Documents = () => {
                             <div>
                               <h3 className="font-medium">{document.name}</h3>
                               <p className="text-xs text-muted-foreground">
-                                {formatFileSize(document.size)} • Modified {formatDate(document.dateModified)}
+                                {formatFileSize(document.fileSize)} • Modified {formatDate(document.updatedAt)}
                               </p>
                             </div>
                           </div>

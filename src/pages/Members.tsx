@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Filter, Grid3X3, List } from 'lucide-react';
@@ -22,6 +21,10 @@ const Members = () => {
     `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getMemberName = (member: any) => {
+    return `${member.firstName} ${member.lastName}`;
+  };
 
   return (
     <div className="p-6">
@@ -102,10 +105,10 @@ const Members = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-4">
                         <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                          {member.name.charAt(0)}
+                          {member.firstName.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-medium">{member.name}</h3>
+                          <h3 className="font-medium">{getMemberName(member)}</h3>
                           <p className="text-sm text-muted-foreground">{member.email}</p>
                         </div>
                       </div>
@@ -121,10 +124,10 @@ const Members = () => {
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                        {member.name.charAt(0)}
+                        {member.firstName.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-medium">{member.name}</h3>
+                        <h3 className="font-medium">{getMemberName(member)}</h3>
                         <p className="text-sm text-muted-foreground">{member.email}</p>
                       </div>
                     </div>
@@ -147,7 +150,6 @@ const Members = () => {
           )}
         </TabsContent>
         
-        {/* Other tabs would have similar content structure */}
         <TabsContent value="active">
           <div className="text-center py-12">
             <h3 className="text-lg font-medium">Active Members View</h3>

@@ -84,6 +84,43 @@ const Finance = () => {
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
+  // Add this function to render the transaction list
+  const renderTransactionList = () => {
+    if (isLoading) {
+      return Array(3).fill(0).map((_, index) => (
+        <div key={`loading-${index}`} className="grid grid-cols-5 px-4 py-5 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+          <div className="h-4 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+          <div className="h-4 bg-gray-200 rounded w-16"></div>
+          <div className="h-4 bg-gray-200 rounded w-20 ml-auto"></div>
+        </div>
+      ));
+    }
+
+    if (transactions.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No transactions found</p>
+        </div>
+      );
+    }
+
+    return transactions.map((transaction) => (
+      <div key={transaction.id} className="grid grid-cols-5 px-4 py-3 hover:bg-muted/50">
+        <div>{new Date(transaction.date).toLocaleDateString()}</div>
+        <div>{transaction.categoryId}</div>
+        <div className="truncate">{transaction.description}</div>
+        <div className={transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}>
+          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+        </div>
+        <div className={`text-right ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
+          {formatCurrency(transaction.amount)}
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="p-6">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">

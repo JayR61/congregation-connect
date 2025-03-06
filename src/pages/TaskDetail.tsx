@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -134,12 +133,12 @@ const TaskDetail = () => {
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-2">Assigned To</h3>
             <div className="flex flex-wrap gap-2">
-              {task.assignees?.map((assignee) => (
-                <div key={assignee.id} className="flex items-center space-x-2 border rounded-full px-3 py-1">
+              {task.assigneeIds?.map((assigneeId) => (
+                <div key={assigneeId} className="flex items-center space-x-2 border rounded-full px-3 py-1">
                   <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    {assignee.name.charAt(0)}
+                    {assigneeId.charAt(0)}
                   </div>
-                  <span>{assignee.name}</span>
+                  <span>{assigneeId}</span>
                 </div>
               ))}
             </div>
@@ -150,8 +149,8 @@ const TaskDetail = () => {
               <h3 className="text-lg font-medium mb-2">Categories</h3>
               <div className="flex flex-wrap gap-2">
                 {task.categories.map((category) => (
-                  <span key={category} className="bg-muted px-2 py-1 rounded text-sm">
-                    {category}
+                  <span key={category.id} className="bg-muted px-2 py-1 rounded text-sm">
+                    {category.name}
                   </span>
                 ))}
               </div>

@@ -12,6 +12,7 @@ interface StatCardProps {
     value: number;
     label: string;
     isCurrency?: boolean;
+    icon?: React.ReactNode;
   };
 }
 
@@ -40,6 +41,7 @@ const StatCard: React.FC<StatCardProps> = ({
               trend.value > 0 ? "text-emerald-500" : "text-red-500"
             )}>
               ({trend.isCurrency ? '$' : ''}{trend.value.toLocaleString()} {trend.label})
+              {trend.icon && <span className="ml-1">{trend.icon}</span>}
             </span>
           )}
         </p>

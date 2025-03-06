@@ -18,7 +18,6 @@ const Finance = () => {
     queryFn: getTransactions
   });
 
-  // Calculate summary metrics
   const summary = transactions.reduce((acc, transaction) => {
     if (transaction.type === 'income') {
       acc.income += transaction.amount;
@@ -30,15 +29,13 @@ const Finance = () => {
 
   const balance = summary ? summary.income - summary.expenses : 0;
 
-  // Format dollar amounts
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'ZAR',
     }).format(amount);
   };
 
-  // Generate expense by category data for pie chart
   const expenseCategories = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc, transaction) => {
@@ -51,7 +48,6 @@ const Finance = () => {
       return acc;
     }, [] as { name: string; value: number }[]);
 
-  // Generate monthly data for bar chart
   const monthlyData = transactions
     .reduce((acc, transaction) => {
       const date = new Date(transaction.date);
@@ -74,17 +70,14 @@ const Finance = () => {
       return acc;
     }, [] as { name: string; income: number; expense: number }[]);
 
-  // Sort monthly data chronologically
   monthlyData.sort((a, b) => {
     const aDate = new Date(a.name);
     const bDate = new Date(b.name);
     return aDate.getTime() - bDate.getTime();
   });
-  
-  // Colors for pie chart
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
-  // Add this function to render the transaction list
   const renderTransactionList = () => {
     if (isLoading) {
       return Array(3).fill(0).map((_, index) => (

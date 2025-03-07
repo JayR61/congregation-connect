@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { CheckSquare, DollarSign, FileText, UserPlus, MessageSquare } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const RecentActivity = () => {
   const { tasks, transactions, documents, members } = useAppContext();
@@ -88,25 +89,27 @@ const RecentActivity = () => {
   };
 
   return (
-    <div className="space-y-4">
-      {activities.length > 0 ? (
-        activities.map((activity, index) => (
-          <div key={`${activity.id}-${index}`} className="flex items-start space-x-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              {activity.icon}
+    <ScrollArea className="h-[300px]">
+      <div className="space-y-4 p-1">
+        {activities.length > 0 ? (
+          activities.map((activity, index) => (
+            <div key={`${activity.id}-${index}`} className="flex items-start space-x-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                {activity.icon}
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{activity.description}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(activity.date)}</p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{activity.description}</p>
-              <p className="text-xs text-muted-foreground">{formatDate(activity.date)}</p>
-            </div>
+          ))
+        ) : (
+          <div className="text-center text-muted-foreground py-8">
+            No recent activity
           </div>
-        ))
-      ) : (
-        <div className="text-center text-muted-foreground py-8">
-          No recent activity
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ScrollArea>
   );
 };
 

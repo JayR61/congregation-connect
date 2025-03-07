@@ -1,8 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory } from '../types';
 import { 
-  tasks as initialTasks, 
   transactions as initialTransactions,
   members as initialMembers,
   documents as initialDocuments,
@@ -14,18 +12,21 @@ import {
 } from '../data/mockData';
 import { toast } from '@/lib/toast';
 
+const initialTasks: Task[] = [];
+
 interface AppContextType {
   // User data
   currentUser: User;
   notifications: Notification[];
   markNotificationAsRead: (id: string) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
   
   // Tasks data and operations
   tasks: Task[];
   taskCategories: TaskCategory[];
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'comments'>) => void;
-  updateTask: (id: string, task: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
+  updateTask: (id: string, task: Partial<Task>, editorId?: string) => void;
+  deleteTask: (id: string, deleterId?: string) => void;
   addTaskComment: (taskId: string, content: string) => void;
   
   // Finance data and operations
@@ -65,7 +66,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
 
-  // Tasks operations
+  const addNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: `notif-${Date.now()}`,
+      createdAt: new Date(),
+      read: false
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
   const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'comments'>) => {
     const newTask: Task = {
       ...task,
@@ -73,53 +84,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdById: currentUser.id,
       createdAt: new Date(),
       updatedAt: new Date(),
-      comments: []
+      comments: [],
+      lastModifiedById: currentUser.id,
+      lastModifiedAction: 'created'
     };
     
     setTasks(prevTasks => [...prevTasks, newTask]);
+    
+    const creatorName = `${currentUser.firstName} ${currentUser.lastName}`;
+    addNotification({
+      title: "New Task Created",
+      message: `${creatorName} created a new task: "${task.title}"`,
+      type: "info",
+      targetUrl: `/tasks/${newTask.id}`
+    });
+    
     toast.success("Task created successfully");
   };
 
-  const updateTask = (id: string, task: Partial<Task>) => {
+  const updateTask = (id: string, task: Partial<Task>, editorId?: string) => {
+    const editor = editorId || currentUser.id;
+    const oldTask = tasks.find(t => t.id === id);
+    
+    if (!oldTask) return;
+    
     setTasks(prevTasks => 
       prevTasks.map(t => 
         t.id === id 
-          ? { ...t, ...task, updatedAt: new Date() } 
+          ? { 
+              ...t, 
+              ...task, 
+              updatedAt: new Date(),
+              lastModifiedById: editor,
+              lastModifiedAction: task.status === 'completed' ? 'completed' : 'updated'
+            } 
           : t
       )
     );
+    
+    const editorMember = members.find(m => m.id === editor);
+    const editorName = editorMember 
+      ? `${editorMember.firstName} ${editorMember.lastName}`
+      : 'Someone';
+    
+    let message = `${editorName} updated the task: "${oldTask.title}"`;
+    if (task.status === 'completed' && oldTask.status !== 'completed') {
+      message = `${editorName} marked the task "${oldTask.title}" as completed`;
+    } else if (task.status && task.status !== oldTask.status) {
+      message = `${editorName} changed the status of "${oldTask.title}" to ${task.status}`;
+    }
+    
+    addNotification({
+      title: "Task Updated",
+      message,
+      type: "info",
+      targetUrl: `/tasks/${id}`
+    });
+    
     toast.success("Task updated successfully");
   };
 
-  const deleteTask = (id: string) => {
+  const deleteTask = (id: string, deleterId?: string) => {
+    const deleter = deleterId || currentUser.id;
+    const taskToDelete = tasks.find(t => t.id === id);
+    
+    if (!taskToDelete) return;
+    
     setTasks(prevTasks => prevTasks.filter(t => t.id !== id));
+    
+    const deleterMember = members.find(m => m.id === deleter);
+    const deleterName = deleterMember 
+      ? `${deleterMember.firstName} ${deleterMember.lastName}`
+      : 'Someone';
+    
+    addNotification({
+      title: "Task Deleted",
+      message: `${deleterName} deleted the task: "${taskToDelete.title}"`,
+      type: "warning",
+      targetUrl: `/tasks`
+    });
+    
     toast.success("Task deleted successfully");
   };
 
-  const addTaskComment = (taskId: string, content: string) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            comments: [
-              ...task.comments,
-              {
-                id: `comment-${Date.now()}`,
-                content,
-                authorId: currentUser.id,
-                createdAt: new Date()
-              }
-            ],
-            updatedAt: new Date()
-          };
-        }
-        return task;
-      })
-    );
-  };
-
-  // Finance operations
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => {
     const newTransaction: Transaction = {
       ...transaction,
@@ -149,7 +196,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Transaction deleted successfully");
   };
 
-  // Members operations
   const addMember = (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newMember: Member = {
       ...member,
@@ -178,7 +224,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Member removed successfully");
   };
 
-  // Documents operations
   const addDocument = (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>) => {
     const newDocument: Document = {
       ...document,
@@ -207,7 +252,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDocuments(prev => 
       prev.map(d => {
         if (d.id === id) {
-          // If the URL changed, add a new version
           if (document.url && document.url !== d.url) {
             const newVersion = {
               id: `version-${Date.now()}`,
@@ -240,7 +284,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Document deleted successfully");
   };
 
-  // Folders operations
   const addFolder = (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => {
     const newFolder: Folder = {
       ...folder,
@@ -266,7 +309,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteFolder = (id: string) => {
-    // Check if folder has documents or subfolders
     const hasDocuments = documents.some(d => d.folderId === id);
     const hasSubfolders = folders.some(f => f.parentId === id);
     
@@ -279,7 +321,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success("Folder deleted successfully");
   };
 
-  // Notifications operations
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => 
       prev.map(n => 
@@ -296,6 +337,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         notifications,
         markNotificationAsRead,
+        addNotification,
         tasks,
         taskCategories,
         addTask,

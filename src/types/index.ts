@@ -1,8 +1,8 @@
-
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+export type TaskModificationAction = 'created' | 'updated' | 'completed' | 'deleted';
 
 export interface TaskCategory {
   id: string;
@@ -43,6 +43,8 @@ export interface Task {
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
+  lastModifiedById?: string;
+  lastModifiedAction?: TaskModificationAction;
 }
 
 // Finance related types

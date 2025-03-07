@@ -23,6 +23,7 @@ const Tasks = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [tabsValue, setTabsValue] = useState('all');
   const navigate = useNavigate();
   
   // Filter tasks based on selected filters and search query
@@ -257,7 +258,7 @@ const Tasks = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4" onValueChange={(value) => setTabsValue(value)}>
+      <Tabs defaultValue="all" className="space-y-4" value={tabsValue} onValueChange={setTabsValue}>
         <TabsList>
           <TabsTrigger value="all">All Tasks</TabsTrigger>
           <TabsTrigger value="my">My Tasks</TabsTrigger>
@@ -288,7 +289,7 @@ const Tasks = () => {
               oneWeekFromNow.setDate(today.getDate() + 7);
               return (task.status !== 'completed') && 
                     ((dueDate <= oneWeekFromNow) || 
-                    (dueDate < today && task.status !== 'completed')); // Include overdue tasks
+                    (dueDate < today)); // Fixed the type error by removing redundant status check
             })} 
             viewMode={viewMode}
             onTaskClick={handleViewTask}

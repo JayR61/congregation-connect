@@ -15,13 +15,11 @@ import { toast } from '@/lib/toast';
 const initialTasks: Task[] = [];
 
 interface AppContextType {
-  // User data
   currentUser: User;
   notifications: Notification[];
   markNotificationAsRead: (id: string) => void;
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
   
-  // Tasks data and operations
   tasks: Task[];
   taskCategories: TaskCategory[];
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'comments'>) => void;
@@ -29,20 +27,17 @@ interface AppContextType {
   deleteTask: (id: string, deleterId?: string) => void;
   addTaskComment: (taskId: string, content: string) => void;
   
-  // Finance data and operations
   transactions: Transaction[];
   financeCategories: FinanceCategory[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   
-  // Members data and operations
   members: Member[];
   addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMember: (id: string, member: Partial<Member>) => void;
   deleteMember: (id: string) => void;
   
-  // Documents and folders data and operations
   documents: Document[];
   folders: Folder[];
   addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>) => void;

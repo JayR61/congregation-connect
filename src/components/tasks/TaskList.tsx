@@ -1,302 +1,216 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Task, TaskCategory } from '@/types';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Task } from '@/types';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle, Circle, CheckSquare, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CalendarIcon, Clock, Flag } from 'lucide-react';
+import { format, isAfter, isBefore, isToday } from 'date-fns';
 import { useAppContext } from '@/context/AppContext';
-import { Button } from '@/components/ui/button';
-import { TaskDialog } from './TaskDialog';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface TaskListProps {
   tasks: Task[];
   viewMode: 'grid' | 'list';
-  onTaskClick?: (taskId: string) => void;
+  onTaskClick: (taskId: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => {
-  const navigate = useNavigate();
-  const { members, deleteTask } = useAppContext();
-  const [editTaskId, setEditTaskId] = React.useState<string | null>(null);
-  const [showEditDialog, setShowEditDialog] = React.useState(false);
-  const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const { members } = useAppContext();
 
-  const getStatusIcon = (status: Task['status']) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'pending':
-        return <Circle className="h-4 w-4 text-indigo-500" />;
-      default:
-        return <Circle className="h-4 w-4" />;
-    }
-  };
-
-  const formatDueDate = (date: Date | null) => {
-    if (!date) return 'No due date';
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const dueDate = new Date(date);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const isOverdue = dueDate < today;
-    const isToday = dueDate.getTime() === today.getTime();
-    const isTomorrow = dueDate.getTime() === tomorrow.getTime();
-    
-    let formattedDate = format(date, 'MMM d, yyyy');
-    
-    if (isToday) formattedDate = 'Today';
-    if (isTomorrow) formattedDate = 'Tomorrow';
-    
+  if (tasks.length === 0) {
     return (
-      <span className={`flex items-center ${isOverdue && 'text-red-500'}`}>
-        {isOverdue && <AlertTriangle className="h-3 w-3 mr-1" />}
-        {formattedDate}
-      </span>
+      <div className="flex flex-col items-center justify-center p-10 border border-dashed rounded-lg bg-muted/30 text-center">
+        <h3 className="text-xl font-medium mb-2">No tasks found</h3>
+        <p className="text-muted-foreground mb-4">
+          There are no tasks that match your criteria. Try adjusting your filters or create a new task.
+        </p>
+        <div className="flex items-center justify-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Your task list is empty</span>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const getInitials = (name: string) => {
-    if (typeof name !== 'string') return '';
-    return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase();
-  };
-
-  const handleCardClick = (e: React.MouseEvent, taskId: string) => {
-    // This prevents navigation when clicking on action buttons
-    if ((e.target as HTMLElement).closest('.task-actions')) {
-      return;
-    }
-    
-    if (onTaskClick) {
-      onTaskClick(taskId);
-    } else {
-      navigate(`/tasks/${taskId}`);
-    }
-  };
-
-  const handleEditClick = (e: React.MouseEvent, taskId: string) => {
-    e.stopPropagation();
-    setEditTaskId(taskId);
-    setShowEditDialog(true);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, taskId: string) => {
-    e.stopPropagation();
-    setTaskToDelete(taskId);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    if (taskToDelete) {
-      deleteTask(taskToDelete);
-      setTaskToDelete(null);
-      setShowDeleteDialog(false);
-    }
-  };
-
-  const getCreatorName = (createdById: string) => {
-    const creator = members.find(m => m.id === createdById);
+  // Function to get creator name from task
+  const getCreatorName = (task: Task) => {
+    const creator = members.find(m => m.id === task.createdById);
     return creator ? `${creator.firstName} ${creator.lastName}` : 'Unknown';
   };
 
-  const emptyState = (
-    <div className="flex flex-col items-center justify-center p-8 text-center">
-      <CheckSquare className="h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-semibold mb-2">No Tasks Found</h3>
-      <p className="text-muted-foreground mb-4">There are no tasks matching your current filters. Try adjusting your filters or create a new task.</p>
-    </div>
-  );
+  const getStatusColor = (status: Task['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-orange-100 text-orange-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  if (tasks.length === 0) return emptyState;
+  const getPriorityIcon = (priority: Task['priority']) => {
+    switch (priority) {
+      case 'high':
+        return <Flag className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <Flag className="h-4 w-4 text-orange-500" />;
+      case 'low':
+        return <Flag className="h-4 w-4 text-green-500" />;
+      default:
+        return null;
+    }
+  };
 
-  return (
-    <>
-      <div className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
-        {tasks.map(task => (
-          <Card key={task.id} className="card-hover cursor-pointer" onClick={(e) => handleCardClick(e, task.id)}>
-            {viewMode === 'grid' ? (
-              <>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-semibold line-clamp-1">{task.title}</CardTitle>
-                    {getStatusIcon(task.status)}
+  const getDueDateInfo = (dueDate: Date | null) => {
+    if (!dueDate) return { text: 'No due date', className: 'text-muted-foreground' };
+    
+    const now = new Date();
+    
+    if (isToday(dueDate)) {
+      return { text: 'Due today', className: 'text-orange-500 font-medium' };
+    } else if (isBefore(dueDate, now)) {
+      return { text: `Overdue: ${format(dueDate, 'MMM d')}`, className: 'text-red-500 font-medium' };
+    } else {
+      return { text: `Due ${format(dueDate, 'MMM d')}`, className: 'text-muted-foreground' };
+    }
+  };
+
+  if (viewMode === 'grid') {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {tasks.map((task) => (
+          <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onTaskClick(task.id)}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-base">{task.title}</CardTitle>
+                {getPriorityIcon(task.priority)}
+              </div>
+            </CardHeader>
+            <CardContent className="pb-0">
+              <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
+              
+              <div className="flex items-center justify-between mt-4">
+                <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+                {task.dueDate && (
+                  <div className="flex items-center text-xs">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span className={getDueDateInfo(task.dueDate).className}>
+                      {getDueDateInfo(task.dueDate).text}
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{task.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {task.categories.map(category => (
-                      <Badge key={category.id} style={{ backgroundColor: category.color, color: 'white' }}>
-                        {category.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {formatDueDate(task.dueDate)}
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <span>Created by {getCreatorName(task.createdById)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2 flex justify-between">
-                  <div className="flex -space-x-2">
-                    {task.assigneeIds.slice(0, 3).map((assigneeId) => {
-                      const member = members.find(m => m.id === assigneeId);
-                      return (
-                        <Avatar key={assigneeId} className="h-8 w-8 border-2 border-background">
-                          <AvatarImage src={member?.avatar || undefined} alt={member?.firstName} />
-                          <AvatarFallback>
-                            {getInitials(`${member?.firstName || ''} ${member?.lastName || ''}`)}
-                          </AvatarFallback>
-                        </Avatar>
-                      );
-                    })}
-                    {task.assigneeIds.length > 3 && (
-                      <Avatar className="h-8 w-8 border-2 border-background">
-                        <AvatarFallback>+{task.assigneeIds.length - 3}</AvatarFallback>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="pt-4 text-xs">
+              <div className="flex justify-between items-center w-full">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">By:</span>
+                  <span>{getCreatorName(task)}</span>
+                </div>
+                
+                <div className="flex -space-x-2">
+                  {task.assigneeIds.slice(0, 3).map((id) => {
+                    const member = members.find(m => m.id === id);
+                    return (
+                      <Avatar key={id} className="h-6 w-6 border-2 border-background">
+                        <AvatarImage src={member?.avatar || undefined} />
+                        <AvatarFallback className="text-[10px]">
+                          {member ? `${member.firstName[0]}${member.lastName[0]}` : 'U'}
+                        </AvatarFallback>
                       </Avatar>
-                    )}
-                  </div>
-                  <div className="task-actions flex space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8" 
-                      onClick={(e) => handleEditClick(e, task.id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-destructive hover:text-destructive" 
-                      onClick={(e) => handleDeleteClick(e, task.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardFooter>
-              </>
-            ) : (
-              <div className="flex p-4">
-                <div className="mr-4 mt-0.5">
-                  {getStatusIcon(task.status)}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">{task.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{task.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {task.categories.map(category => (
-                      <Badge key={category.id} style={{ backgroundColor: category.color, color: 'white' }}>
-                        {category.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    <span>Created by {getCreatorName(task.createdById)}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end justify-between ml-4">
-                  <div className="text-sm flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                    {formatDueDate(task.dueDate)}
-                  </div>
-                  <div className="flex -space-x-2 mt-2">
-                    {task.assigneeIds.slice(0, 2).map((assigneeId) => {
-                      const member = members.find(m => m.id === assigneeId);
-                      return (
-                        <Avatar key={assigneeId} className="h-7 w-7 border-2 border-background">
-                          <AvatarImage src={member?.avatar || undefined} alt={member?.firstName} />
-                          <AvatarFallback>
-                            {getInitials(`${member?.firstName || ''} ${member?.lastName || ''}`)}
-                          </AvatarFallback>
-                        </Avatar>
-                      );
-                    })}
-                    {task.assigneeIds.length > 2 && (
-                      <Avatar className="h-7 w-7 border-2 border-background">
-                        <AvatarFallback>+{task.assigneeIds.length - 2}</AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                </div>
-                <div className="task-actions flex flex-col space-y-1 ml-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={(e) => handleEditClick(e, task.id)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive hover:text-destructive" 
-                    onClick={(e) => handleDeleteClick(e, task.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    );
+                  })}
+                  {task.assigneeIds.length > 3 && (
+                    <Avatar className="h-6 w-6 border-2 border-background">
+                      <AvatarFallback className="text-[10px] bg-muted">
+                        +{task.assigneeIds.length - 3}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
               </div>
-            )}
+            </CardFooter>
           </Card>
         ))}
       </div>
+    );
+  }
 
-      {/* Edit Task Dialog */}
-      <TaskDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        taskId={editTaskId || undefined}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the task.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+  return (
+    <div className="space-y-2">
+      {tasks.map((task) => (
+        <div 
+          key={task.id}
+          className="flex items-center border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+          onClick={() => onTaskClick(task.id)}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">{task.title}</h3>
+              <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+              {getPriorityIcon(task.priority)}
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-1 mb-1">{task.description}</p>
+            
+            <div className="flex items-center text-xs text-muted-foreground">
+              <span>Created by {getCreatorName(task)}</span>
+              <span className="mx-2">•</span>
+              
+              {task.categories.length > 0 && (
+                <div className="flex items-center gap-1 mr-2">
+                  {task.categories.slice(0, 2).map(category => (
+                    <Badge 
+                      key={category.id} 
+                      variant="outline"
+                      className="text-[10px] px-1 h-4"
+                      style={{ borderColor: category.color, color: category.color }}
+                    >
+                      {category.name}
+                    </Badge>
+                  ))}
+                  {task.categories.length > 2 && (
+                    <span className="text-xs">+{task.categories.length - 2}</span>
+                  )}
+                </div>
+              )}
+              
+              {task.dueDate && (
+                <div className="flex items-center">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  <span className={getDueDateInfo(task.dueDate).className}>
+                    {getDueDateInfo(task.dueDate).text}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex -space-x-2 ml-4">
+            {task.assigneeIds.slice(0, 3).map((id) => {
+              const member = members.find(m => m.id === id);
+              return (
+                <Avatar key={id} className="h-7 w-7 border-2 border-background">
+                  <AvatarImage src={member?.avatar || undefined} />
+                  <AvatarFallback>
+                    {member ? `${member.firstName[0]}${member.lastName[0]}` : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              );
+            })}
+            {task.assigneeIds.length > 3 && (
+              <Avatar className="h-7 w-7 border-2 border-background">
+                <AvatarFallback className="bg-muted">
+                  +{task.assigneeIds.length - 3}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
 

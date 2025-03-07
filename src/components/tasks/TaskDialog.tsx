@@ -111,8 +111,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       const newCategory: TaskCategory = {
         id: `custom-category-${Date.now()}`,
         name: customCategoryName.trim(),
-        color: customCategoryColor,
-        description: 'Custom category'
+        color: customCategoryColor
       };
       
       setCustomCategories(prev => [...prev, newCategory]);
@@ -190,7 +189,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{taskId ? 'Edit Task' : 'Create New Task'}</DialogTitle>
             <DialogDescription>
@@ -200,7 +199,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 px-1">
+          <ScrollArea className="flex-1 px-1 max-h-[60vh]">
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
@@ -268,12 +267,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
                       {dueDate ? format(dueDate, "PPP") : "Select a date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={dueDate || undefined}
                       onSelect={setDueDate}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

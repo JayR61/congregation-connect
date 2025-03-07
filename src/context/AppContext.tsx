@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory } from '../types';
+import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment } from '../types';
 import { 
   transactions as initialTransactions,
   members as initialMembers,
@@ -165,6 +165,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     
     toast.success("Task deleted successfully");
+  };
+
+  const addTaskComment = (taskId: string, content: string) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    
+    if (!taskToUpdate) {
+      toast.error("Task not found");
+      return;
+    }
+    
+    const newComment: TaskComment = {
+      id: `comment-${Date.now()}`,
+      content,
+      authorId: currentUser.id,
+      createdAt: new Date()
+    };
+    
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        t.id === taskId 
+          ? { 
+              ...t, 
+              comments: [...t.comments, newComment],
+              updatedAt: new Date()
+            } 
+          : t
+      )
+    );
+    
+    const commenterName = `${currentUser.firstName} ${currentUser.lastName}`;
+    
+    addNotification({
+      title: "New Comment",
+      message: `${commenterName} commented on task "${taskToUpdate.title}"`,
+      type: "info",
+      targetUrl: `/tasks/${taskId}`
+    });
+    
+    toast.success("Comment added successfully");
   };
 
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => {

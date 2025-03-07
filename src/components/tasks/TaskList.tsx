@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task, TaskCategory } from '@/types';
@@ -12,9 +11,10 @@ import { useAppContext } from '@/context/AppContext';
 interface TaskListProps {
   tasks: Task[];
   viewMode: 'grid' | 'list';
+  onTaskClick?: (taskId: string) => void;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => {
   const navigate = useNavigate();
   const { members } = useAppContext();
 
@@ -61,11 +61,20 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode }) => {
   };
 
   const getInitials = (name: string) => {
+    if (typeof name !== 'string') return '';
     return name
       .split(' ')
-      .map(part => part[0])
+      .map(part => part.charAt(0))
       .join('')
       .toUpperCase();
+  };
+
+  const handleCardClick = (taskId: string) => {
+    if (onTaskClick) {
+      onTaskClick(taskId);
+    } else {
+      navigate(`/tasks/${taskId}`);
+    }
   };
 
   const emptyState = (
@@ -81,7 +90,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode }) => {
   return (
     <div className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
       {tasks.map(task => (
-        <Card key={task.id} className="card-hover cursor-pointer" onClick={() => navigate(`/tasks/${task.id}`)}>
+        <Card key={task.id} className="card-hover cursor-pointer" onClick={() => handleCardClick(task.id)}>
           {viewMode === 'grid' ? (
             <>
               <CardHeader className="pb-2">

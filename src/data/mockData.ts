@@ -1,4 +1,5 @@
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, ChurchStructure, MemberCategory, ChurchPosition } from '@/types';
+
+import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, ChurchStructure, MemberCategory, ChurchPosition, ChurchStructureData, MemberCategoryData } from '@/types';
 
 // Add functions to simulate API calls
 export const getTasks = async (): Promise<Task[]> => {
@@ -39,7 +40,7 @@ const members: Member[] = [
     address: '123 Main St',
     status: 'active',
     birthDate: new Date('1990-01-01'),
-    membershipDate: new Date('2020-01-01'),
+    joinDate: new Date('2020-01-01'),
     churchStructureId: 'structure-1',
     memberCategoryId: 'category-1',
     churchPositionId: 'position-1',
@@ -65,6 +66,16 @@ const members: Member[] = [
     givingHistory: [],
     createdBy: 'user-1',
     updatedBy: 'user-1',
+    roles: ['member', 'worship_team'],
+    familyId: null,
+    familyIds: [],
+    category: 'regular',
+    structures: ['senior_leadership', 'youth_leadership'],
+    positions: [{
+      structure: 'senior_leadership',
+      title: 'Worship Leader',
+      startDate: new Date('2020-01-01')
+    }],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -77,7 +88,7 @@ const members: Member[] = [
     address: '456 Elm St',
     status: 'inactive',
     birthDate: new Date('1985-02-02'),
-    membershipDate: new Date('2019-02-02'),
+    joinDate: new Date('2019-02-02'),
     churchStructureId: 'structure-2',
     memberCategoryId: 'category-2',
     churchPositionId: 'position-2',
@@ -103,6 +114,12 @@ const members: Member[] = [
     givingHistory: [],
     createdBy: 'user-1',
     updatedBy: 'user-1',
+    roles: ['member', 'sunday_school'],
+    familyId: null,
+    familyIds: [],
+    category: 'regular',
+    structures: ['sunday_school'],
+    positions: [],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -115,7 +132,7 @@ const members: Member[] = [
     address: '789 Oak St',
     status: 'active',
     birthDate: new Date('1992-03-03'),
-    membershipDate: new Date('2021-03-03'),
+    joinDate: new Date('2021-03-03'),
     churchStructureId: 'structure-3',
     memberCategoryId: 'category-3',
     churchPositionId: 'position-3',
@@ -141,6 +158,16 @@ const members: Member[] = [
     givingHistory: [],
     createdBy: 'user-1',
     updatedBy: 'user-1',
+    roles: ['member', 'healthcare_team'],
+    familyId: null,
+    familyIds: [],
+    category: 'regular',
+    structures: [],
+    positions: [{
+      structure: 'mens_forum',
+      title: 'Healthcare Coordinator',
+      startDate: new Date('2021-03-03')
+    }],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -153,7 +180,7 @@ const members: Member[] = [
     address: '012 Pine St',
     status: 'prospect',
     birthDate: new Date('1988-04-04'),
-    membershipDate: new Date('2023-04-04'),
+    joinDate: new Date('2023-04-04'),
     churchStructureId: 'structure-4',
     memberCategoryId: 'category-4',
     churchPositionId: null,
@@ -179,6 +206,12 @@ const members: Member[] = [
     givingHistory: [],
     createdBy: 'user-1',
     updatedBy: 'user-1',
+    roles: [],
+    familyId: null,
+    familyIds: [],
+    category: 'visitor',
+    structures: [],
+    positions: [],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -191,7 +224,7 @@ const members: Member[] = [
     address: '345 Maple St',
     status: 'visitor',
     birthDate: new Date('1995-05-05'),
-    membershipDate: new Date('2024-05-05'),
+    joinDate: new Date('2024-05-05'),
     churchStructureId: null,
     memberCategoryId: 'category-5',
     churchPositionId: null,
@@ -217,6 +250,12 @@ const members: Member[] = [
     givingHistory: [],
     createdBy: 'user-1',
     updatedBy: 'user-1',
+    roles: [],
+    familyId: null,
+    familyIds: [],
+    category: 'visitor',
+    structures: [],
+    positions: [],
     createdAt: new Date(),
     updatedAt: new Date()
   }
@@ -233,7 +272,9 @@ export const currentUser: User = {
   lastName: 'Doe',
   email: 'john.doe@example.com',
   role: 'admin',
-  avatar: '/placeholder.svg'
+  avatar: '/placeholder.svg',
+  lastActive: new Date(),
+  createdAt: new Date()
 };
 export const notifications: Notification[] = [];
 export const taskCategories: TaskCategory[] = [];
@@ -241,7 +282,7 @@ export const financeCategories: FinanceCategory[] = [];
 export const tasks: Task[] = [];
 
 // Church structures
-export const churchStructures: ChurchStructure[] = [
+export const churchStructures: ChurchStructureData[] = [
   { id: 'structure-1', name: 'Senior Leadership', description: 'Senior church leadership including pastors and elders' },
   { id: 'structure-2', name: 'Youth Leadership', description: 'Youth ministry leadership team' },
   { id: 'structure-3', name: 'Men\'s Forum', description: 'Men\'s ministry and outreach' },
@@ -249,7 +290,7 @@ export const churchStructures: ChurchStructure[] = [
 ];
 
 // Member categories
-export const memberCategories: MemberCategory[] = [
+export const memberCategories: MemberCategoryData[] = [
   { id: 'category-1', name: 'Elders', description: 'Church elders' },
   { id: 'category-2', name: 'Pastors', description: 'Church pastors' },
   { id: 'category-3', name: 'Youth', description: 'Youth members' },

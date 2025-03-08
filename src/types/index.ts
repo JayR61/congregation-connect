@@ -1,3 +1,4 @@
+
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -96,8 +97,27 @@ export interface Budget {
 }
 
 // Member related types
+export type MemberStatus = 'active' | 'inactive' | 'prospect' | 'visitor';
 export type MemberCategory = 'elder' | 'pastor' | 'youth' | 'child' | 'visitor' | 'new' | 'regular';
 export type ChurchStructure = 'senior_leadership' | 'youth_leadership' | 'mens_forum' | 'sunday_school';
+
+export interface ChurchStructureData {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface MemberCategoryData {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ChurchPosition {
+  id: string;
+  name: string;
+  structureId: string;
+}
 
 export interface Position {
   structure: ChurchStructure;
@@ -138,26 +158,48 @@ export interface Member {
   email: string;
   phone: string;
   address: string;
-  city: string;
-  state: string;
-  zip: string;
-  birthDate: Date | null;
+  city?: string;
+  state?: string;
+  zip?: string;
+  birthDate?: Date | null;
   joinDate: Date;
-  avatar: string | null;
-  roles: string[];
+  avatar?: string | null;
+  roles?: string[];
   isActive: boolean;
-  familyId: string | null;
-  familyIds?: string[]; // Added for compatibility with new components
-  status?: string; // Added for compatibility with new components
+  familyId?: string | null;
+  familyIds?: string[];
+  status?: MemberStatus;
   category: MemberCategory;
   structures?: ChurchStructure[];
   positions?: Position[];
-  notes: string;
+  notes?: string;
   memberNotes?: MemberNote[];
   resourcesProvided?: ResourceProvided[];
   attendance?: AttendanceRecord[];
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+  churchStructureId?: string;
+  memberCategoryId?: string;
+  churchPositionId?: string | null;
+  occupation?: string;
+  skills?: string[];
+  familyInfo?: string;
+  socialLinks?: {
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
+  qualifications?: string[];
+  ministryInvolvement?: string[];
+  attendanceHistory?: any[];
+  givingHistory?: any[];
 }
 
 // Attendance interface
@@ -215,8 +257,8 @@ export interface User {
   email: string;
   avatar: string | null;
   role: 'admin' | 'staff' | 'member';
-  lastActive: Date;
-  createdAt: Date;
+  lastActive?: Date;
+  createdAt?: Date;
 }
 
 // Notification type

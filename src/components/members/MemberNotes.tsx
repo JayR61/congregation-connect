@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MemberNote, ResourceProvided, Member } from '@/types';
-import { FileText, Plus, DollarSign, PenLine } from 'lucide-react';
+import { FileText, Plus, Edit2, Trash2, PenLine } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useAppContext } from '@/context/AppContext';
 
@@ -19,6 +19,7 @@ interface MemberNotesProps {
 const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
   const { updateMember, currentUser } = useAppContext();
   const [newNote, setNewNote] = useState('');
+  const [editingNote, setEditingNote] = useState<MemberNote | null>(null);
   const [newResource, setNewResource] = useState({
     description: '',
     value: '',
@@ -31,22 +32,62 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
       return;
     }
     
-    const memberNote: MemberNote = {
-      id: `note-${Date.now()}`,
-      content: newNote,
-      date: new Date(),
-      createdById: currentUser.id,
-      attachments: [],
-    };
-    
-    const updatedNotes = [...(member.memberNotes || []), memberNote];
-    
-    updateMember(member.id, {
-      memberNotes: updatedNotes
-    });
+    if (editingNote) {
+      // Update existing note
+      const updatedNotes = (member.memberNotes || []).map(note => 
+        note.id === editingNote.id 
+          ? { ...note, content: newNote, updatedAt: new Date() } 
+          : note
+      );
+      
+      updateMember(member.id, {
+        memberNotes: updatedNotes
+      });
+      
+      setEditingNote(null);
+      toast.success("Note updated successfully");
+    } else {
+      // Add new note
+      const memberNote: MemberNote = {
+        id: `note-${Date.now()}`,
+        content: newNote,
+        date: new Date(),
+        createdById: currentUser.id,
+        attachments: [],
+      };
+      
+      const updatedNotes = [...(member.memberNotes || []), memberNote];
+      
+      updateMember(member.id, {
+        memberNotes: updatedNotes
+      });
+      
+      toast.success("Note added successfully");
+    }
     
     setNewNote('');
-    toast.success("Note added successfully");
+  };
+  
+  const editNote = (note: MemberNote) => {
+    setNewNote(note.content);
+    setEditingNote(note);
+  };
+  
+  const deleteNote = (noteId: string) => {
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      const updatedNotes = (member.memberNotes || []).filter(note => note.id !== noteId);
+      
+      updateMember(member.id, {
+        memberNotes: updatedNotes
+      });
+      
+      if (editingNote?.id === noteId) {
+        setEditingNote(null);
+        setNewNote('');
+      }
+      
+      toast.success("Note deleted successfully");
+    }
   };
   
   const addResourceRecord = () => {
@@ -105,7 +146,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
           
           <TabsContent value="notes" className="mt-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newNote">New Note</Label>
+              <Label htmlFor="newNote">{editingNote ? 'Edit Note' : 'New Note'}</Label>
               <Textarea
                 id="newNote"
                 placeholder="Add notes about this member..."
@@ -113,9 +154,20 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
               />
-              <Button onClick={addNote} className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Add Note
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={addNote} className="flex-1">
+                  {editingNote ? <Edit2 className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                  {editingNote ? 'Update Note' : 'Add Note'}
+                </Button>
+                {editingNote && (
+                  <Button variant="outline" onClick={() => {
+                    setEditingNote(null);
+                    setNewNote('');
+                  }}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="mt-6">
@@ -127,9 +179,19 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .map((note) => (
                         <div key={note.id} className="p-3 border rounded-md">
-                          <div className="flex items-center text-sm text-muted-foreground mb-1">
-                            <PenLine className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{formatDate(note.date)}</span>
+                          <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                            <div className="flex items-center">
+                              <PenLine className="h-3.5 w-3.5 mr-1.5" />
+                              <span>{formatDate(note.date)}</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => editNote(note)}>
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                           <p className="whitespace-pre-line">{note.content}</p>
                         </div>
@@ -165,13 +227,17 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="resourceValue">Value (Optional)</Label>
-                  <Input
-                    id="resourceValue"
-                    type="number"
-                    placeholder="0.00"
-                    value={newResource.value}
-                    onChange={(e) => setNewResource({...newResource, value: e.target.value})}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-2 top-2.5">R</span>
+                    <Input
+                      id="resourceValue"
+                      type="number"
+                      placeholder="0.00"
+                      className="pl-6"
+                      value={newResource.value}
+                      onChange={(e) => setNewResource({...newResource, value: e.target.value})}
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -203,8 +269,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
                             <span className="text-sm font-medium">{formatDate(resource.date)}</span>
                             {resource.value && (
                               <div className="flex items-center text-sm font-semibold">
-                                <DollarSign className="h-3.5 w-3.5 mr-0.5" />
-                                <span>{resource.value.toFixed(2)}</span>
+                                <span>R {resource.value.toFixed(2)}</span>
                               </div>
                             )}
                           </div>
@@ -216,7 +281,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
                 </ScrollArea>
               ) : (
                 <div className="text-center py-6 border rounded-md">
-                  <DollarSign className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                   <h3 className="font-medium">No Resource Records</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     Record resources, support, or services provided to this member.

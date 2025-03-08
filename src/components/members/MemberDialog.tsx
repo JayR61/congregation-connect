@@ -242,8 +242,8 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{member ? 'Edit Member' : 'Add Member'}</DialogTitle>
           <DialogDescription>
             {member 
@@ -252,336 +252,338 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           </DialogDescription>
         </DialogHeader>
         
-        {!member && (
-          <Tabs defaultValue="individual" className="mb-4" onValueChange={(value) => setMode(value as 'individual' | 'bulk')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="individual">Individual</TabsTrigger>
-              <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="individual">
-              <p className="text-sm text-muted-foreground mb-4">
-                Add a single member with detailed information
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="bulk">
-              <p className="text-sm text-muted-foreground mb-4">
-                Import multiple members at once. Enter one member per line in the format:<br/>
-                <span className="font-mono text-xs">Name, Email, Phone, Category (optional)</span>
-              </p>
-              <div className="space-y-4">
-                <Textarea 
-                  placeholder="John Doe, john@example.com, 555-123-4567, elder&#10;Jane Smith, jane@example.com, 555-987-6543, youth" 
-                  className="min-h-[150px] font-mono text-sm"
-                  value={bulkText}
-                  onChange={(e) => setBulkText(e.target.value)}
-                />
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setBulkText('')}>
-                    Clear
-                  </Button>
-                  <Button onClick={processBulkImport}>
-                    <Upload className="mr-2 h-4 w-4" /> Process
-                  </Button>
-                </div>
-                
-                {bulkMembers.length > 0 && (
-                  <div className="border rounded-md p-4 mt-4">
-                    <h3 className="font-medium mb-2">Processed Members ({bulkMembers.length})</h3>
-                    <ScrollArea className="h-[120px]">
-                      <ul className="space-y-2">
-                        {bulkMembers.map((bm, idx) => (
-                          <li key={idx} className="text-sm flex justify-between">
-                            <span>{bm.firstName} {bm.lastName}</span>
-                            <span className="text-muted-foreground">{bm.email} ({bm.category || 'regular'})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </ScrollArea>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
-        
-        {(mode === 'individual' || member) && (
-          <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="roles">Roles & Positions</TabsTrigger>
-              <TabsTrigger value="family">Family</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-            </TabsList>
-            
-            <ScrollArea className="flex-grow h-[400px] max-h-[400px] mt-4">
-              <TabsContent value="basic" className="space-y-4 px-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input 
-                      id="firstName"
-                      name="firstName"
-                      placeholder="First name"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input 
-                      id="lastName"
-                      name="lastName"
-                      placeholder="Last name"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email"
-                    name="email"
-                    placeholder="Email address"
-                    value={formData.email}
-                    onChange={handleChange}
+        <div className="flex-grow overflow-auto">
+          {!member && (
+            <Tabs defaultValue="individual" className="mb-4" onValueChange={(value) => setMode(value as 'individual' | 'bulk')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="individual">Individual</TabsTrigger>
+                <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="individual">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add a single member with detailed information
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="bulk">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Import multiple members at once. Enter one member per line in the format:<br/>
+                  <span className="font-mono text-xs">Name, Email, Phone, Category (optional)</span>
+                </p>
+                <div className="space-y-4">
+                  <Textarea 
+                    placeholder="John Doe, john@example.com, 555-123-4567, elder&#10;Jane Smith, jane@example.com, 555-987-6543, youth" 
+                    className="min-h-[150px] font-mono text-sm"
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
                   />
+                  <div className="flex justify-between">
+                    <Button variant="outline" onClick={() => setBulkText('')}>
+                      Clear
+                    </Button>
+                    <Button onClick={processBulkImport}>
+                      <Upload className="mr-2 h-4 w-4" /> Process
+                    </Button>
+                  </div>
+                  
+                  {bulkMembers.length > 0 && (
+                    <div className="border rounded-md p-4 mt-4">
+                      <h3 className="font-medium mb-2">Processed Members ({bulkMembers.length})</h3>
+                      <ScrollArea className="h-[120px]">
+                        <ul className="space-y-2">
+                          {bulkMembers.map((bm, idx) => (
+                            <li key={idx} className="text-sm flex justify-between">
+                              <span>{bm.firstName} {bm.lastName}</span>
+                              <span className="text-muted-foreground">{bm.email} ({bm.category || 'regular'})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </ScrollArea>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone"
-                    name="phone"
-                    placeholder="Phone number"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input 
-                    id="address"
-                    name="address"
-                    placeholder="Address"
-                    value={formData.address}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+              </TabsContent>
+            </Tabs>
+          )}
+          
+          {(mode === 'individual' || member) && (
+            <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-4">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="roles">Roles & Positions</TabsTrigger>
+                <TabsTrigger value="family">Family</TabsTrigger>
+                <TabsTrigger value="notes">Notes</TabsTrigger>
+              </TabsList>
+              
+              <div className="mt-4 max-h-[400px] overflow-y-auto p-1">
+                <TabsContent value="basic" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input 
+                        id="firstName"
+                        name="firstName"
+                        placeholder="First name"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input 
+                        id="lastName"
+                        name="lastName"
+                        placeholder="Last name"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="joinDate">Join Date</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input 
-                      id="joinDate"
-                      name="joinDate"
-                      type="date"
-                      value={formatDateForInput(formData.joinDate)}
+                      id="email"
+                      name="email"
+                      placeholder="Email address"
+                      value={formData.email}
                       onChange={handleChange}
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select 
-                      value={formData.status as string} 
-                      onValueChange={handleStatusChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="prospect">Prospect</SelectItem>
-                        <SelectItem value="visitor">Visitor</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input 
+                      id="phone"
+                      name="phone"
+                      placeholder="Phone number"
+                      value={formData.phone}
+                      onChange={handleChange}
+                    />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="category">Member Category</Label>
-                  <Select 
-                    value={formData.category as string} 
-                    onValueChange={(value) => handleCategoryChange(value as MemberCategory)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="elder">Elder</SelectItem>
-                      <SelectItem value="pastor">Pastor</SelectItem>
-                      <SelectItem value="youth">Youth</SelectItem>
-                      <SelectItem value="child">Child (Sunday School)</SelectItem>
-                      <SelectItem value="visitor">Visitor</SelectItem>
-                      <SelectItem value="new">New Member</SelectItem>
-                      <SelectItem value="regular">Regular Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="roles" className="space-y-6 px-1">
-                <div className="space-y-3">
-                  <Label>Church Structures</Label>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input 
+                      id="address"
+                      name="address"
+                      placeholder="Address"
+                      value={formData.address}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { id: 'senior_leadership', label: 'Senior Leadership' },
-                      { id: 'youth_leadership', label: 'Youth Leadership' },
-                      { id: 'mens_forum', label: "Men's Forum" },
-                      { id: 'sunday_school', label: 'Sunday School' },
-                    ].map((structure) => (
-                      <div key={structure.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={structure.id}
-                          checked={(formData.structures || []).includes(structure.id as ChurchStructure)}
-                          onCheckedChange={() => handleStructureToggle(structure.id as ChurchStructure)}
-                        />
-                        <label
-                          htmlFor={structure.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {structure.label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label>Leadership Positions</Label>
-                  <div className="space-y-4">
-                    {(formData.positions || []).map((position, index) => (
-                      <div key={index} className="flex items-center space-x-2 p-3 border rounded-md">
-                        <div className="flex-1">
-                          <p className="font-medium">{position.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {position.structure.replace('_', ' ')} | 
-                            Since: {new Date(position.startDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => removePosition(index)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    
-                    <div className="space-y-3 p-3 border rounded-md">
-                      <div className="space-y-2">
-                        <Label htmlFor="positionTitle">Position Title</Label>
-                        <Input 
-                          id="positionTitle"
-                          placeholder="Position title"
-                          value={newPosition.title}
-                          onChange={(e) => handlePositionChange('title', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="positionStructure">Structure</Label>
-                        <Select 
-                          value={newPosition.structure as string}
-                          onValueChange={(value) => handlePositionChange('structure', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select structure" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="senior_leadership">Senior Leadership</SelectItem>
-                            <SelectItem value="youth_leadership">Youth Leadership</SelectItem>
-                            <SelectItem value="mens_forum">Men's Forum</SelectItem>
-                            <SelectItem value="sunday_school">Sunday School</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="positionStartDate">Start Date</Label>
-                        <Input 
-                          id="positionStartDate"
-                          type="date"
-                          value={formatDateForInput(newPosition.startDate)}
-                          onChange={(e) => handlePositionChange('startDate', new Date(e.target.value))}
-                        />
-                      </div>
-                      
-                      <Button onClick={addPosition} className="w-full mt-2">
-                        <Plus className="mr-2 h-4 w-4" /> Add Position
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="family" className="space-y-4 px-1">
-                <div className="space-y-2">
-                  <Label>Family Members</Label>
-                  <div className="border rounded-md p-2">
-                    <div className="relative mb-2">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search members..."
-                        className="pl-8"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                    <div className="space-y-2">
+                      <Label htmlFor="joinDate">Join Date</Label>
+                      <Input 
+                        id="joinDate"
+                        name="joinDate"
+                        type="date"
+                        value={formatDateForInput(formData.joinDate)}
+                        onChange={handleChange}
                       />
                     </div>
                     
-                    <ScrollArea className="h-[200px]">
-                      <div className="space-y-1">
-                        {filteredMembers.length > 0 ? (
-                          filteredMembers.map((m) => (
-                            <div
-                              key={m.id}
-                              className={`px-2 py-1 rounded-md text-sm cursor-pointer flex items-center justify-between ${
-                                (formData.familyIds || []).includes(m.id) ? 'bg-primary/10' : 'hover:bg-muted'
-                              }`}
-                              onClick={() => handleFamilyMemberSelect(m.id)}
-                            >
-                              <span>{m.firstName} {m.lastName}</span>
-                              {(formData.familyIds || []).includes(m.id) && (
-                                <X className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-2 text-sm text-muted-foreground">
-                            No members found
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select 
+                        value={formData.status as string} 
+                        onValueChange={handleStatusChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="prospect">Prospect</SelectItem>
+                          <SelectItem value="visitor">Visitor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="notes" className="space-y-4 px-1">
-                <div className="space-y-2">
-                  <Label htmlFor="notes">General Notes</Label>
-                  <Textarea 
-                    id="notes"
-                    name="notes"
-                    placeholder="Additional notes about this member"
-                    value={formData.notes || ''}
-                    onChange={handleChange}
-                    className="min-h-[150px]"
-                  />
-                </div>
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
-        )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Member Category</Label>
+                    <Select 
+                      value={formData.category as string} 
+                      onValueChange={(value) => handleCategoryChange(value as MemberCategory)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="elder">Elder</SelectItem>
+                        <SelectItem value="pastor">Pastor</SelectItem>
+                        <SelectItem value="youth">Youth</SelectItem>
+                        <SelectItem value="child">Child (Sunday School)</SelectItem>
+                        <SelectItem value="visitor">Visitor</SelectItem>
+                        <SelectItem value="new">New Member</SelectItem>
+                        <SelectItem value="regular">Regular Member</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="roles" className="space-y-6">
+                  <div className="space-y-3">
+                    <Label>Church Structures</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { id: 'senior_leadership', label: 'Senior Leadership' },
+                        { id: 'youth_leadership', label: 'Youth Leadership' },
+                        { id: 'mens_forum', label: "Men's Forum" },
+                        { id: 'sunday_school', label: 'Sunday School' },
+                      ].map((structure) => (
+                        <div key={structure.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={structure.id}
+                            checked={(formData.structures || []).includes(structure.id as ChurchStructure)}
+                            onCheckedChange={() => handleStructureToggle(structure.id as ChurchStructure)}
+                          />
+                          <label
+                            htmlFor={structure.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {structure.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label>Leadership Positions</Label>
+                    <div className="space-y-4">
+                      {(formData.positions || []).map((position, index) => (
+                        <div key={index} className="flex items-center space-x-2 p-3 border rounded-md">
+                          <div className="flex-1">
+                            <p className="font-medium">{position.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {position.structure.replace('_', ' ')} | 
+                              Since: {new Date(position.startDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => removePosition(index)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      <div className="space-y-3 p-3 border rounded-md">
+                        <div className="space-y-2">
+                          <Label htmlFor="positionTitle">Position Title</Label>
+                          <Input 
+                            id="positionTitle"
+                            placeholder="Position title"
+                            value={newPosition.title}
+                            onChange={(e) => handlePositionChange('title', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="positionStructure">Structure</Label>
+                          <Select 
+                            value={newPosition.structure as string}
+                            onValueChange={(value) => handlePositionChange('structure', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select structure" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="senior_leadership">Senior Leadership</SelectItem>
+                              <SelectItem value="youth_leadership">Youth Leadership</SelectItem>
+                              <SelectItem value="mens_forum">Men's Forum</SelectItem>
+                              <SelectItem value="sunday_school">Sunday School</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="positionStartDate">Start Date</Label>
+                          <Input 
+                            id="positionStartDate"
+                            type="date"
+                            value={formatDateForInput(newPosition.startDate)}
+                            onChange={(e) => handlePositionChange('startDate', new Date(e.target.value))}
+                          />
+                        </div>
+                        
+                        <Button onClick={addPosition} className="w-full mt-2">
+                          <Plus className="mr-2 h-4 w-4" /> Add Position
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="family" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Family Members</Label>
+                    <div className="border rounded-md p-2">
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search members..."
+                          className="pl-8"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-1">
+                          {filteredMembers.length > 0 ? (
+                            filteredMembers.map((m) => (
+                              <div
+                                key={m.id}
+                                className={`px-2 py-1 rounded-md text-sm cursor-pointer flex items-center justify-between ${
+                                  (formData.familyIds || []).includes(m.id) ? 'bg-primary/10' : 'hover:bg-muted'
+                                }`}
+                                onClick={() => handleFamilyMemberSelect(m.id)}
+                              >
+                                <span>{m.firstName} {m.lastName}</span>
+                                {(formData.familyIds || []).includes(m.id) && (
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-2 text-sm text-muted-foreground">
+                              No members found
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="notes" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">General Notes</Label>
+                    <Textarea 
+                      id="notes"
+                      name="notes"
+                      placeholder="Additional notes about this member"
+                      value={formData.notes || ''}
+                      onChange={handleChange}
+                      className="min-h-[150px]"
+                    />
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          )}
+        </div>
         
-        <DialogFooter className="mt-4">
+        <DialogFooter className="flex-shrink-0 mt-4 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

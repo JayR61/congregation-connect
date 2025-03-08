@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload } from 'lucide-react';
@@ -34,7 +35,9 @@ const Members = () => {
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.phone.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                          member.status === statusFilter || 
+                          (statusFilter === 'active' && member.isActive);
     
     return matchesSearch && matchesStatus;
   });
@@ -175,7 +178,7 @@ const Members = () => {
             <p className="text-muted-foreground mt-2">
               This tab shows members with "active" status
             </p>
-            {members.filter(m => m.status === 'active').length === 0 ? (
+            {members.filter(m => m.status === 'active' || m.isActive).length === 0 ? (
               <Button onClick={handleAddMember} className="mt-4">
                 <UserPlus className="mr-2 h-4 w-4" /> Add Active Member
               </Button>

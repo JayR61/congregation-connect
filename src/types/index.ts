@@ -1,3 +1,4 @@
+
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -112,6 +113,8 @@ export interface Member {
   roles: string[];
   isActive: boolean;
   familyId: string | null;
+  familyIds?: string[]; // Added for compatibility with new components
+  status?: string; // Added for compatibility with new components
   notes: string;
   createdAt: Date;
   updatedAt: Date;

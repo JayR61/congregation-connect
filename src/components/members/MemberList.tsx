@@ -22,7 +22,11 @@ const MemberList: React.FC<MemberListProps> = ({ members, onEdit }) => {
   const navigate = useNavigate();
   const { deleteMember } = useAppContext();
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) {
+      return 'bg-gray-500';
+    }
+    
     switch (status) {
       case 'active':
         return 'bg-green-500';
@@ -44,7 +48,7 @@ const MemberList: React.FC<MemberListProps> = ({ members, onEdit }) => {
     }
   };
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: Date | string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
@@ -85,10 +89,10 @@ const MemberList: React.FC<MemberListProps> = ({ members, onEdit }) => {
                 <span>Joined: {formatDate(member.joinDate)}</span>
               </div>
               
-              {member.familyIds && member.familyIds.length > 0 && (
+              {((member.familyIds && member.familyIds.length > 0) || member.familyId) && (
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-                  <span>Family members: {member.familyIds.length}</span>
+                  <span>Family members: {member.familyIds ? member.familyIds.length : (member.familyId ? '1' : '0')}</span>
                 </div>
               )}
             </div>

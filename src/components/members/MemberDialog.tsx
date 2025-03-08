@@ -36,7 +36,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     familyIds: [],
     status: 'active',
     notes: '',
-    joinDate: new Date().toISOString().split('T')[0],
+    joinDate: new Date(),
   });
 
   // Reset or set form data when dialog opens/closes or member changes
@@ -45,7 +45,9 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
       if (member) {
         setFormData({
           ...member,
-          joinDate: member.joinDate ? new Date(member.joinDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          joinDate: member.joinDate || new Date(),
+          // Ensure familyIds exists
+          familyIds: member.familyIds || (member.familyId ? [member.familyId] : [])
         });
         setMode('individual');
       } else {
@@ -58,7 +60,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           familyIds: [],
           status: 'active',
           notes: '',
-          joinDate: new Date().toISOString().split('T')[0],
+          joinDate: new Date(),
         });
       }
       setBulkText('');
@@ -101,7 +103,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           email: email || '',
           phone: phone || '',
           status: 'active',
-          joinDate: new Date().toISOString(),
+          joinDate: new Date(),
         };
       });
       
@@ -120,10 +122,18 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
         return;
       }
 
+      // Prepare data for saving with correct types
+      const memberData = {
+        ...formData,
+        isActive: formData.status === 'active', // Map status to isActive
+        // Convert joinDate string to Date if needed
+        joinDate: formData.joinDate instanceof Date ? formData.joinDate : new Date(formData.joinDate as string),
+      };
+
       if (member) {
-        updateMember(member.id, formData);
+        updateMember(member.id, memberData);
       } else {
-        addMember(formData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
+        addMember(memberData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
       }
     } else {
       // Bulk import
@@ -132,9 +142,14 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
         return;
       }
 
-      // Add all members in the bulkMembers array
+      // Add all members in the bulkMembers array with correct types
       bulkMembers.forEach(memberData => {
-        addMember(memberData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
+        const preparedData = {
+          ...memberData,
+          isActive: memberData.status === 'active',
+          joinDate: memberData.joinDate instanceof Date ? memberData.joinDate : new Date(memberData.joinDate as string),
+        };
+        addMember(preparedData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
       });
       
       toast.success(`Added ${bulkMembers.length} members successfully`);
@@ -147,6 +162,13 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     m.id !== member?.id && // Don't show current member
     (`${m.firstName} ${m.lastName}`).toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Helper function to format date to YYYY-MM-DD for input
+  const formatDateForInput = (date: Date | string | undefined) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -278,7 +300,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                   id="joinDate"
                   name="joinDate"
                   type="date"
-                  value={formData.joinDate}
+                  value={formatDateForInput(formData.joinDate)}
                   onChange={handleChange}
                 />
               </div>
@@ -286,7 +308,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select 
-                  value={formData.status} 
+                  value={formData.status as string} 
                   onValueChange={handleStatusChange}
                 >
                   <SelectTrigger>
@@ -321,12 +343,12 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                           <div
                             key={m.id}
                             className={`px-2 py-1 rounded-md text-sm cursor-pointer flex items-center justify-between ${
-                              formData.familyIds?.includes(m.id) ? 'bg-primary/10' : 'hover:bg-muted'
+                              (formData.familyIds || []).includes(m.id) ? 'bg-primary/10' : 'hover:bg-muted'
                             }`}
                             onClick={() => handleFamilyMemberSelect(m.id)}
                           >
                             <span>{m.firstName} {m.lastName}</span>
-                            {formData.familyIds?.includes(m.id) && (
+                            {(formData.familyIds || []).includes(m.id) && (
                               <X className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>

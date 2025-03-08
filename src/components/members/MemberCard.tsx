@@ -11,7 +11,11 @@ interface MemberCardProps {
 }
 
 const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) {
+      return member.isActive ? 'bg-green-500' : 'bg-gray-500';
+    }
+    
     switch (status) {
       case 'active':
         return 'bg-green-500';
@@ -26,7 +30,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
     }
   };
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: Date | string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
@@ -70,10 +74,10 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
                 <span>Joined: {formatDate(member.joinDate)}</span>
               </div>
               
-              {member.familyIds && member.familyIds.length > 0 && (
+              {((member.familyIds && member.familyIds.length > 0) || member.familyId) && (
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-                  <span>Family members: {member.familyIds.length}</span>
+                  <span>Family members: {member.familyIds ? member.familyIds.length : (member.familyId ? '1' : '0')}</span>
                 </div>
               )}
             </div>

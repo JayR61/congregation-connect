@@ -30,7 +30,13 @@ const MemberDetail = () => {
     );
   }
   
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined) => {
+    if (!status) {
+      return member.isActive ? 
+        <Badge variant="success">Active</Badge> : 
+        <Badge variant="secondary">Inactive</Badge>;
+    }
+    
     switch (status) {
       case 'active':
         return <Badge variant="success">Active</Badge>;
@@ -60,7 +66,10 @@ const MemberDetail = () => {
     }
   };
   
-  const familyMembers = members.filter(m => member.familyIds?.includes(m.id));
+  const familyMembers = members.filter(m => 
+    (member.familyIds && member.familyIds.includes(m.id)) || 
+    (member.familyId && m.id === member.familyId)
+  );
   
   return (
     <div className="p-6">
@@ -251,7 +260,7 @@ const MemberDetail = () => {
                   {member.lastName.charAt(0)}
                 </div>
                 <h2 className="text-xl font-bold">{member.firstName} {member.lastName}</h2>
-                {member.status && (
+                {(member.status || member.isActive !== undefined) && (
                   <div className="mt-1">
                     {getStatusBadge(member.status)}
                   </div>
@@ -267,7 +276,7 @@ const MemberDetail = () => {
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium capitalize">{member.status}</span>
+                  <span className="font-medium capitalize">{member.status || (member.isActive ? 'Active' : 'Inactive')}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Family Members</span>

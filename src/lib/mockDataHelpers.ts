@@ -1,35 +1,79 @@
 
+import { Transaction, Task, Document, Folder, Member } from '@/types';
 import { members, documents, folders, tasks, transactions } from '@/data/mockData';
-import { Member, Document, Folder, Task, Transaction } from '@/types';
 
-// Helper functions to convert arrays to maps for faster lookups
-export const getMemberById = (id: string): Member | undefined => {
-  return members.find(member => member.id === id);
+// Helper function to format currency
+export const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR'
+  }).format(amount);
 };
 
-export const getTaskById = (id: string): Task | undefined => {
-  return tasks.find(task => task.id === id);
+// Helper function to format dates
+export const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString('en-ZA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 };
 
-export const getDocumentById = (id: string): Document | undefined => {
-  return documents.find(doc => doc.id === id);
+// Helper function to get transaction totals
+export const getTransactionTotals = () => {
+  return transactions.reduce(
+    (acc, transaction) => {
+      if (transaction.type === 'income') {
+        acc.income += transaction.amount;
+      } else {
+        acc.expenses += transaction.amount;
+      }
+      return acc;
+    },
+    { income: 0, expenses: 0 }
+  );
 };
 
-export const getFolderById = (id: string): Folder | undefined => {
-  return folders.find(folder => folder.id === id);
+// Helper function to get member counts
+export const getMemberCounts = () => {
+  const active = members.filter(member => member.isActive).length;
+  const inactive = members.filter(member => !member.isActive).length;
+  const total = members.length;
+  
+  return { active, inactive, total };
 };
 
-export const getTransactionById = (id: string): Transaction | undefined => {
-  return transactions.find(transaction => transaction.id === id);
+// Helper function to get documents by folder
+export const getDocumentsByFolder = (folderId: string | null) => {
+  return documents.filter(doc => doc.folderId === folderId);
 };
 
-// Convert categorical ID to human-readable name
-export const getCategoryName = (categoryId: string): string => {
-  // This is a placeholder - in a real app, you'd lookup the category by ID
-  return categoryId.replace('fin-cat-', 'Category ');
+// Helper function to get folder path
+export const getFolderPath = (folderId: string | null): string => {
+  if (!folderId) return 'Root';
+  
+  const folder = folders.find(f => f.id === folderId);
+  if (!folder) return 'Unknown';
+  
+  if (!folder.parentId) return folder.name;
+  
+  return `${getFolderPath(folder.parentId)} > ${folder.name}`;
 };
 
-// Helper to format member names
-export const formatMemberName = (member: Member): string => {
-  return `${member.firstName} ${member.lastName}`;
+// Helper function to get task statistics
+export const getTaskStatistics = () => {
+  const pending = tasks.filter(task => task.status === 'pending').length;
+  const inProgress = tasks.filter(task => task.status === 'in-progress').length;
+  const completed = tasks.filter(task => task.status === 'completed').length;
+  const total = tasks.length;
+  
+  return { pending, inProgress, completed, total };
+};
+
+// Helper function to format file size
+export const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' bytes';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 };

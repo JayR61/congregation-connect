@@ -27,7 +27,7 @@ const Finance = () => {
     return acc;
   }, { income: 0, expenses: 0 });
 
-  const balance = summary ? summary.income - summary.expenses : 0;
+  const balance = summary.income - summary.expenses;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -151,7 +151,7 @@ const Finance = () => {
             <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary?.income || 0)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary.income)}</div>
             <p className="text-xs text-muted-foreground">
               Total income received
             </p>
@@ -164,7 +164,7 @@ const Finance = () => {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary?.expenses || 0)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary.expenses)}</div>
             <p className="text-xs text-muted-foreground">
               Total expenses paid
             </p>

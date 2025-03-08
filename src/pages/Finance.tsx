@@ -15,10 +15,13 @@ const Finance = () => {
   
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
-    queryFn: getTransactions
+    queryFn: async () => {
+      const data = await getTransactions();
+      return data || [];
+    }
   });
 
-  const summary = transactions.reduce((acc, transaction) => {
+  const summary = (transactions as Transaction[]).reduce((acc, transaction) => {
     if (transaction.type === 'income') {
       acc.income += transaction.amount;
     } else {
@@ -36,7 +39,7 @@ const Finance = () => {
     }).format(amount);
   };
 
-  const expenseCategories = transactions
+  const expenseCategories = (transactions as Transaction[])
     .filter(t => t.type === 'expense')
     .reduce((acc, transaction) => {
       const existingCategory = acc.find(c => c.name === transaction.categoryId);
@@ -48,7 +51,7 @@ const Finance = () => {
       return acc;
     }, [] as { name: string; value: number }[]);
 
-  const monthlyData = transactions
+  const monthlyData = (transactions as Transaction[])
     .reduce((acc, transaction) => {
       const date = new Date(transaction.date);
       const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
@@ -91,7 +94,7 @@ const Finance = () => {
       ));
     }
 
-    if (transactions.length === 0) {
+    if ((transactions as Transaction[]).length === 0) {
       return (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No transactions found</p>
@@ -99,7 +102,7 @@ const Finance = () => {
       );
     }
 
-    return transactions.map((transaction) => (
+    return (transactions as Transaction[]).map((transaction) => (
       <div key={transaction.id} className="grid grid-cols-5 px-4 py-3 hover:bg-muted/50">
         <div>{new Date(transaction.date).toLocaleDateString()}</div>
         <div>{transaction.categoryId}</div>

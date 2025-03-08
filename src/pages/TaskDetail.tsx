@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,8 @@ const TaskDetail = () => {
   
   const { data: task, isLoading, error } = useQuery({
     queryKey: ['task', id],
-    queryFn: () => {
-      const tasks = getTasks();
+    queryFn: async () => {
+      const tasks = await getTasks();
       return tasks.find(task => task.id === id) || null;
     }
   });

@@ -23,12 +23,12 @@ const Documents = () => {
   
   const { data: documents, isLoading: documentsLoading } = useQuery({
     queryKey: ['documents', currentFolder],
-    queryFn: () => getDocuments(currentFolder)
+    queryFn: async () => getDocuments()
   });
 
   const { data: folders, isLoading: foldersLoading } = useQuery({
     queryKey: ['folders', currentFolder],
-    queryFn: () => getFoldersWithItemCount(currentFolder)
+    queryFn: async () => getFoldersWithItemCount()
   });
 
   const isLoading = documentsLoading || foldersLoading;

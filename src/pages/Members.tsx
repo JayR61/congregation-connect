@@ -1,29 +1,59 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Plus, Filter, Grid3X3, List } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from '@tanstack/react-query';
+import { useAppContext } from '@/context/AppContext';
+import { Member } from '@/types';
+import MemberCard from '@/components/members/MemberCard';
+import MemberList from '@/components/members/MemberList';
+import MemberDialog from '@/components/members/MemberDialog';
 import { getMembers } from '@/data/mockData';
 
 const Members = () => {
+  const navigate = useNavigate();
+  const { members } = useAppContext();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | undefined>(undefined);
   
-  const { data: members = [], isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['members'],
     queryFn: getMembers
   });
 
-  const filteredMembers = members.filter(member => 
-    `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMembers = members.filter(member => {
+    const matchesSearch = 
+      `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.phone.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
-  const getMemberName = (member: any) => {
-    return `${member.firstName} ${member.lastName}`;
+  const handleAddMember = () => {
+    setSelectedMember(undefined);
+    setDialogOpen(true);
+  };
+  
+  const handleEditMember = (member: Member) => {
+    setSelectedMember(member);
+    setDialogOpen(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setSelectedMember(undefined);
+    }
   };
 
   return (
@@ -33,9 +63,11 @@ const Members = () => {
           <h1 className="text-2xl font-bold">Members</h1>
           <p className="text-muted-foreground">Manage church members and their information</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Add Member
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleAddMember}>
+            <UserPlus className="mr-2 h-4 w-4" /> Add Member
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4 mb-6">
@@ -49,9 +81,19 @@ const Members = () => {
           />
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" /> Filter
-          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="prospect">Prospect</SelectItem>
+              <SelectItem value="visitor">Visitor</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <div className="border rounded-md flex">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -84,8 +126,8 @@ const Members = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6">
+                <div key={i} className="animate-pulse">
+                  <div className="p-6 border rounded-md">
                     <div className="flex items-center space-x-4">
                       <div className="h-12 w-12 rounded-full bg-gray-200"></div>
                       <div className="space-y-2">
@@ -93,90 +135,86 @@ const Members = () => {
                         <div className="h-3 w-32 bg-gray-200 rounded"></div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMembers?.map((member) => (
-                <Link key={member.id} to={`/members/${member.id}`}>
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                          {member.firstName.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{getMemberName(member)}</h3>
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+              {filteredMembers.map((member) => (
+                <MemberCard 
+                  key={member.id} 
+                  member={member} 
+                  onClick={() => navigate(`/members/${member.id}`)}
+                />
               ))}
             </div>
           ) : (
-            <div className="border rounded-md divide-y">
-              {filteredMembers?.map((member) => (
-                <Link key={member.id} to={`/members/${member.id}`} className="block hover:bg-muted/50">
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                        {member.firstName.charAt(0)}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{getMemberName(member)}</h3>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {member.phone}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <MemberList 
+              members={filteredMembers} 
+              onEdit={handleEditMember}
+            />
           )}
 
-          {filteredMembers?.length === 0 && (
+          {filteredMembers.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium">No members found</h3>
               <p className="text-muted-foreground mt-2">
                 Try adjusting your search or filter criteria
               </p>
+              <Button onClick={handleAddMember} className="mt-4">
+                <UserPlus className="mr-2 h-4 w-4" /> Add Member
+              </Button>
             </div>
           )}
         </TabsContent>
         
         <TabsContent value="active">
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Active Members View</h3>
+            <h3 className="text-lg font-medium">Active Members</h3>
             <p className="text-muted-foreground mt-2">
-              This tab would show only active members
+              This tab shows members with "active" status
             </p>
+            {members.filter(m => m.status === 'active').length === 0 ? (
+              <Button onClick={handleAddMember} className="mt-4">
+                <UserPlus className="mr-2 h-4 w-4" /> Add Active Member
+              </Button>
+            ) : (
+              <p className="mt-4">Use the status filter above to see only active members</p>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="new">
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium">New Members View</h3>
+            <h3 className="text-lg font-medium">New Members</h3>
             <p className="text-muted-foreground mt-2">
               This tab would show recently added members
             </p>
+            <Button onClick={handleAddMember} className="mt-4">
+              <UserPlus className="mr-2 h-4 w-4" /> Add New Member
+            </Button>
           </div>
         </TabsContent>
         
         <TabsContent value="leadership">
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Leadership View</h3>
+            <h3 className="text-lg font-medium">Leadership</h3>
             <p className="text-muted-foreground mt-2">
               This tab would show members in leadership positions
             </p>
+            <Button onClick={handleAddMember} className="mt-4">
+              <UserPlus className="mr-2 h-4 w-4" /> Add Leader
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
+      
+      <MemberDialog 
+        open={dialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        member={selectedMember}
+      />
     </div>
   );
 };

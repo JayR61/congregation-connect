@@ -1,0 +1,87 @@
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Member } from '@/types';
+import { Mail, Phone, Calendar, Users } from 'lucide-react';
+
+interface MemberCardProps {
+  member: Member;
+  onClick?: () => void;
+}
+
+const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'inactive':
+        return 'bg-gray-500';
+      case 'prospect':
+        return 'bg-blue-500';
+      case 'visitor':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  return (
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer h-full"
+      onClick={onClick}
+    >
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-lg font-semibold">
+            {member.firstName.charAt(0)}
+            {member.lastName.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-medium text-base truncate">
+                {member.firstName} {member.lastName}
+              </h3>
+              <div className={`h-2.5 w-2.5 rounded-full ${getStatusColor(member.status)}`} />
+            </div>
+            
+            <div className="space-y-1 text-sm">
+              {member.email && (
+                <div className="flex items-center text-muted-foreground">
+                  <Mail className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                  <span className="truncate">{member.email}</span>
+                </div>
+              )}
+              
+              {member.phone && (
+                <div className="flex items-center text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                  <span>{member.phone}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <span>Joined: {formatDate(member.joinDate)}</span>
+              </div>
+              
+              {member.familyIds && member.familyIds.length > 0 && (
+                <div className="flex items-center text-muted-foreground">
+                  <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                  <span>Family members: {member.familyIds.length}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default MemberCard;

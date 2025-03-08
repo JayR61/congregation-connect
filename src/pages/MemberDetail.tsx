@@ -7,8 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Mail, Phone, MapPin, Calendar, Users, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Mail, Phone, MapPin, Calendar, Users, MessageSquare, Award, Crown } from 'lucide-react';
 import MemberDialog from '@/components/members/MemberDialog';
+import AttendanceTracker from '@/components/members/AttendanceTracker';
+import MemberNotes from '@/components/members/MemberNotes';
 
 const MemberDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +53,34 @@ const MemberDetail = () => {
     }
   };
   
+  const getCategoryBadge = () => {
+    if (!member.category) return null;
+    
+    const getVariant = (category: string) => {
+      switch (category) {
+        case 'elder':
+        case 'pastor':
+          return 'secondary';
+        case 'youth':
+          return 'info';
+        case 'child':
+          return 'warning';
+        case 'visitor':
+          return 'destructive';
+        case 'new':
+          return 'success';
+        default:
+          return 'outline';
+      }
+    };
+    
+    return (
+      <Badge variant={getVariant(member.category)} className="ml-2">
+        {member.category}
+      </Badge>
+    );
+  };
+
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -80,6 +110,7 @@ const MemberDetail = () => {
           </Button>
           <h1 className="text-2xl font-bold">{member.firstName} {member.lastName}</h1>
           {getStatusBadge(member.status)}
+          {getCategoryBadge()}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
@@ -141,7 +172,34 @@ const MemberDetail = () => {
                       <Users className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>Family Members: {familyMembers.length}</span>
                     </li>
-                    {/* Additional membership details can be added here */}
+                    {member.structures && member.structures.length > 0 && (
+                      <li className="flex items-start">
+                        <Award className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
+                        <div>
+                          <span>Structures: </span>
+                          {member.structures.map((structure, index) => (
+                            <Badge key={structure} variant="outline" className="mr-1 mt-1">
+                              {structure.replace('_', ' ')}
+                            </Badge>
+                          ))}
+                        </div>
+                      </li>
+                    )}
+                    {member.positions && member.positions.length > 0 && (
+                      <li className="flex items-start">
+                        <Crown className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
+                        <div>
+                          <span>Positions: </span>
+                          {member.positions.map((position, index) => (
+                            <div key={index} className="mt-1">
+                              <Badge variant="outline">
+                                {position.title} ({position.structure.replace('_', ' ')})
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </li>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -163,8 +221,8 @@ const MemberDetail = () => {
           <Tabs defaultValue="family" className="mt-6">
             <TabsList>
               <TabsTrigger value="family">Family</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="teams">Teams</TabsTrigger>
+              <TabsTrigger value="attendance">Attendance</TabsTrigger>
+              <TabsTrigger value="notes">Notes & Resources</TabsTrigger>
             </TabsList>
             <TabsContent value="family" className="mt-4">
               <Card>
@@ -207,43 +265,12 @@ const MemberDetail = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="activity" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Recent interactions and updates</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-6">
-                    <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                    <h3 className="font-medium">No Recent Activity</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      No recent activity has been recorded for this member.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="attendance" className="mt-4">
+              <AttendanceTracker member={member} />
             </TabsContent>
             
-            <TabsContent value="teams" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Teams & Ministries</CardTitle>
-                  <CardDescription>Teams and ministries this member is involved with</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-6">
-                    <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                    <h3 className="font-medium">No Teams</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      This member is not part of any teams or ministries.
-                    </p>
-                    <Button variant="outline" className="mt-4">
-                      Add to Team
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="notes" className="mt-4">
+              <MemberNotes member={member} />
             </TabsContent>
           </Tabs>
         </div>
@@ -260,11 +287,10 @@ const MemberDetail = () => {
                   {member.lastName.charAt(0)}
                 </div>
                 <h2 className="text-xl font-bold">{member.firstName} {member.lastName}</h2>
-                {(member.status || member.isActive !== undefined) && (
-                  <div className="mt-1">
-                    {getStatusBadge(member.status)}
-                  </div>
-                )}
+                <div className="flex items-center gap-2 mt-1">
+                  {getStatusBadge(member.status)}
+                  {getCategoryBadge()}
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -279,9 +305,25 @@ const MemberDetail = () => {
                   <span className="font-medium capitalize">{member.status || (member.isActive ? 'Active' : 'Inactive')}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Category</span>
+                  <span className="font-medium capitalize">{member.category || 'Regular'}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Family Members</span>
                   <span className="font-medium">{familyMembers.length}</span>
                 </div>
+                {member.structures && member.structures.length > 0 && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-muted-foreground">Structures</span>
+                    <span className="font-medium">{member.structures.length}</span>
+                  </div>
+                )}
+                {member.positions && member.positions.length > 0 && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-muted-foreground">Positions</span>
+                    <span className="font-medium">{member.positions.length}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-2">
                   <span className="text-muted-foreground">Last Updated</span>
                   <span className="font-medium">

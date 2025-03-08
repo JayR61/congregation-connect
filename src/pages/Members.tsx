@@ -1,14 +1,25 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload } from 'lucide-react';
+import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload, Users, Award, X } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Check } from "@/components/ui/check";
 import { useQuery } from '@tanstack/react-query';
 import { useAppContext } from '@/context/AppContext';
-import { Member } from '@/types';
+import { Member, ChurchStructure, MemberCategory } from '@/types';
 import MemberCard from '@/components/members/MemberCard';
 import MemberList from '@/components/members/MemberList';
 import MemberDialog from '@/components/members/MemberDialog';

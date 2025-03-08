@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Member } from '@/types';
-import { Mail, Phone, Calendar, Users } from 'lucide-react';
+import { Mail, Phone, Calendar, Users, Award, Crown } from 'lucide-react';
 
 interface MemberCardProps {
   member: Member;
@@ -35,6 +35,54 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const getPositionBadge = () => {
+    if (!member.positions || member.positions.length === 0) return null;
+    
+    const positionTexts = member.positions.map(p => {
+      const structureName = p.structure.replace('_', ' ');
+      return `${p.title} (${structureName})`;
+    });
+    
+    return (
+      <div className="mt-1 flex flex-wrap gap-1">
+        {positionTexts.map((text, index) => (
+          <Badge key={index} variant="outline" className="text-xs">
+            <Crown className="h-3 w-3 mr-1" />
+            {text}
+          </Badge>
+        ))}
+      </div>
+    );
+  };
+
+  const getCategoryBadge = () => {
+    if (!member.category) return null;
+    
+    const getVariant = (category: string) => {
+      switch (category) {
+        case 'elder':
+        case 'pastor':
+          return 'secondary';
+        case 'youth':
+          return 'info';
+        case 'child':
+          return 'warning';
+        case 'visitor':
+          return 'destructive';
+        case 'new':
+          return 'success';
+        default:
+          return 'outline';
+      }
+    };
+    
+    return (
+      <Badge variant={getVariant(member.category)} className="ml-2">
+        {member.category}
+      </Badge>
+    );
+  };
+
   return (
     <Card 
       className="hover:shadow-md transition-shadow cursor-pointer h-full"
@@ -50,11 +98,14 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-medium text-base truncate">
                 {member.firstName} {member.lastName}
+                {getCategoryBadge()}
               </h3>
               <div className={`h-2.5 w-2.5 rounded-full ${getStatusColor(member.status)}`} />
             </div>
             
-            <div className="space-y-1 text-sm">
+            {getPositionBadge()}
+            
+            <div className="space-y-1 text-sm mt-2">
               {member.email && (
                 <div className="flex items-center text-muted-foreground">
                   <Mail className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
@@ -78,6 +129,13 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
                   <span>Family members: {member.familyIds ? member.familyIds.length : (member.familyId ? '1' : '0')}</span>
+                </div>
+              )}
+              
+              {member.structures && member.structures.length > 0 && (
+                <div className="flex items-center text-muted-foreground">
+                  <Award className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                  <span>{member.structures.map(s => s.replace('_', ' ')).join(', ')}</span>
                 </div>
               )}
             </div>

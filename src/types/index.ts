@@ -1,4 +1,3 @@
-
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -97,6 +96,41 @@ export interface Budget {
 }
 
 // Member related types
+export type MemberCategory = 'elder' | 'pastor' | 'youth' | 'child' | 'visitor' | 'new' | 'regular';
+export type ChurchStructure = 'senior_leadership' | 'youth_leadership' | 'mens_forum' | 'sunday_school';
+
+export interface Position {
+  structure: ChurchStructure;
+  title: string;
+  startDate: Date;
+  endDate?: Date;
+}
+
+export interface MemberNote {
+  id: string;
+  content: string;
+  date: Date;
+  createdById: string;
+  attachments?: string[];
+}
+
+export interface ResourceProvided {
+  id: string;
+  description: string;
+  date: Date;
+  value?: number;
+  createdById: string;
+  attachments?: string[];
+}
+
+export interface AttendanceRecord {
+  id: string;
+  eventId: string;
+  date: Date;
+  isPresent: boolean;
+  notes?: string;
+}
+
 export interface Member {
   id: string;
   firstName: string;
@@ -115,11 +149,18 @@ export interface Member {
   familyId: string | null;
   familyIds?: string[]; // Added for compatibility with new components
   status?: string; // Added for compatibility with new components
+  category: MemberCategory;
+  structures?: ChurchStructure[];
+  positions?: Position[];
   notes: string;
+  memberNotes?: MemberNote[];
+  resourcesProvided?: ResourceProvided[];
+  attendance?: AttendanceRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Attendance interface
 export interface Attendance {
   id: string;
   eventId: string;

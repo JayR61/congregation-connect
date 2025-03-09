@@ -18,34 +18,40 @@ export const useDocumentActions = ({
   currentUser
 }: UseDocumentActionsProps) => {
   
-  const addDocument = (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>) => {
+  const addDocument = (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>, file?: File) => {
+    // Generate a unique ID for the new document
+    const documentId = `document-${Date.now()}`;
+    
+    // Create the document object
     const newDocument: Document = {
       ...document,
-      id: `document-${Date.now()}`,
+      id: documentId,
       createdById: currentUser.id,
       createdAt: new Date(),
       updatedAt: new Date(),
       versions: [
         {
           id: `version-${Date.now()}`,
-          documentId: `document-${Date.now()}`,
+          documentId: documentId,
           version: 1,
           url: document.url,
           createdById: currentUser.id,
           createdAt: new Date(),
           notes: "Initial version"
         }
-      ]
+      ],
+      shared: false
     };
     
     setDocuments(prev => [...prev, newDocument]);
     toast.success("Document uploaded successfully");
   };
 
-  const updateDocument = (id: string, document: Partial<Document>) => {
+  const updateDocument = (id: string, document: Partial<Document>, file?: File) => {
     setDocuments(prev => 
       prev.map(d => {
         if (d.id === id) {
+          // If URL has changed, create a new version
           if (document.url && document.url !== d.url) {
             const newVersion = {
               id: `version-${Date.now()}`,
@@ -54,7 +60,7 @@ export const useDocumentActions = ({
               url: document.url,
               createdById: currentUser.id,
               createdAt: new Date(),
-              notes: "Updated version"
+              notes: document.description || "Updated version"
             };
             
             return { 
@@ -115,12 +121,74 @@ export const useDocumentActions = ({
     toast.success("Folder deleted successfully");
   };
 
+  const shareDocument = (id: string, shared: boolean) => {
+    setDocuments(prev => 
+      prev.map(d => 
+        d.id === id 
+          ? { 
+              ...d, 
+              shared, 
+              shareLink: shared ? `${window.location.origin}/documents/shared/${id}` : undefined,
+              updatedAt: new Date() 
+            } 
+          : d
+      )
+    );
+    
+    if (shared) {
+      toast.success("Document shared successfully");
+    } else {
+      toast.success("Document sharing disabled");
+    }
+  };
+
+  const moveDocument = (id: string, folderId: string | null) => {
+    setDocuments(prev => 
+      prev.map(d => 
+        d.id === id 
+          ? { ...d, folderId, updatedAt: new Date() } 
+          : d
+      )
+    );
+    toast.success("Document moved successfully");
+  };
+
+  const addDocumentVersion = (documentId: string, url: string, notes: string) => {
+    setDocuments(prev => 
+      prev.map(d => {
+        if (d.id === documentId) {
+          const newVersion = {
+            id: `version-${Date.now()}`,
+            documentId,
+            version: d.versions.length + 1,
+            url,
+            createdById: currentUser.id,
+            createdAt: new Date(),
+            notes
+          };
+          
+          return { 
+            ...d, 
+            url, // Update the main document URL to the latest version
+            updatedAt: new Date(),
+            versions: [...d.versions, newVersion]
+          };
+        }
+        return d;
+      })
+    );
+    toast.success("New version uploaded successfully");
+  };
+
   return {
     addDocument,
     updateDocument,
     deleteDocument,
     addFolder,
     updateFolder,
-    deleteFolder
+    deleteFolder,
+    shareDocument,
+    moveDocument,
+    addDocumentVersion
   };
 };

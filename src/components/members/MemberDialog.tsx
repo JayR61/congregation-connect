@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Member, MemberCategory, ChurchStructure, Position } from '@/types';
+import { Member, MemberCategory, ChurchStructure, Position, MemberStatus } from '@/types';
 import { useAppContext } from '@/context/AppContext';
 import { X, Search, UserPlus, Upload, Save, Plus, Trash } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -36,17 +36,17 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     phone: '',
     address: '',
     familyIds: [],
-    status: 'active',
+    status: 'active' as MemberStatus,
     notes: '',
     joinDate: new Date(),
-    category: 'regular',
-    structures: [],
-    positions: [],
+    category: 'regular' as MemberCategory,
+    structures: [] as ChurchStructure[],
+    positions: [] as Position[],
   });
 
   // Positions form state
   const [newPosition, setNewPosition] = useState<Partial<Position>>({
-    structure: 'senior_leadership',
+    structure: 'senior_leadership' as ChurchStructure,
     title: '',
     startDate: new Date(),
   });
@@ -71,16 +71,16 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           phone: '',
           address: '',
           familyIds: [],
-          status: 'active',
+          status: 'active' as MemberStatus,
           notes: '',
           joinDate: new Date(),
-          category: 'regular',
-          structures: [],
-          positions: [],
+          category: 'regular' as MemberCategory,
+          structures: [] as ChurchStructure[],
+          positions: [] as Position[],
         });
       }
       setNewPosition({
-        structure: 'senior_leadership',
+        structure: 'senior_leadership' as ChurchStructure,
         title: '',
         startDate: new Date(),
       });
@@ -95,7 +95,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
   };
 
   const handleStatusChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, status: value }));
+    setFormData((prev) => ({ ...prev, status: value as MemberStatus }));
   };
 
   const handleCategoryChange = (value: MemberCategory) => {
@@ -132,7 +132,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     });
     
     setNewPosition({
-      structure: 'senior_leadership',
+      structure: 'senior_leadership' as ChurchStructure,
       title: '',
       startDate: new Date(),
     });
@@ -171,11 +171,11 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           lastName: lastName || '',
           email: email || '',
           phone: phone || '',
-          status: 'active',
+          status: 'active' as MemberStatus,
           category: (category || 'regular') as MemberCategory,
           joinDate: new Date(),
           isActive: true,
-        };
+        } as Partial<Member>;
       });
       
       setBulkMembers(newMembers);
@@ -243,7 +243,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader className="pb-2">
           <DialogTitle>{member ? 'Edit Member' : 'Add Member'}</DialogTitle>
           <DialogDescription>
@@ -317,7 +317,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                 <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
               
-              <ScrollArea className="flex-grow mt-4">
+              <div className="flex-grow overflow-auto mt-4">
                 <div className="p-1 space-y-6">
                   <TabsContent value="basic" className="space-y-4 m-0">
                     <div className="grid grid-cols-2 gap-4">
@@ -539,7 +539,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                           />
                         </div>
                         
-                        <ScrollArea className="h-[200px]">
+                        <div className="h-[200px] overflow-auto">
                           <div className="space-y-1">
                             {filteredMembers.length > 0 ? (
                               filteredMembers.map((m) => (
@@ -562,7 +562,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                               </div>
                             )}
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
@@ -581,7 +581,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                     </div>
                   </TabsContent>
                 </div>
-              </ScrollArea>
+              </div>
             </Tabs>
           </div>
         )}

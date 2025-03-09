@@ -1,3 +1,4 @@
+
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -91,6 +92,16 @@ export interface Budget {
   period: 'weekly' | 'monthly' | 'yearly';
   startDate: Date;
   endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Document related types
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  createdById: string;
   createdAt: Date;
   updatedAt: Date;
 }

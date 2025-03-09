@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,32 +26,27 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
   const [fileContent, setFileContent] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Reset form when dialog opens with the current folder
+  useEffect(() => {
+    if (open) {
+      setFolderId(currentFolder);
+    } else {
+      // Only reset form when dialog closes
+      resetForm();
+    }
+  }, [open, currentFolder]);
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setFile(null);
+    setFileContent(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      
-      // If no name is set, use the file name (without extension)
-      if (!name) {
-        const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
-        setName(fileName);
-      }
-      
-      // For text files, try to read content for preview
-      if (
-        selectedFile.type.startsWith('text/') || 
-        ['application/json', 'application/javascript', 'application/xml'].includes(selectedFile.type)
-      ) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target && typeof event.target.result === 'string') {
-            setFileContent(event.target.result);
-          }
-        };
-        reader.readAsText(selectedFile);
-      } else {
-        setFileContent(null);
-      }
+      processFile(selectedFile);
     }
   };
   
@@ -60,15 +55,37 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      setFile(droppedFile);
-      
-      // If no name is set, use the file name (without extension)
-      if (!name) {
-        const fileName = droppedFile.name.split('.').slice(0, -1).join('.');
-        setName(fileName);
-      }
+      processFile(droppedFile);
     }
-  }, [name]);
+  }, []);
+  
+  const processFile = (selectedFile: File) => {
+    setFile(selectedFile);
+    
+    // If no name is set, use the file name (without extension)
+    if (!name) {
+      const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
+      setName(fileName);
+    }
+    
+    // For text files, try to read content for preview
+    // Only read small text files to prevent memory issues
+    if (
+      (selectedFile.type.startsWith('text/') || 
+      ['application/json', 'application/javascript', 'application/xml'].includes(selectedFile.type)) &&
+      selectedFile.size < 1024 * 1024 // 1MB size limit for text content loading
+    ) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target && typeof event.target.result === 'string') {
+          setFileContent(event.target.result);
+        }
+      };
+      reader.readAsText(selectedFile);
+    } else {
+      setFileContent(null);
+    }
+  };
   
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -141,13 +158,22 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       setIsUploading(true);
       
       // In a real application, this would upload to a cloud storage service
-      // For now, we'll fake it with a local URL
+      // For now, we'll create an object URL in an optimized way
       const fileUrl = URL.createObjectURL(file);
       const fileType = detectFileType(file);
       
-      // Simulate a network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Process thumbnail only for images to improve performance
+      let thumbnailUrl = null;
+      if (fileType === 'image') {
+        thumbnailUrl = fileUrl;
+      }
       
+      // Only include content for text files and limit size
+      const docContent = fileType.match(/txt|html|css|js|json/) && fileContent && file.size < 500000 
+        ? fileContent 
+        : undefined;
+      
+      // Add the document
       addDocument({
         name,
         description,
@@ -155,18 +181,12 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
         fileType,
         fileSize: file.size,
         url: fileUrl,
-        thumbnailUrl: fileType === 'image' ? fileUrl : null,
+        thumbnailUrl,
         shared: false,
-        content: fileContent || undefined
-      }, file);
+        content: docContent
+      });
       
-      // Reset the form
-      setName('');
-      setDescription('');
-      setFile(null);
-      setFileContent(null);
-      
-      // Close the dialog
+      // Close the dialog - form will be reset in the useEffect
       onOpenChange(false);
     } catch (error) {
       console.error('Error uploading document:', error);
@@ -175,21 +195,6 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       setIsUploading(false);
     }
   };
-  
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setFile(null);
-    setFileContent(null);
-    setFolderId(currentFolder);
-  };
-  
-  // When the dialog closes, reset the form
-  React.useEffect(() => {
-    if (!open) {
-      resetForm();
-    }
-  }, [open, currentFolder]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,4 +1,3 @@
-
 import { Document, Folder, User } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -18,7 +17,7 @@ export const useDocumentActions = ({
   currentUser
 }: UseDocumentActionsProps) => {
   
-  const addDocument = (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>, file?: File) => {
+  const addDocument = (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>) => {
     // Generate a unique ID for the new document
     const documentId = `document-${Date.now()}`;
     

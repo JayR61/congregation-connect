@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +17,19 @@ interface DocumentPreviewDialogProps {
 const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreviewDialogProps) => {
   const { members } = useAppContext();
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  
+  // Reset selected version when document changes
+  useEffect(() => {
+    setSelectedVersion(null);
+  }, [document]);
+  
+  // Clear any resources when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedVersion(null);
+    }
+  }, [open]);
   
   if (!document) return null;
   
@@ -28,6 +41,7 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
     if (!currentVersion) return null;
     
     const url = currentVersion.url;
+    setLoadingPreview(true);
     
     // Image preview
     if (document.fileType === 'image') {
@@ -37,6 +51,8 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
             src={url} 
             alt={document.name} 
             className="max-h-[500px] max-w-full object-contain rounded shadow"
+            onLoad={() => setLoadingPreview(false)}
+            onError={() => setLoadingPreview(false)}
           />
         </div>
       );
@@ -50,6 +66,7 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
             src={url} 
             className="w-full h-full border-0 rounded" 
             title={document.name}
+            onLoad={() => setLoadingPreview(false)}
           />
         </div>
       );
@@ -62,7 +79,9 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
           <video 
             src={url} 
             controls 
-            className="w-full h-full" 
+            className="w-full h-full"
+            onLoadedData={() => setLoadingPreview(false)}
+            onError={() => setLoadingPreview(false)} 
           />
         </div>
       );
@@ -72,13 +91,20 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
     if (document.fileType === 'audio') {
       return (
         <div className="p-8 bg-muted/50 rounded-md flex items-center justify-center">
-          <audio src={url} controls className="w-full" />
+          <audio 
+            src={url} 
+            controls 
+            className="w-full"
+            onLoadedData={() => setLoadingPreview(false)}
+            onError={() => setLoadingPreview(false)}
+          />
         </div>
       );
     }
     
     // Text file preview (for txt, html, css, js, etc.)
     if (['txt', 'html', 'css', 'js', 'json'].includes(document.fileType)) {
+      setLoadingPreview(false);
       return (
         <div className="p-4 bg-muted/50 rounded-md">
           <div className="bg-white p-4 rounded border shadow max-h-[500px] overflow-auto">
@@ -89,6 +115,7 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
     }
     
     // Fallback for other file types
+    setLoadingPreview(false);
     return (
       <div className="p-16 bg-muted/50 rounded-md flex flex-col items-center justify-center text-center">
         {getFileIcon(document.fileType)}
@@ -146,7 +173,14 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
         </DialogHeader>
         
         <div className="flex-1 overflow-auto">
-          {renderPreview()}
+          {loadingPreview && (
+            <div className="flex justify-center items-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
+          <div className={loadingPreview ? 'hidden' : 'block'}>
+            {renderPreview()}
+          </div>
           
           <div className="mt-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">

@@ -46,12 +46,15 @@ interface AppContextType {
   
   documents: Document[];
   folders: Folder[];
-  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>) => void;
-  updateDocument: (id: string, document: Partial<Document>) => void;
+  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>, file?: File) => void;
+  updateDocument: (id: string, document: Partial<Document>, file?: File) => void;
   deleteDocument: (id: string) => void;
   addFolder: (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => void;
   updateFolder: (id: string, folder: Partial<Folder>) => void;
   deleteFolder: (id: string) => void;
+  shareDocument: (id: string, shared: boolean) => void;
+  moveDocument: (id: string, folderId: string | null) => void;
+  addDocumentVersion: (documentId: string, url: string, notes: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -137,7 +140,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteDocument: documentActions.deleteDocument,
         addFolder: documentActions.addFolder,
         updateFolder: documentActions.updateFolder,
-        deleteFolder: documentActions.deleteFolder
+        deleteFolder: documentActions.deleteFolder,
+        shareDocument: documentActions.shareDocument,
+        moveDocument: documentActions.moveDocument,
+        addDocumentVersion: documentActions.addDocumentVersion
       }}
     >
       {children}

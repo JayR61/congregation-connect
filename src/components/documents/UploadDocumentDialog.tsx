@@ -1,14 +1,13 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, FileText, FileImage, Video, FileAudio, File } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
-import { Folder } from '@/types';
 import { toast } from '@/lib/toast';
 
 interface UploadDocumentDialogProps {
@@ -24,6 +23,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
   const [folderId, setFolderId] = useState<string | null>(currentFolder);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [fileContent, setFileContent] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,8 +36,43 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
         const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
         setName(fileName);
       }
+      
+      // For text files, try to read content for preview
+      if (
+        selectedFile.type.startsWith('text/') || 
+        ['application/json', 'application/javascript', 'application/xml'].includes(selectedFile.type)
+      ) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target && typeof event.target.result === 'string') {
+            setFileContent(event.target.result);
+          }
+        };
+        reader.readAsText(selectedFile);
+      } else {
+        setFileContent(null);
+      }
     }
   };
+  
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      setFile(droppedFile);
+      
+      // If no name is set, use the file name (without extension)
+      if (!name) {
+        const fileName = droppedFile.name.split('.').slice(0, -1).join('.');
+        setName(fileName);
+      }
+    }
+  }, [name]);
+  
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
   
   const detectFileType = (file: File): string => {
     const types: Record<string, string> = {
@@ -74,6 +109,23 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
     return types[file.type] || file.type;
   };
   
+  const getFileIcon = (file: File) => {
+    const fileType = detectFileType(file);
+    
+    switch (fileType) {
+      case 'image':
+        return <FileImage className="h-10 w-10 text-blue-500" />;
+      case 'video':
+        return <Video className="h-10 w-10 text-purple-500" />;
+      case 'audio':
+        return <FileAudio className="h-10 w-10 text-green-500" />;
+      case 'pdf':
+        return <FileText className="h-10 w-10 text-red-500" />;
+      default:
+        return <File className="h-10 w-10 text-gray-500" />;
+    }
+  };
+  
   const handleSubmit = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
@@ -104,13 +156,15 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
         fileSize: file.size,
         url: fileUrl,
         thumbnailUrl: fileType === 'image' ? fileUrl : null,
-        shared: false
+        shared: false,
+        content: fileContent || undefined
       }, file);
       
       // Reset the form
       setName('');
       setDescription('');
       setFile(null);
+      setFileContent(null);
       
       // Close the dialog
       onOpenChange(false);
@@ -126,6 +180,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
     setName('');
     setDescription('');
     setFile(null);
+    setFileContent(null);
     setFolderId(currentFolder);
   };
   
@@ -148,11 +203,14 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
         
         <div className="grid gap-4 py-4">
           {file ? (
-            <div className="flex items-center p-2 border rounded-md">
+            <div className="flex items-center p-3 border rounded-md">
+              <div className="mr-2">
+                {getFileIcon(file)}
+              </div>
               <div className="flex-1 truncate">
                 <p className="font-medium truncate">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(2)} KB
+                  {(file.size / 1024).toFixed(2)} KB • {file.type || 'Unknown type'}
                 </p>
               </div>
               <Button
@@ -167,17 +225,23 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
             <div
               className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
             >
               <Upload className="h-10 w-10 text-muted-foreground mb-2" />
               <p className="font-medium">Click to select a file</p>
               <p className="text-sm text-muted-foreground">
                 or drag and drop here
               </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Support for images, videos, audio, PDFs, documents, and more
+              </p>
               <input
                 type="file"
                 className="hidden"
                 ref={fileInputRef}
                 onChange={handleFileChange}
+                accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/html,text/css,text/javascript,application/json"
               />
             </div>
           )}

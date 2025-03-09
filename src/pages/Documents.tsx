@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import {
   Search, Plus, Filter, Grid3X3, List, File, FileText, 
   FileImage, Folder, Share, Download, MoreVertical, 
   ChevronRight, FolderPlus, UploadCloud, History, 
-  ExternalLink, StarIcon, Trash
+  ExternalLink, StarIcon, Trash, Video, FileAudio
 } from 'lucide-react';
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
@@ -30,8 +29,9 @@ const Documents = () => {
   
   // State
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentFolder, setCurrentFolder] = useState<string | null>('root');
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState('all');
   
   // Dialog states
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -50,10 +50,23 @@ const Documents = () => {
   });
   
   const filteredDocuments = documents.filter(doc => {
-    const matchesFolder = doc.folderId === currentFolder;
-    const matchesSearch = searchQuery ? 
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase()) : true;
-    return matchesFolder && matchesSearch;
+    if (activeTab === 'recent') {
+      // Show documents modified in the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return new Date(doc.updatedAt) >= sevenDaysAgo;
+    } else if (activeTab === 'shared') {
+      return doc.shared;
+    } else if (activeTab === 'favorites') {
+      // This could be implemented with a 'favorite' flag in the future
+      return false;
+    } else {
+      // All documents tab - filter by folder and search
+      const matchesFolder = doc.folderId === currentFolder;
+      const matchesSearch = searchQuery ? 
+        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) : true;
+      return matchesFolder && matchesSearch;
+    }
   });
   
   // Sort folders and documents by name
@@ -62,7 +75,7 @@ const Documents = () => {
   );
   
   const sortedDocuments = [...filteredDocuments].sort((a, b) => 
-    a.name.localeCompare(b.name)
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
   
   // Handlers
@@ -91,6 +104,8 @@ const Documents = () => {
   
   const navigateToFolder = (folderId: string | null) => {
     setCurrentFolder(folderId);
+    // When navigating to a folder, always switch to the 'all' tab
+    setActiveTab('all');
   };
   
   const getIconForFileType = (fileType: string) => {
@@ -101,6 +116,12 @@ const Documents = () => {
       case 'image/jpeg':
       case 'image/png':
       case 'image/gif': return <FileImage className="h-10 w-10 text-blue-500" />;
+      case 'video':
+      case 'video/mp4':
+      case 'video/webm': return <Video className="h-10 w-10 text-purple-500" />;
+      case 'audio':
+      case 'audio/mp3':
+      case 'audio/wav': return <FileAudio className="h-10 w-10 text-green-500" />;
       case 'doc':
       case 'docx':
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': return <FileText className="h-10 w-10 text-blue-700" />;
@@ -121,7 +142,7 @@ const Documents = () => {
   };
   
   const getBreadcrumbs = () => {
-    if (currentFolder === 'root') {
+    if (currentFolder === null) {
       return (
         <div className="flex items-center text-sm text-muted-foreground mb-6">
           <span className="font-medium text-foreground">Documents</span>
@@ -147,7 +168,7 @@ const Documents = () => {
       <div className="flex items-center text-sm text-muted-foreground mb-6 flex-wrap">
         <button 
           className="hover:text-foreground"
-          onClick={() => setCurrentFolder('root')}
+          onClick={() => navigateToFolder(null)}
         >
           Documents
         </button>
@@ -160,7 +181,7 @@ const Documents = () => {
             ) : (
               <button 
                 className="hover:text-foreground"
-                onClick={() => setCurrentFolder(folder.id)}
+                onClick={() => navigateToFolder(folder.id)}
               >
                 {folder.name}
               </button>
@@ -169,6 +190,14 @@ const Documents = () => {
         ))}
       </div>
     );
+  };
+  
+  // Only show folder navigation when in the "All Documents" tab
+  const showFolderNav = activeTab === 'all';
+  
+  // When changing tabs, we may need to adjust what's displayed
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
   
   return (
@@ -182,13 +211,15 @@ const Documents = () => {
           <Button onClick={() => setUploadDialogOpen(true)}>
             <UploadCloud className="mr-2 h-4 w-4" /> Upload Document
           </Button>
-          <Button variant="outline" onClick={() => setCreateFolderDialogOpen(true)}>
-            <FolderPlus className="mr-2 h-4 w-4" /> New Folder
-          </Button>
+          {showFolderNav && (
+            <Button variant="outline" onClick={() => setCreateFolderDialogOpen(true)}>
+              <FolderPlus className="mr-2 h-4 w-4" /> New Folder
+            </Button>
+          )}
         </div>
       </div>
 
-      {getBreadcrumbs()}
+      {showFolderNav && getBreadcrumbs()}
 
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4 mb-6">
         <div className="relative flex-1">
@@ -225,7 +256,7 @@ const Documents = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="mb-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
         <TabsList>
           <TabsTrigger value="all">All Documents</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
@@ -234,8 +265,7 @@ const Documents = () => {
         </TabsList>
         
         <TabsContent value="all">
-          {/* Folders */}
-          {sortedFolders.length > 0 && (
+          {showFolderNav && sortedFolders.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Folders</h3>
               {viewMode === 'grid' ? (
@@ -483,7 +513,7 @@ const Documents = () => {
                   <FileText className="h-16 w-16 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">No documents found</h3>
                   <p className="text-muted-foreground mt-2 mb-6">
-                    {currentFolder === 'root' 
+                    {currentFolder === null 
                       ? 'Upload your first document to get started' 
                       : 'This folder is currently empty'}
                   </p>
@@ -497,30 +527,342 @@ const Documents = () => {
         </TabsContent>
         
         <TabsContent value="recent">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Recent Documents</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab would show recently accessed or modified documents
-            </p>
-          </div>
+          {sortedDocuments.length > 0 ? (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Recent Documents</h3>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {sortedDocuments.map((document) => (
+                    <Card key={document.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div 
+                          className="flex flex-col items-center text-center cursor-pointer"
+                          onClick={() => handlePreviewDocument(document)}
+                        >
+                          {document.thumbnailUrl ? (
+                            <div className="w-24 h-24 mb-2 overflow-hidden rounded border">
+                              <img 
+                                src={document.thumbnailUrl} 
+                                alt={document.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            </div>
+                          ) : (
+                            getIconForFileType(document.fileType)
+                          )}
+                          <h3 className="font-medium mt-2 truncate w-full">{document.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(document.fileSize)} • {formatDate(document.updatedAt)}
+                          </p>
+                          {document.shared && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <Share className="h-3 w-3 mr-1" /> Shared
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-center space-x-2 mt-4">
+                          <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(document)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDocument(document)}>
+                            <Share className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
+                                <ExternalLink className="mr-2 h-4 w-4" /> Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleNewVersion(document)}>
+                                <History className="mr-2 h-4 w-4" /> Upload New Version
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMoveDocument(document)}>
+                                <ChevronRight className="mr-2 h-4 w-4" /> Move
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-500" onClick={() => deleteDocument(document.id)}>
+                                <Trash className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="border rounded-md divide-y">
+                  {sortedDocuments.map((document) => (
+                    <div key={document.id} className="p-4 flex items-center justify-between hover:bg-muted/50">
+                      <div 
+                        className="flex items-center space-x-4 cursor-pointer flex-1"
+                        onClick={() => handlePreviewDocument(document)}
+                      >
+                        {document.thumbnailUrl ? (
+                          <div className="w-12 h-12 overflow-hidden rounded border flex-shrink-0">
+                            <img 
+                              src={document.thumbnailUrl} 
+                              alt={document.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0">
+                            {getIconForFileType(document.fileType)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium truncate">{document.name}</h3>
+                          <div className="flex items-center text-xs text-muted-foreground space-x-2">
+                            <span>{formatFileSize(document.fileSize)}</span>
+                            <span>•</span>
+                            <span>Modified {formatDate(document.updatedAt)}</span>
+                            {document.shared && (
+                              <>
+                                <span>•</span>
+                                <span className="inline-flex items-center text-blue-600">
+                                  <Share className="h-3 w-3 mr-1" /> Shared
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="ghost" onClick={() => handleDownloadDocument(document)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleShareDocument(document)}>
+                          <Share className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
+                              <ExternalLink className="mr-2 h-4 w-4" /> Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleNewVersion(document)}>
+                              <History className="mr-2 h-4 w-4" /> Upload New Version
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMoveDocument(document)}>
+                              <ChevronRight className="mr-2 h-4 w-4" /> Move
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-500" onClick={() => deleteDocument(document.id)}>
+                              <Trash className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center py-8">
+                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No recent documents</h3>
+                  <p className="text-muted-foreground mt-2 mb-6">
+                    Documents modified in the last 7 days will appear here
+                  </p>
+                  <Button onClick={() => setUploadDialogOpen(true)}>
+                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Document
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="shared">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Shared Documents</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab would show documents that have been shared with others
-            </p>
-          </div>
+          {sortedDocuments.length > 0 ? (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Shared Documents</h3>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {sortedDocuments.map((document) => (
+                    <Card key={document.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div 
+                          className="flex flex-col items-center text-center cursor-pointer"
+                          onClick={() => handlePreviewDocument(document)}
+                        >
+                          {document.thumbnailUrl ? (
+                            <div className="w-24 h-24 mb-2 overflow-hidden rounded border">
+                              <img 
+                                src={document.thumbnailUrl} 
+                                alt={document.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            </div>
+                          ) : (
+                            getIconForFileType(document.fileType)
+                          )}
+                          <h3 className="font-medium mt-2 truncate w-full">{document.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(document.fileSize)} • {formatDate(document.updatedAt)}
+                          </p>
+                          {document.shared && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <Share className="h-3 w-3 mr-1" /> Shared
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-center space-x-2 mt-4">
+                          <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(document)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDocument(document)}>
+                            <Share className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
+                                <ExternalLink className="mr-2 h-4 w-4" /> Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleNewVersion(document)}>
+                                <History className="mr-2 h-4 w-4" /> Upload New Version
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMoveDocument(document)}>
+                                <ChevronRight className="mr-2 h-4 w-4" /> Move
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-500" onClick={() => deleteDocument(document.id)}>
+                                <Trash className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="border rounded-md divide-y">
+                  {sortedDocuments.map((document) => (
+                    <div key={document.id} className="p-4 flex items-center justify-between hover:bg-muted/50">
+                      <div 
+                        className="flex items-center space-x-4 cursor-pointer flex-1"
+                        onClick={() => handlePreviewDocument(document)}
+                      >
+                        {document.thumbnailUrl ? (
+                          <div className="w-12 h-12 overflow-hidden rounded border flex-shrink-0">
+                            <img 
+                              src={document.thumbnailUrl} 
+                              alt={document.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0">
+                            {getIconForFileType(document.fileType)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium truncate">{document.name}</h3>
+                          <div className="flex items-center text-xs text-muted-foreground space-x-2">
+                            <span>{formatFileSize(document.fileSize)}</span>
+                            <span>•</span>
+                            <span>Modified {formatDate(document.updatedAt)}</span>
+                            {document.shared && (
+                              <>
+                                <span>•</span>
+                                <span className="inline-flex items-center text-blue-600">
+                                  <Share className="h-3 w-3 mr-1" /> Shared
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="ghost" onClick={() => handleDownloadDocument(document)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleShareDocument(document)}>
+                          <Share className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
+                              <ExternalLink className="mr-2 h-4 w-4" /> Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleNewVersion(document)}>
+                              <History className="mr-2 h-4 w-4" /> Upload New Version
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMoveDocument(document)}>
+                              <ChevronRight className="mr-2 h-4 w-4" /> Move
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-500" onClick={() => deleteDocument(document.id)}>
+                              <Trash className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center py-8">
+                  <Share className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No shared documents</h3>
+                  <p className="text-muted-foreground mt-2 mb-6">
+                    Share documents with others to see them here
+                  </p>
+                  <Button onClick={() => navigateToFolder(null)}>
+                    Go to All Documents
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="favorites">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Favorite Documents</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab would show documents marked as favorites
-            </p>
-          </div>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center py-8">
+                <StarIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Favorites Coming Soon</h3>
+                <p className="text-muted-foreground mt-2 mb-6">
+                  Soon you'll be able to mark documents as favorites
+                </p>
+                <Button onClick={() => navigateToFolder(null)}>
+                  Go to All Documents
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       
@@ -559,3 +901,4 @@ const Documents = () => {
 };
 
 export default Documents;
+

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Document as DocumentType, DocumentVersion } from '@/types';
-import { File, FileText, FileImage, Download, X, Clock } from 'lucide-react';
+import { File, FileText, FileImage, Download, X, Clock, Video, FileAudio, ExternalLink } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { formatDistance } from 'date-fns';
 
@@ -72,7 +72,18 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
     if (document.fileType === 'audio') {
       return (
         <div className="p-8 bg-muted/50 rounded-md flex items-center justify-center">
-          <audio src={url} controls />
+          <audio src={url} controls className="w-full" />
+        </div>
+      );
+    }
+    
+    // Text file preview (for txt, html, css, js, etc.)
+    if (['txt', 'html', 'css', 'js', 'json'].includes(document.fileType)) {
+      return (
+        <div className="p-4 bg-muted/50 rounded-md">
+          <div className="bg-white p-4 rounded border shadow max-h-[500px] overflow-auto">
+            <pre className="whitespace-pre-wrap text-sm">{document.content || "Text preview not available"}</pre>
+          </div>
         </div>
       );
     }
@@ -98,6 +109,10 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
         return <FileImage className="h-20 w-20 text-blue-500" />;
       case 'pdf':
         return <FileText className="h-20 w-20 text-red-500" />;
+      case 'video':
+        return <Video className="h-20 w-20 text-purple-500" />;
+      case 'audio':
+        return <FileAudio className="h-20 w-20 text-green-500" />;
       default:
         return <File className="h-20 w-20 text-gray-500" />;
     }
@@ -166,13 +181,15 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
           </div>
         </div>
         
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-          <Button onClick={() => window.open(currentVersion?.url, '_blank')}>
-            <Download className="mr-2 h-4 w-4" /> Download
-          </Button>
+        <DialogFooter className="mt-4 flex items-center justify-between md:justify-end">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => window.open(currentVersion?.url, '_blank')}>
+              <ExternalLink className="mr-2 h-4 w-4" /> Open in New Tab
+            </Button>
+            <Button onClick={() => window.open(currentVersion?.url, '_blank')} className="ml-2">
+              <Download className="mr-2 h-4 w-4" /> Download
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

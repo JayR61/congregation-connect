@@ -1,4 +1,3 @@
-
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -216,7 +215,7 @@ export interface Attendance {
 export interface Document {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   folderId: string | null;
   fileType: string;
   fileSize: number;
@@ -225,9 +224,10 @@ export interface Document {
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
-  versions: DocumentVersion[];
   shared: boolean;
   shareLink?: string;
+  versions: DocumentVersion[];
+  content?: string;
 }
 
 export interface DocumentVersion {
@@ -238,15 +238,6 @@ export interface DocumentVersion {
   createdById: string;
   createdAt: Date;
   notes: string;
-}
-
-export interface Folder {
-  id: string;
-  name: string;
-  parentId: string | null;
-  createdById: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // User related types

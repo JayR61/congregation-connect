@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { SettingsProvider } from "./context/SettingsContext";
+import { LanguageProvider } from "./components/settings/LanguageProvider";
 import Layout from "./components/layout/Layout";
 
 // Pages
@@ -25,23 +27,27 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider>
-        <AppProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
-              <Route path="/tasks/:id" element={<Layout><TaskDetail /></Layout>} />
-              <Route path="/members" element={<Layout><Members /></Layout>} />
-              <Route path="/members/:id" element={<Layout><MemberDetail /></Layout>} />
-              <Route path="/finance" element={<Layout><Finance /></Layout>} />
-              <Route path="/documents" element={<Layout><Documents /></Layout>} />
-              <Route path="/settings" element={<Layout><Settings /></Layout>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AppProvider>
+        <SettingsProvider>
+          <LanguageProvider>
+            <AppProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Layout><Dashboard /></Layout>} />
+                  <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
+                  <Route path="/tasks/:id" element={<Layout><TaskDetail /></Layout>} />
+                  <Route path="/members" element={<Layout><Members /></Layout>} />
+                  <Route path="/members/:id" element={<Layout><MemberDetail /></Layout>} />
+                  <Route path="/finance" element={<Layout><Finance /></Layout>} />
+                  <Route path="/documents" element={<Layout><Documents /></Layout>} />
+                  <Route path="/settings" element={<Layout><Settings /></Layout>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </AppProvider>
+          </LanguageProvider>
+        </SettingsProvider>
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>

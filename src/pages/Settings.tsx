@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,25 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { 
   User, Building, Bell, PaintBucket, Mail, Phone, 
-  MapPin, Clock, Moon, Sun, Save, Globe
+  MapPin, Clock, Moon, Sun, Save, Globe, Settings as SettingsIcon
 } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useSettings, AccentColor, FontSize, Language } from '@/context/SettingsContext';
 import { toast } from '@/lib/toast';
+import { ThemeToggle } from '@/components/settings/ThemeToggle';
+import ChangePasswordDialog from '@/components/settings/ChangePasswordDialog';
+import TwoFactorAuthDialog from '@/components/settings/TwoFactorAuthDialog';
+import FileUploadField from '@/components/settings/FileUploadField';
 
 const Settings = () => {
   const { currentUser } = useAppContext();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  const { 
+    notifications, updateNotificationSetting, saveNotificationSettings,
+    appearance, updateAppearanceSetting,
+    churchInfo, updateChurchInfo, saveChurchInfo
+  } = useSettings();
   
   const [profileForm, setProfileForm] = useState({
     name: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`,
@@ -27,30 +37,57 @@ const Settings = () => {
     bio: '',
   });
   
-  const [churchForm, setChurchForm] = useState({
-    name: 'Grace Community Church',
-    address: '123 Main Street, Anytown, USA',
-    phone: '(555) 123-4567',
-    email: 'info@gracechurch.org',
-    website: 'www.gracechurch.org',
-    logo: '',
-  });
+  // Apply compact view class to body when it changes
+  useEffect(() => {
+    const body = document.body;
+    if (appearance.compactView) {
+      body.classList.add('compact-view');
+    } else {
+      body.classList.remove('compact-view');
+    }
+  }, [appearance.compactView]);
   
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    taskReminders: true,
-    eventReminders: true,
-    weeklyDigest: false,
-  });
+  // Apply accent color when it changes
+  useEffect(() => {
+    document.documentElement.style.setProperty('--color-accent', appearance.accentColor);
+    
+    // Update CSS variables based on the accent color
+    const accentColorMap = {
+      blue: {
+        light: '#3b82f6',
+        dark: '#60a5fa',
+      },
+      green: {
+        light: '#22c55e',
+        dark: '#4ade80',
+      },
+      purple: {
+        light: '#8b5cf6',
+        dark: '#a78bfa',
+      },
+      red: {
+        light: '#ef4444',
+        dark: '#f87171',
+      },
+    };
+    
+    const color = accentColorMap[appearance.accentColor];
+    document.documentElement.style.setProperty(
+      '--accent-color', 
+      theme === 'dark' ? color.dark : color.light
+    );
+  }, [appearance.accentColor, theme]);
   
-  const [appearanceSettings, setAppearanceSettings] = useState({
-    darkMode: theme === 'dark',
-    compactView: false,
-    fontSize: 'medium',
-    accentColor: 'blue',
-    language: 'en',
-  });
+  // Apply font size when it changes
+  useEffect(() => {
+    const fontSizeMap = {
+      small: '0.875rem',
+      medium: '1rem',
+      large: '1.125rem',
+    };
+    
+    document.documentElement.style.fontSize = fontSizeMap[appearance.fontSize];
+  }, [appearance.fontSize]);
 
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,36 +97,28 @@ const Settings = () => {
 
   const handleChurchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, this would save to the backend
+    saveChurchInfo();
     toast.success("Church information updated successfully");
   };
 
-  const handleNotificationChange = (key: keyof typeof notificationSettings) => {
-    setNotificationSettings({
-      ...notificationSettings,
-      [key]: !notificationSettings[key],
-    });
-    toast.success(`${key} setting updated`);
+  const handleLogoUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        updateChurchInfo('logo', e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleAppearanceChange = (key: keyof typeof appearanceSettings, value: any) => {
-    if (key === 'darkMode') {
-      setTheme(value ? 'dark' : 'light');
-    }
-    
-    setAppearanceSettings({
-      ...appearanceSettings,
-      [key]: value,
-    });
-    
+  const handleNotificationChange = (key: keyof typeof notifications) => {
+    updateNotificationSetting(key, !notifications[key]);
+    saveNotificationSettings();
     toast.success(`${key} setting updated`);
   };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setAppearanceSettings({
-      ...appearanceSettings,
-      language: e.target.value,
-    });
+    updateAppearanceSetting('language', e.target.value as Language);
     toast.success("Language setting updated");
   };
 
@@ -171,12 +200,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">Account Security</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Button variant="outline" type="button">
-                        Change Password
-                      </Button>
-                      <Button variant="outline" type="button">
-                        Enable Two-Factor Authentication
-                      </Button>
+                      <ChangePasswordDialog />
+                      <TwoFactorAuthDialog />
                     </div>
                   </div>
 
@@ -207,8 +232,8 @@ const Settings = () => {
                       <Label htmlFor="church-name">Church Name</Label>
                       <Input
                         id="church-name"
-                        value={churchForm.name}
-                        onChange={(e) => setChurchForm({...churchForm, name: e.target.value})}
+                        value={churchInfo.name}
+                        onChange={(e) => updateChurchInfo('name', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -219,8 +244,8 @@ const Settings = () => {
                         </span>
                         <Input
                           id="church-website"
-                          value={churchForm.website}
-                          onChange={(e) => setChurchForm({...churchForm, website: e.target.value})}
+                          value={churchInfo.website}
+                          onChange={(e) => updateChurchInfo('website', e.target.value)}
                           className="rounded-l-none"
                         />
                       </div>
@@ -231,8 +256,8 @@ const Settings = () => {
                     <Label htmlFor="church-address">Address</Label>
                     <Textarea
                       id="church-address"
-                      value={churchForm.address}
-                      onChange={(e) => setChurchForm({...churchForm, address: e.target.value})}
+                      value={churchInfo.address}
+                      onChange={(e) => updateChurchInfo('address', e.target.value)}
                     />
                   </div>
 
@@ -244,8 +269,8 @@ const Settings = () => {
                         <Input
                           id="church-email"
                           type="email"
-                          value={churchForm.email}
-                          onChange={(e) => setChurchForm({...churchForm, email: e.target.value})}
+                          value={churchInfo.email}
+                          onChange={(e) => updateChurchInfo('email', e.target.value)}
                         />
                       </div>
                     </div>
@@ -255,8 +280,8 @@ const Settings = () => {
                         <Phone className="mr-2 h-4 w-4 mt-3 text-muted-foreground" />
                         <Input
                           id="church-phone"
-                          value={churchForm.phone}
-                          onChange={(e) => setChurchForm({...churchForm, phone: e.target.value})}
+                          value={churchInfo.phone}
+                          onChange={(e) => updateChurchInfo('phone', e.target.value)}
                         />
                       </div>
                     </div>
@@ -264,17 +289,14 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="church-logo">Church Logo</Label>
-                    <div className="flex items-center space-x-4">
-                      <div className="h-16 w-16 rounded-md bg-muted flex items-center justify-center">
-                        <Building className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <Button variant="outline" type="button">
-                        Upload New Logo
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Recommended size: 512x512px. Max file size: 2MB.
-                    </p>
+                    <FileUploadField
+                      onFileChange={handleLogoUpload}
+                      label="Upload New Logo"
+                      preview={churchInfo.logo}
+                      icon={<Building className="h-8 w-8 text-muted-foreground" />}
+                      accept="image/*"
+                      maxSize={2}
+                    />
                   </div>
 
                   <div className="flex justify-end">
@@ -307,7 +329,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       id="email-notifications"
-                      checked={notificationSettings.emailNotifications}
+                      checked={notifications.emailNotifications}
                       onCheckedChange={() => handleNotificationChange('emailNotifications')}
                     />
                   </div>
@@ -318,7 +340,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       id="push-notifications"
-                      checked={notificationSettings.pushNotifications}
+                      checked={notifications.pushNotifications}
                       onCheckedChange={() => handleNotificationChange('pushNotifications')}
                     />
                   </div>
@@ -335,7 +357,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       id="task-reminders"
-                      checked={notificationSettings.taskReminders}
+                      checked={notifications.taskReminders}
                       onCheckedChange={() => handleNotificationChange('taskReminders')}
                     />
                   </div>
@@ -346,7 +368,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       id="event-reminders"
-                      checked={notificationSettings.eventReminders}
+                      checked={notifications.eventReminders}
                       onCheckedChange={() => handleNotificationChange('eventReminders')}
                     />
                   </div>
@@ -357,7 +379,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       id="weekly-digest"
-                      checked={notificationSettings.weeklyDigest}
+                      checked={notifications.weeklyDigest}
                       onCheckedChange={() => handleNotificationChange('weeklyDigest')}
                     />
                   </div>
@@ -382,15 +404,7 @@ const Settings = () => {
                     <Label htmlFor="dark-mode" className="block mb-1">Dark Mode</Label>
                     <p className="text-sm text-muted-foreground">Switch between light and dark theme</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Sun className="h-4 w-4 text-muted-foreground" />
-                    <Switch
-                      id="dark-mode"
-                      checked={appearanceSettings.darkMode}
-                      onCheckedChange={(checked) => handleAppearanceChange('darkMode', checked)}
-                    />
-                    <Moon className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  <ThemeToggle />
                 </div>
 
                 <Separator />
@@ -402,8 +416,8 @@ const Settings = () => {
                   </div>
                   <Switch
                     id="compact-view"
-                    checked={appearanceSettings.compactView}
-                    onCheckedChange={(checked) => handleAppearanceChange('compactView', checked)}
+                    checked={appearance.compactView}
+                    onCheckedChange={(checked) => updateAppearanceSetting('compactView', checked)}
                   />
                 </div>
 
@@ -412,24 +426,24 @@ const Settings = () => {
                   <div className="flex space-x-4">
                     <Button
                       type="button"
-                      variant={appearanceSettings.fontSize === 'small' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceChange('fontSize', 'small')}
+                      variant={appearance.fontSize === 'small' ? 'default' : 'outline'}
+                      onClick={() => updateAppearanceSetting('fontSize', 'small')}
                       className="flex-1"
                     >
                       Small
                     </Button>
                     <Button
                       type="button"
-                      variant={appearanceSettings.fontSize === 'medium' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceChange('fontSize', 'medium')}
+                      variant={appearance.fontSize === 'medium' ? 'default' : 'outline'}
+                      onClick={() => updateAppearanceSetting('fontSize', 'medium')}
                       className="flex-1"
                     >
                       Medium
                     </Button>
                     <Button
                       type="button"
-                      variant={appearanceSettings.fontSize === 'large' ? 'default' : 'outline'}
-                      onClick={() => handleAppearanceChange('fontSize', 'large')}
+                      variant={appearance.fontSize === 'large' ? 'default' : 'outline'}
+                      onClick={() => updateAppearanceSetting('fontSize', 'large')}
                       className="flex-1"
                     >
                       Large
@@ -445,11 +459,23 @@ const Settings = () => {
                         key={color}
                         type="button"
                         variant="outline"
-                        className={`h-10 ${appearanceSettings.accentColor === color ? 'ring-2 ring-offset-2' : ''}`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleAppearanceChange('accentColor', color)}
+                        className={`h-10 ${appearance.accentColor === color ? 'ring-2 ring-ring ring-offset-2' : ''}`}
+                        style={{ 
+                          backgroundColor: color, 
+                          color: 'white',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}
+                        onClick={() => updateAppearanceSetting('accentColor', color as AccentColor)}
                         aria-label={`${color} theme`}
-                      />
+                      >
+                        {appearance.accentColor === color && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -462,8 +488,8 @@ const Settings = () => {
                   <div className="flex items-center space-x-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <select 
-                      className="border rounded px-2 py-1"
-                      value={appearanceSettings.language}
+                      className="border rounded px-3 py-2 bg-background"
+                      value={appearance.language}
                       onChange={handleLanguageChange}
                     >
                       <option value="en">English</option>

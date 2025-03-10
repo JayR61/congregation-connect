@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,10 +13,13 @@ import {
   MapPin, Clock, Moon, Sun, Save, Globe
 } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/lib/toast';
 
 const Settings = () => {
   const { currentUser } = useAppContext();
+  const { theme, setTheme } = useTheme();
+  
   const [profileForm, setProfileForm] = useState({
     name: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`,
     email: currentUser?.email || '',
@@ -41,10 +45,11 @@ const Settings = () => {
   });
   
   const [appearanceSettings, setAppearanceSettings] = useState({
-    darkMode: false,
+    darkMode: theme === 'dark',
     compactView: false,
     fontSize: 'medium',
     accentColor: 'blue',
+    language: 'en',
   });
 
   const handleProfileSubmit = (e: React.FormEvent) => {
@@ -64,15 +69,28 @@ const Settings = () => {
       ...notificationSettings,
       [key]: !notificationSettings[key],
     });
-    toast.success(`Setting updated`);
+    toast.success(`${key} setting updated`);
   };
 
   const handleAppearanceChange = (key: keyof typeof appearanceSettings, value: any) => {
+    if (key === 'darkMode') {
+      setTheme(value ? 'dark' : 'light');
+    }
+    
     setAppearanceSettings({
       ...appearanceSettings,
       [key]: value,
     });
-    toast.success(`Setting updated`);
+    
+    toast.success(`${key} setting updated`);
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setAppearanceSettings({
+      ...appearanceSettings,
+      language: e.target.value,
+    });
+    toast.success("Language setting updated");
   };
 
   return (
@@ -443,7 +461,11 @@ const Settings = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <select className="border rounded px-2 py-1">
+                    <select 
+                      className="border rounded px-2 py-1"
+                      value={appearanceSettings.language}
+                      onChange={handleLanguageChange}
+                    >
                       <option value="en">English</option>
                       <option value="es">Español</option>
                       <option value="fr">Français</option>

@@ -263,7 +263,99 @@ const members: Member[] = [
 
 // Export all required data
 export { members };
-export const transactions: Transaction[] = [];
+
+// Sample transactions
+export const transactions: Transaction[] = [
+  {
+    id: 'tx-1',
+    description: 'Monthly Tithe',
+    amount: 5000,
+    type: 'income',
+    categoryId: 'tithe',
+    date: new Date('2023-05-01'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-01'),
+    updatedAt: new Date('2023-05-01')
+  },
+  {
+    id: 'tx-2',
+    description: 'Sunday Offering',
+    amount: 2500,
+    type: 'income',
+    categoryId: 'offering',
+    date: new Date('2023-05-05'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-05'),
+    updatedAt: new Date('2023-05-05')
+  },
+  {
+    id: 'tx-3',
+    description: 'Electricity Bill',
+    amount: 1200,
+    type: 'expense',
+    categoryId: 'utilities',
+    date: new Date('2023-05-10'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-10'),
+    updatedAt: new Date('2023-05-10')
+  },
+  {
+    id: 'tx-4',
+    description: 'Building Maintenance',
+    amount: 3500,
+    type: 'expense',
+    categoryId: 'maintenance',
+    date: new Date('2023-05-15'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-15'),
+    updatedAt: new Date('2023-05-15')
+  },
+  {
+    id: 'tx-5',
+    description: 'Special Donation',
+    amount: 10000,
+    type: 'income',
+    categoryId: 'other',
+    date: new Date('2023-05-20'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-20'),
+    updatedAt: new Date('2023-05-20')
+  },
+  {
+    id: 'tx-6',
+    description: 'Youth Camp Expenses',
+    amount: 8000,
+    type: 'expense',
+    categoryId: 'events',
+    date: new Date('2023-05-25'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-05-25'),
+    updatedAt: new Date('2023-05-25')
+  },
+  {
+    id: 'tx-7',
+    description: 'Pastor Salary',
+    amount: 15000,
+    type: 'expense',
+    categoryId: 'salary',
+    date: new Date('2023-06-01'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-06-01'),
+    updatedAt: new Date('2023-06-01')
+  },
+  {
+    id: 'tx-8',
+    description: 'Water Bill',
+    amount: 800,
+    type: 'expense',
+    categoryId: 'utilities',
+    date: new Date('2023-06-05'),
+    createdById: 'user-1',
+    createdAt: new Date('2023-06-05'),
+    updatedAt: new Date('2023-06-05')
+  }
+];
+
 export const documents: Document[] = [];
 export const folders: Folder[] = [];
 export const currentUser: User = {
@@ -278,7 +370,20 @@ export const currentUser: User = {
 };
 export const notifications: Notification[] = [];
 export const taskCategories: TaskCategory[] = [];
-export const financeCategories: FinanceCategory[] = [];
+
+// Finance categories
+export const financeCategories: FinanceCategory[] = [
+  { id: 'tithe', name: 'Tithe', description: 'Regular church tithe', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'offering', name: 'Offering', description: 'Sunday and special offerings', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'salary', name: 'Salary', description: 'Staff salaries', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'utilities', name: 'Utilities', description: 'Electricity, water, etc.', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'supplies', name: 'Supplies', description: 'Office and church supplies', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'maintenance', name: 'Maintenance', description: 'Building maintenance', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'events', name: 'Events', description: 'Church events and programs', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'outreach', name: 'Outreach', description: 'Community outreach programs', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'other', name: 'Other', description: 'Miscellaneous income/expenses', createdAt: new Date(), updatedAt: new Date() }
+];
+
 export const tasks: Task[] = [];
 
 // Church structures

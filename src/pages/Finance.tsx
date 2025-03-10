@@ -1,23 +1,28 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Download, Search, Filter, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Download, Search, Filter, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getTransactions } from '@/data/mockData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Transaction } from '@/types';
+import { useAppContext } from '@/context/AppContext';
+import { AddTransactionDialog } from '@/components/finance/AddTransactionDialog';
 
 const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('all-time');
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const { addTransaction, deleteTransaction, transactions: contextTransactions } = useAppContext();
   
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const data = await getTransactions();
-      return data || [];
+      return data.length > 0 ? data : contextTransactions;
     }
   });
 
@@ -81,6 +86,41 @@ const Finance = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
+  const filteredTransactions = (transactions as Transaction[]).filter(transaction => {
+    // Apply search filter
+    const searchFilter = searchQuery.toLowerCase();
+    const matchesSearch = transaction.description.toLowerCase().includes(searchFilter) ||
+                          transaction.categoryId.toLowerCase().includes(searchFilter) ||
+                          transaction.type.toLowerCase().includes(searchFilter);
+    
+    // Apply date filter
+    const transactionDate = new Date(transaction.date);
+    const now = new Date();
+    let matchesDate = true;
+    
+    if (dateRange === 'this-month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      matchesDate = transactionDate >= startOfMonth;
+    } else if (dateRange === 'last-month') {
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      matchesDate = transactionDate >= startOfLastMonth && transactionDate < startOfThisMonth;
+    }
+    
+    return matchesSearch && matchesDate;
+  });
+
+  const handleDeleteTransaction = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this transaction?')) {
+      deleteTransaction(id);
+    }
+  };
+
+  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => {
+    addTransaction(newTransaction);
+    setIsAddTransactionOpen(false);
+  };
+
   const renderTransactionList = () => {
     if (isLoading) {
       return Array(3).fill(0).map((_, index) => (
@@ -94,7 +134,7 @@ const Finance = () => {
       ));
     }
 
-    if ((transactions as Transaction[]).length === 0) {
+    if (filteredTransactions.length === 0) {
       return (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No transactions found</p>
@@ -102,8 +142,8 @@ const Finance = () => {
       );
     }
 
-    return (transactions as Transaction[]).map((transaction) => (
-      <div key={transaction.id} className="grid grid-cols-5 px-4 py-3 hover:bg-muted/50">
+    return filteredTransactions.map((transaction) => (
+      <div key={transaction.id} className="grid grid-cols-6 px-4 py-3 hover:bg-muted/50">
         <div>{new Date(transaction.date).toLocaleDateString()}</div>
         <div>{transaction.categoryId}</div>
         <div className="truncate">{transaction.description}</div>
@@ -112,6 +152,11 @@ const Finance = () => {
         </div>
         <div className={`text-right ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
           {formatCurrency(transaction.amount)}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleDeleteTransaction(transaction.id)}>
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          </Button>
         </div>
       </div>
     ));
@@ -125,7 +170,7 @@ const Finance = () => {
           <p className="text-muted-foreground">Manage church finances and transactions</p>
         </div>
         <div className="flex space-x-2">
-          <Button>
+          <Button onClick={() => setIsAddTransactionOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add Transaction
           </Button>
           <Button variant="outline">
@@ -138,7 +183,7 @@ const Finance = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
@@ -190,7 +235,7 @@ const Finance = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  <RechartsTooltip formatter={(value) => formatCurrency(value as number)} />
                   <Bar dataKey="income" fill="#10b981" name="Income" />
                   <Bar dataKey="expense" fill="#ef4444" name="Expense" />
                 </BarChart>
@@ -221,7 +266,7 @@ const Finance = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  <RechartsTooltip formatter={(value) => formatCurrency(value as number)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -254,12 +299,13 @@ const Finance = () => {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <div className="grid grid-cols-5 border-b px-4 py-3 font-medium">
+            <div className="grid grid-cols-6 border-b px-4 py-3 font-medium">
               <div>Date</div>
               <div>Category</div>
               <div>Description</div>
               <div>Type</div>
               <div className="text-right">Amount</div>
+              <div className="text-right">Actions</div>
             </div>
             <div className="divide-y">
               {renderTransactionList()}
@@ -267,6 +313,12 @@ const Finance = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddTransactionDialog 
+        open={isAddTransactionOpen} 
+        onOpenChange={setIsAddTransactionOpen}
+        onAddTransaction={handleAddTransaction}
+      />
     </div>
   );
 };

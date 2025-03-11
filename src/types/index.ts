@@ -213,6 +213,7 @@ export interface Member {
   givingHistory?: any[];
   isFullMember?: boolean;
   newMemberDate?: Date | null;
+  attachments?: TaskAttachment[];
 }
 
 // Attendance interface

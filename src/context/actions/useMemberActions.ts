@@ -17,7 +17,11 @@ export const useMemberActions = ({
       ...member,
       id: `member-${Date.now()}`,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      // Set newMemberDate if the category is 'new'
+      newMemberDate: member.category === 'new' ? new Date() : null,
+      // Ensure attachments exists
+      attachments: member.attachments || []
     };
     
     setMembers(prev => [...prev, newMember]);
@@ -26,23 +30,104 @@ export const useMemberActions = ({
 
   const updateMember = (id: string, member: Partial<Member>) => {
     setMembers(prev => 
-      prev.map(m => 
-        m.id === id 
-          ? { ...m, ...member, updatedAt: new Date() } 
-          : m
-      )
+      prev.map(m => {
+        if (m.id === id) {
+          // Handle category change from regular to new
+          if (member.category === 'new' && m.category !== 'new') {
+            member.newMemberDate = new Date();
+          }
+          
+          // Handle category change from new to something else
+          if (m.category === 'new' && member.category && member.category !== 'new') {
+            member.newMemberDate = null;
+          }
+          
+          return { 
+            ...m, 
+            ...member, 
+            updatedAt: new Date() 
+          };
+        }
+        return m;
+      })
     );
     toast.success("Member updated successfully");
   };
 
   const deleteMember = (id: string) => {
-    setMembers(prev => prev.filter(m => m.id !== id));
+    // Also remove this member from any family relationships
+    setMembers(prev => {
+      const updatedMembers = prev.filter(m => m.id !== id);
+      
+      // Update family relationships for remaining members
+      return updatedMembers.map(m => {
+        if (m.familyIds && m.familyIds.includes(id)) {
+          return {
+            ...m,
+            familyIds: m.familyIds.filter(fid => fid !== id),
+            updatedAt: new Date()
+          };
+        }
+        if (m.familyId === id) {
+          return {
+            ...m,
+            familyId: null,
+            updatedAt: new Date()
+          };
+        }
+        return m;
+      });
+    });
+    
     toast.success("Member removed successfully");
+  };
+
+  // Function to check for members that should be automatically upgraded
+  const checkMemberStatusUpdates = () => {
+    const currentDate = new Date();
+    let updates = false;
+    
+    setMembers(prev => 
+      prev.map(member => {
+        // Check if new members should be converted to regular (after 60 days)
+        if (member.category === 'new' && member.newMemberDate) {
+          const newMemberDate = new Date(member.newMemberDate);
+          const daysSinceNewMember = Math.floor((currentDate.getTime() - newMemberDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysSinceNewMember >= 60) {
+            updates = true;
+            toast.success(`${member.firstName} ${member.lastName} is now a regular member`);
+            return {
+              ...member,
+              category: 'regular' as const,
+              newMemberDate: null,
+              updatedAt: new Date()
+            };
+          }
+        }
+        
+        // Check if regular members can become full members (after 2 years)
+        if ((member.category === 'regular') && !member.isFullMember && member.joinDate) {
+          const joinDate = new Date(member.joinDate);
+          const yearsSinceJoining = (currentDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+          
+          if (yearsSinceJoining >= 2) {
+            // Just notify, don't automatically change
+            toast.info(`${member.firstName} ${member.lastName} is eligible to become a full member`);
+          }
+        }
+        
+        return member;
+      })
+    );
+    
+    return updates;
   };
 
   return {
     addMember,
     updateMember,
-    deleteMember
+    deleteMember,
+    checkMemberStatusUpdates
   };
 };

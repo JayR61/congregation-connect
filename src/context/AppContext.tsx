@@ -43,6 +43,7 @@ interface AppContextType {
   addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMember: (id: string, member: Partial<Member>) => void;
   deleteMember: (id: string) => void;
+  checkMemberStatusUpdates: () => boolean;
   
   documents: Document[];
   folders: Folder[];
@@ -111,6 +112,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications
   });
 
+  // Check for member status updates on initial load and daily
+  useEffect(() => {
+    // Check on initial load
+    memberActions.checkMemberStatusUpdates();
+    
+    // Set up a daily check (24 hours)
+    const interval = setInterval(() => {
+      memberActions.checkMemberStatusUpdates();
+    }, 24 * 60 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -133,6 +147,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMember: memberActions.addMember,
         updateMember: memberActions.updateMember,
         deleteMember: memberActions.deleteMember,
+        checkMemberStatusUpdates: memberActions.checkMemberStatusUpdates,
         documents,
         folders,
         addDocument: documentActions.addDocument,

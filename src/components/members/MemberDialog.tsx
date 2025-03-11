@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Member, MemberCategory, ChurchStructure, Position, MemberStatus } from '@/types';
 import { useAppContext } from '@/context/AppContext';
-import { X, Search, UserPlus, Upload, Save, Plus, Trash } from 'lucide-react';
+import { X, Search, UserPlus, Upload, Save, Plus, Trash, CheckCircle } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -42,6 +42,9 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     category: 'regular' as MemberCategory,
     structures: [] as ChurchStructure[],
     positions: [] as Position[],
+    occupation: '',
+    isFullMember: false,
+    newMemberDate: new Date(),
   });
 
   // Positions form state
@@ -70,6 +73,9 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           email: '',
           phone: '',
           address: '',
+          city: '',
+          state: '',
+          zip: '',
           familyIds: [],
           status: 'active' as MemberStatus,
           notes: '',
@@ -77,6 +83,9 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           category: 'regular' as MemberCategory,
           structures: [] as ChurchStructure[],
           positions: [] as Position[],
+          occupation: '',
+          isFullMember: false,
+          newMemberDate: new Date(),
         });
       }
       setNewPosition({
@@ -99,7 +108,13 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
   };
 
   const handleCategoryChange = (value: MemberCategory) => {
-    setFormData((prev) => ({ ...prev, category: value }));
+    setFormData((prev) => {
+      // If new member is selected, set the newMemberDate to today
+      if (value === 'new' && prev.newMemberDate === undefined) {
+        return { ...prev, category: value, newMemberDate: new Date() };
+      }
+      return { ...prev, category: value };
+    });
   };
 
   const handleStructureToggle = (structure: ChurchStructure) => {
@@ -157,24 +172,45 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
     });
   };
 
+  const handleCheckboxChange = (field: string, checked: boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: checked }));
+  };
+
   const processBulkImport = () => {
     try {
       // Process entered member data
       const rows = bulkText.split('\n').filter(row => row.trim());
       const newMembers = rows.map(row => {
-        const [fullName, email, phone, category] = row.split(',').map(item => item.trim());
-        const [firstName, ...lastNameArr] = fullName.split(' ');
-        const lastName = lastNameArr.join(' ');
+        const columns = row.split(',').map(item => item.trim());
+        
+        // Check if we have at least 4 columns (name, email, phone, category)
+        if (columns.length < 4) {
+          throw new Error(`Invalid format in row: ${row}`);
+        }
+        
+        const [fullName, email, phone, category, address = '', occupation = ''] = columns;
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        const joinDate = new Date();
+        const isNewMember = category?.toLowerCase() === 'new';
         
         return {
-          firstName: firstName || '',
-          lastName: lastName || '',
+          firstName,
+          lastName,
           email: email || '',
           phone: phone || '',
+          address: address || '',
           status: 'active' as MemberStatus,
           category: (category || 'regular') as MemberCategory,
-          joinDate: new Date(),
+          joinDate,
           isActive: true,
+          occupation: occupation || '',
+          isFullMember: false,
+          newMemberDate: isNewMember ? joinDate : null,
+          structures: [] as ChurchStructure[],
+          positions: [] as Position[],
         } as Partial<Member>;
       });
       
@@ -199,6 +235,10 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
         isActive: formData.status === 'active', // Map status to isActive
         // Convert joinDate string to Date if needed
         joinDate: formData.joinDate instanceof Date ? formData.joinDate : new Date(formData.joinDate as string),
+        // If category is "new", ensure newMemberDate is set
+        newMemberDate: formData.category === 'new' ? (formData.newMemberDate || new Date()) : formData.newMemberDate,
+        // Ensure attachments and other required fields exist
+        attachments: formData.attachments || [],
       };
 
       if (member) {
@@ -219,6 +259,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
           ...memberData,
           isActive: memberData.status === 'active',
           joinDate: memberData.joinDate instanceof Date ? memberData.joinDate : new Date(memberData.joinDate as string),
+          attachments: memberData.attachments || [],
         };
         addMember(preparedData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
       });
@@ -269,11 +310,11 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
             <TabsContent value="bulk">
               <p className="text-sm text-muted-foreground mb-2">
                 Import multiple members at once. Enter one member per line in the format:<br/>
-                <span className="font-mono text-xs">Name, Email, Phone, Category (optional)</span>
+                <span className="font-mono text-xs">Name, Email, Phone, Category, Address (optional), Occupation (optional)</span>
               </p>
               <div className="space-y-4">
                 <Textarea 
-                  placeholder="John Doe, john@example.com, 555-123-4567, elder&#10;Jane Smith, jane@example.com, 555-987-6543, youth" 
+                  placeholder="John Doe, john@example.com, 555-123-4567, elder, 123 Main St, Pastor&#10;Jane Smith, jane@example.com, 555-987-6543, new, 456 Church Ave, Youth Leader" 
                   className="min-h-[150px] font-mono text-sm"
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
@@ -322,46 +363,50 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                   <TabsContent value="basic" className="space-y-4 m-0">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
+                        <Label htmlFor="firstName">First Name *</Label>
                         <Input 
                           id="firstName"
                           name="firstName"
                           placeholder="First name"
                           value={formData.firstName}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
+                        <Label htmlFor="lastName">Last Name *</Label>
                         <Input 
                           id="lastName"
                           name="lastName"
                           placeholder="Last name"
                           value={formData.lastName}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">Email *</Label>
                       <Input 
                         id="email"
                         name="email"
                         placeholder="Email address"
                         value={formData.email}
                         onChange={handleChange}
+                        required
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phone">Phone *</Label>
                       <Input 
                         id="phone"
                         name="phone"
                         placeholder="Phone number"
                         value={formData.phone}
                         onChange={handleChange}
+                        required
                       />
                     </div>
                     
@@ -376,20 +421,65 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                       />
                     </div>
                     
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input 
+                          id="city"
+                          name="city"
+                          placeholder="City"
+                          value={formData.city}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input 
+                          id="state"
+                          name="state"
+                          placeholder="State"
+                          value={formData.state}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="zip">Zip Code</Label>
+                        <Input 
+                          id="zip"
+                          name="zip"
+                          placeholder="Zip Code"
+                          value={formData.zip}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="occupation">Occupation/Role</Label>
+                      <Input 
+                        id="occupation"
+                        name="occupation"
+                        placeholder="Occupation or role in church"
+                        value={formData.occupation}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="joinDate">Join Date</Label>
+                        <Label htmlFor="joinDate">Join Date *</Label>
                         <Input 
                           id="joinDate"
                           name="joinDate"
                           type="date"
                           value={formatDateForInput(formData.joinDate)}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="status">Status *</Label>
                         <Select 
                           value={formData.status as string} 
                           onValueChange={handleStatusChange}
@@ -407,25 +497,57 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Member Category</Label>
-                      <Select 
-                        value={formData.category as string} 
-                        onValueChange={(value) => handleCategoryChange(value as MemberCategory)}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Member Category *</Label>
+                        <Select 
+                          value={formData.category as string} 
+                          onValueChange={(value) => handleCategoryChange(value as MemberCategory)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="elder">Elder</SelectItem>
+                            <SelectItem value="pastor">Pastor</SelectItem>
+                            <SelectItem value="youth">Youth</SelectItem>
+                            <SelectItem value="child">Child (Sunday School)</SelectItem>
+                            <SelectItem value="visitor">Visitor</SelectItem>
+                            <SelectItem value="new">New Member</SelectItem>
+                            <SelectItem value="regular">Regular Member</SelectItem>
+                            <SelectItem value="full">Full Member</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {formData.category === 'new' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="newMemberDate">New Member Since</Label>
+                          <Input 
+                            id="newMemberDate"
+                            name="newMemberDate"
+                            type="date"
+                            value={formatDateForInput(formData.newMemberDate)}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 pt-2">
+                      <Checkbox 
+                        id="isFullMember" 
+                        checked={formData.isFullMember || false}
+                        onCheckedChange={(checked) => 
+                          handleCheckboxChange('isFullMember', checked === true)
+                        }
+                      />
+                      <Label 
+                        htmlFor="isFullMember"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="elder">Elder</SelectItem>
-                          <SelectItem value="pastor">Pastor</SelectItem>
-                          <SelectItem value="youth">Youth</SelectItem>
-                          <SelectItem value="child">Child (Sunday School)</SelectItem>
-                          <SelectItem value="visitor">Visitor</SelectItem>
-                          <SelectItem value="new">New Member</SelectItem>
-                          <SelectItem value="regular">Regular Member</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        Full Church Member
+                      </Label>
                     </div>
                   </TabsContent>
                   

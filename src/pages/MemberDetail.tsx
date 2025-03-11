@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -7,18 +7,45 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Mail, Phone, MapPin, Calendar, Users, MessageSquare, Award, Crown } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Mail, Phone, MapPin, Calendar, Users, MessageSquare, Award, Crown, CheckCircle, Clock } from 'lucide-react';
 import MemberDialog from '@/components/members/MemberDialog';
 import AttendanceTracker from '@/components/members/AttendanceTracker';
 import MemberNotes from '@/components/members/MemberNotes';
+import { toast } from '@/lib/toast';
 
 const MemberDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { members, deleteMember } = useAppContext();
+  const { members, deleteMember, updateMember } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const member = members.find(m => m.id === id);
+  
+  // Check if a new member should be automatically converted to regular
+  useEffect(() => {
+    if (member && member.category === 'new' && member.newMemberDate) {
+      const newMemberDate = new Date(member.newMemberDate);
+      const currentDate = new Date();
+      const daysSinceNewMember = Math.floor((currentDate.getTime() - newMemberDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Convert to regular member after 60 days
+      if (daysSinceNewMember >= 60) {
+        updateMember(member.id, { 
+          category: 'regular',
+          newMemberDate: null
+        });
+        toast.success(`${member.firstName} ${member.lastName} is now a regular member`);
+      }
+      
+      // If they've been a regular member for at least 2 years, check if they should become a full member
+      const joinDate = new Date(member.joinDate);
+      const yearsSinceJoining = (currentDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+      
+      if (yearsSinceJoining >= 2 && !member.isFullMember) {
+        toast.info(`${member.firstName} ${member.lastName} is eligible to become a full member`);
+      }
+    }
+  }, [member, updateMember]);
   
   if (!member) {
     return (
@@ -69,6 +96,8 @@ const MemberDetail = () => {
           return 'destructive';
         case 'new':
           return 'success';
+        case 'full':
+          return 'default';
         default:
           return 'outline';
       }
@@ -96,6 +125,11 @@ const MemberDetail = () => {
     }
   };
   
+  const handleToggleFullMember = () => {
+    updateMember(member.id, { isFullMember: !member.isFullMember });
+    toast.success(`${member.firstName} ${member.lastName} is ${!member.isFullMember ? 'now' : 'no longer'} a full member`);
+  };
+  
   const familyMembers = members.filter(m => 
     (member.familyIds && member.familyIds.includes(m.id)) || 
     (member.familyId && m.id === member.familyId)
@@ -111,6 +145,11 @@ const MemberDetail = () => {
           <h1 className="text-2xl font-bold">{member.firstName} {member.lastName}</h1>
           {getStatusBadge(member.status)}
           {getCategoryBadge()}
+          {member.isFullMember && (
+            <Badge variant="outline" className="ml-2 flex items-center">
+              <CheckCircle className="h-3.5 w-3.5 mr-1" /> Full Member
+            </Badge>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
@@ -153,7 +192,18 @@ const MemberDetail = () => {
                     {member.address && (
                       <li className="flex items-start">
                         <MapPin className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
-                        <div>{member.address}</div>
+                        <div>
+                          {member.address}
+                          {member.city && `, ${member.city}`}
+                          {member.state && `, ${member.state}`}
+                          {member.zip && ` ${member.zip}`}
+                        </div>
+                      </li>
+                    )}
+                    {member.occupation && (
+                      <li className="flex items-center">
+                        <Award className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>Role: {member.occupation}</span>
                       </li>
                     )}
                   </ul>
@@ -166,6 +216,12 @@ const MemberDetail = () => {
                       <li className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span>Joined: {formatDate(member.joinDate)}</span>
+                      </li>
+                    )}
+                    {member.category === 'new' && member.newMemberDate && (
+                      <li className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>New Member Since: {formatDate(member.newMemberDate)}</span>
                       </li>
                     )}
                     <li className="flex items-center">
@@ -309,6 +365,18 @@ const MemberDetail = () => {
                   <span className="font-medium capitalize">{member.category || 'Regular'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Full Member</span>
+                  <span className="font-medium">{member.isFullMember ? 'Yes' : 'No'}</span>
+                </div>
+                {member.category === 'new' && member.newMemberDate && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-muted-foreground">New Member Since</span>
+                    <span className="font-medium">
+                      {formatDate(member.newMemberDate)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Family Members</span>
                   <span className="font-medium">{familyMembers.length}</span>
                 </div>
@@ -332,7 +400,15 @@ const MemberDetail = () => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex flex-col gap-2">
+              <Button 
+                variant={member.isFullMember ? "outline" : "default"} 
+                className="w-full"
+                onClick={handleToggleFullMember}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {member.isFullMember ? 'Remove Full Member Status' : 'Mark as Full Member'}
+              </Button>
               <Button variant="outline" className="w-full" onClick={() => window.print()}>
                 Print Profile
               </Button>

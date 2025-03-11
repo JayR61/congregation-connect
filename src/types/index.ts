@@ -1,4 +1,3 @@
-
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -110,7 +109,7 @@ export interface Folder {
 
 // Member related types
 export type MemberStatus = 'active' | 'inactive' | 'prospect' | 'visitor';
-export type MemberCategory = 'elder' | 'pastor' | 'youth' | 'child' | 'visitor' | 'new' | 'regular';
+export type MemberCategory = 'elder' | 'pastor' | 'youth' | 'child' | 'visitor' | 'new' | 'regular' | 'full';
 export type ChurchStructure = 'senior_leadership' | 'youth_leadership' | 'mens_forum' | 'sunday_school';
 
 export interface ChurchStructureData {
@@ -212,6 +211,8 @@ export interface Member {
   ministryInvolvement?: string[];
   attendanceHistory?: any[];
   givingHistory?: any[];
+  isFullMember?: boolean;
+  newMemberDate?: Date | null;
 }
 
 // Attendance interface

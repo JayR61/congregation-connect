@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, Calendar, Users, Edit, Trash } from 'lucide-react';
+import { Mail, Phone, Calendar, Users, Edit, Trash, CheckCircle } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { Member } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface MemberListProps {
   members: Member[];
@@ -67,6 +68,14 @@ const MemberList: React.FC<MemberListProps> = ({ members, onEdit }) => {
               <h3 className="font-medium">
                 {member.firstName} {member.lastName}
               </h3>
+              {member.isFullMember && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" /> Full Member
+                </Badge>
+              )}
+              {member.category === 'new' && (
+                <Badge variant="success" className="ml-2 text-xs">New Member</Badge>
+              )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
@@ -93,6 +102,12 @@ const MemberList: React.FC<MemberListProps> = ({ members, onEdit }) => {
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
                   <span>Family members: {member.familyIds ? member.familyIds.length : (member.familyId ? '1' : '0')}</span>
+                </div>
+              )}
+              
+              {member.occupation && (
+                <div className="text-muted-foreground">
+                  Role: {member.occupation}
                 </div>
               )}
             </div>

@@ -56,6 +56,8 @@ export interface FinanceCategory {
   name: string;
   type: TransactionType | 'both';
   color: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Transaction {

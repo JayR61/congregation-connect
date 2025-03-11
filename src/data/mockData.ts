@@ -275,7 +275,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-01'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-01'),
-    updatedAt: new Date('2023-05-01')
+    updatedAt: new Date('2023-05-01'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-2',
@@ -286,7 +288,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-05'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-05'),
-    updatedAt: new Date('2023-05-05')
+    updatedAt: new Date('2023-05-05'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-3',
@@ -297,7 +301,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-10'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-10'),
-    updatedAt: new Date('2023-05-10')
+    updatedAt: new Date('2023-05-10'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-4',
@@ -308,7 +314,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-15'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-15'),
-    updatedAt: new Date('2023-05-15')
+    updatedAt: new Date('2023-05-15'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-5',
@@ -319,7 +327,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-20'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-20'),
-    updatedAt: new Date('2023-05-20')
+    updatedAt: new Date('2023-05-20'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-6',
@@ -330,7 +340,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-05-25'),
     createdById: 'user-1',
     createdAt: new Date('2023-05-25'),
-    updatedAt: new Date('2023-05-25')
+    updatedAt: new Date('2023-05-25'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-7',
@@ -341,7 +353,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-06-01'),
     createdById: 'user-1',
     createdAt: new Date('2023-06-01'),
-    updatedAt: new Date('2023-06-01')
+    updatedAt: new Date('2023-06-01'),
+    attachments: [],
+    isRecurring: false
   },
   {
     id: 'tx-8',
@@ -352,7 +366,9 @@ export const transactions: Transaction[] = [
     date: new Date('2023-06-05'),
     createdById: 'user-1',
     createdAt: new Date('2023-06-05'),
-    updatedAt: new Date('2023-06-05')
+    updatedAt: new Date('2023-06-05'),
+    attachments: [],
+    isRecurring: false
   }
 ];
 
@@ -373,15 +389,15 @@ export const taskCategories: TaskCategory[] = [];
 
 // Finance categories
 export const financeCategories: FinanceCategory[] = [
-  { id: 'tithe', name: 'Tithe', description: 'Regular church tithe', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'offering', name: 'Offering', description: 'Sunday and special offerings', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'salary', name: 'Salary', description: 'Staff salaries', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'utilities', name: 'Utilities', description: 'Electricity, water, etc.', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'supplies', name: 'Supplies', description: 'Office and church supplies', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'maintenance', name: 'Maintenance', description: 'Building maintenance', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'events', name: 'Events', description: 'Church events and programs', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'outreach', name: 'Outreach', description: 'Community outreach programs', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'other', name: 'Other', description: 'Miscellaneous income/expenses', createdAt: new Date(), updatedAt: new Date() }
+  { id: 'tithe', name: 'Tithe', type: 'income', color: '#4CAF50', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'offering', name: 'Offering', type: 'income', color: '#8BC34A', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'salary', name: 'Salary', type: 'expense', color: '#F44336', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'utilities', name: 'Utilities', type: 'expense', color: '#FF5722', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'supplies', name: 'Supplies', type: 'expense', color: '#FF9800', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'maintenance', name: 'Maintenance', type: 'expense', color: '#FFC107', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'events', name: 'Events', type: 'expense', color: '#9C27B0', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'outreach', name: 'Outreach', type: 'expense', color: '#673AB7', createdAt: new Date(), updatedAt: new Date() },
+  { id: 'other', name: 'Other', type: 'both', color: '#607D8B', createdAt: new Date(), updatedAt: new Date() }
 ];
 
 export const tasks: Task[] = [];

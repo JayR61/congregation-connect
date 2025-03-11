@@ -44,6 +44,8 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
       type,
       categoryId: category,
       date: new Date(date),
+      attachments: [], // Add missing required properties
+      isRecurring: false
     };
     
     onAddTransaction(newTransaction);

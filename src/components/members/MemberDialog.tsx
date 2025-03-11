@@ -288,7 +288,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="pb-2">
           <DialogTitle>{member ? 'Edit Member' : 'Add Member'}</DialogTitle>
           <DialogDescription>
@@ -305,13 +305,13 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
               <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="individual">
+            <TabsContent value="individual" className="mt-0">
               <p className="text-sm text-muted-foreground mb-2">
                 Add a single member with detailed information
               </p>
             </TabsContent>
             
-            <TabsContent value="bulk">
+            <TabsContent value="bulk" className="mt-0">
               <p className="text-sm text-muted-foreground mb-2">
                 Import multiple members at once. Enter one member per line in the format:<br/>
                 <span className="font-mono text-xs">Name, Email, Phone, Category, Address (optional), Occupation (optional)</span>
@@ -353,7 +353,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
         )}
         
         {(mode === 'individual' || member) && (
-          <div className="flex-grow flex flex-col">
+          <div className="flex-grow flex flex-col overflow-hidden">
             <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab} className="flex-grow flex flex-col">
               <TabsList className="grid grid-cols-4">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -362,8 +362,8 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                 <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
               
-              <div className="overflow-y-auto pr-1 mt-4 max-h-[calc(85vh-220px)]">
-                <TabsContent value="basic" className="space-y-4 m-0">
+              <div className="overflow-y-auto flex-1 pr-1 mt-4">
+                <TabsContent value="basic" className="space-y-4 m-0 pb-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name *</Label>
@@ -554,7 +554,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="roles" className="space-y-6 m-0">
+                <TabsContent value="roles" className="space-y-6 m-0 pb-4">
                   <div className="space-y-3">
                     <Label>Church Structures</Label>
                     <div className="grid grid-cols-2 gap-4">
@@ -650,7 +650,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="family" className="space-y-4 m-0">
+                <TabsContent value="family" className="space-y-4 m-0 pb-4">
                   <div className="space-y-2">
                     <Label>Family Members</Label>
                     <div className="border rounded-md p-2">
@@ -692,7 +692,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, member 
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="notes" className="space-y-4 m-0">
+                <TabsContent value="notes" className="space-y-4 m-0 pb-4">
                   <div className="space-y-2">
                     <Label htmlFor="notes">General Notes</Label>
                     <Textarea 

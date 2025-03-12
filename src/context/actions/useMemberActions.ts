@@ -1,4 +1,3 @@
-
 import { Member } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -22,14 +21,27 @@ export const useMemberActions = ({
       newMemberDate: member.category === 'new' ? new Date() : null,
       // Ensure attachments exists
       attachments: member.attachments || [],
-      // Determine if this is a leadership member based on structures
-      isLeadership: member.structures?.some(s => 
-        s === 'senior_leadership' || s === 'youth_leadership'
-      ) || false
+      // Determine if this is a leadership member based on structures or positions
+      isLeadership: determineLeadershipStatus(member)
     };
     
     setMembers(prev => [...prev, newMember]);
     toast.success("Member added successfully");
+  };
+
+  // Helper function to determine leadership status based on structures or positions
+  const determineLeadershipStatus = (member: Partial<Member>): boolean => {
+    // Check structures
+    const hasLeadershipStructure = member.structures?.some(s => 
+      s === 'senior_leadership' || s === 'youth_leadership'
+    ) || false;
+    
+    // Check positions
+    const hasLeadershipPosition = member.positions?.some(p => 
+      p.structure === 'senior_leadership' || p.structure === 'youth_leadership'
+    ) || false;
+    
+    return hasLeadershipStructure || hasLeadershipPosition;
   };
 
   const updateMember = (id: string, member: Partial<Member>) => {
@@ -46,11 +58,10 @@ export const useMemberActions = ({
             member.newMemberDate = null;
           }
           
-          // Update leadership status if structures are provided
-          if (member.structures) {
-            member.isLeadership = member.structures.some(s => 
-              s === 'senior_leadership' || s === 'youth_leadership'
-            );
+          // Determine leadership status when relevant fields change
+          if (member.structures || member.positions) {
+            const updatedMember = { ...m, ...member };
+            member.isLeadership = determineLeadershipStatus(updatedMember);
           }
           
           return { 

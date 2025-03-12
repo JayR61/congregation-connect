@@ -215,6 +215,10 @@ export interface Member {
   newMemberDate?: Date | null;
   attachments?: TaskAttachment[];
   isLeadership?: boolean;
+  mentorshipPrograms?: MentorshipProgram[];
+  volunteerRoles?: Volunteer[];
+  socialMediaAccounts?: SocialMediaAccount[];
+  resourceBookings?: ResourceBooking[];
 }
 
 // Attendance interface
@@ -289,4 +293,106 @@ export interface ChurchSettings {
   logo: string | null;
   timezone: string;
   currency: string;
+  socialMedia?: SocialMediaAccount[];
+  membershipForms?: string[];
+}
+
+// New interfaces for enhanced functionality
+export interface MembershipForm {
+  id: string;
+  title: string;
+  description: string;
+  fields: FormField[];
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface FormField {
+  id: string;
+  label: string;
+  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'checkbox' | 'textarea';
+  options?: string[];
+  required: boolean;
+  order: number;
+}
+
+// Finance enhancement for accounting
+export interface AccountingCategory {
+  id: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+  description?: string;
+  parentId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AccountingEntry {
+  id: string;
+  date: Date;
+  description: string;
+  debitAccountId: string;
+  creditAccountId: string;
+  amount: number;
+  reference?: string;
+  relatedTransactionId?: string;
+  attachments?: TaskAttachment[];
+  createdById: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MentorshipProgram {
+  id: string;
+  name: string;
+  description: string;
+  startDate: Date;
+  endDate?: Date;
+  mentorId?: string;
+  goals: string[];
+  progress: number;
+  notes?: string;
+}
+
+export interface Volunteer {
+  id: string;
+  memberId: string;
+  area: string;
+  role: string;
+  startDate: Date;
+  endDate?: Date;
+  availability: string[];
+  notes?: string;
+}
+
+export interface ChurchResource {
+  id: string;
+  name: string;
+  type: 'room' | 'equipment' | 'vehicle' | 'other';
+  description: string;
+  location?: string;
+  status: 'available' | 'in-use' | 'maintenance' | 'reserved';
+  currentAssigneeId?: string;
+  maintenanceSchedule?: Date;
+  acquisitionDate?: Date;
+  notes?: string;
+}
+
+export interface ResourceBooking {
+  id: string;
+  resourceId: string;
+  memberId: string;
+  purpose: string;
+  startDateTime: Date;
+  endDateTime: Date;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  notes?: string;
+}
+
+export interface SocialMediaAccount {
+  platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'website' | 'other';
+  url: string;
+  username?: string;
+  active: boolean;
 }

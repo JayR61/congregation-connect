@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -21,14 +20,12 @@ const MemberDetail = () => {
   
   const member = members.find(m => m.id === id);
   
-  // Check if a new member should be automatically converted to regular
   useEffect(() => {
     if (member && member.category === 'new' && member.newMemberDate) {
       const newMemberDate = new Date(member.newMemberDate);
       const currentDate = new Date();
       const daysSinceNewMember = Math.floor((currentDate.getTime() - newMemberDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      // Convert to regular member after 60 days
       if (daysSinceNewMember >= 60) {
         updateMember(member.id, { 
           category: 'regular',
@@ -37,12 +34,21 @@ const MemberDetail = () => {
         toast.success(`${member.firstName} ${member.lastName} is now a regular member`);
       }
       
-      // If they've been a regular member for at least 2 years, check if they should become a full member
       const joinDate = new Date(member.joinDate);
       const yearsSinceJoining = (currentDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
       
       if (yearsSinceJoining >= 2 && !member.isFullMember) {
         toast.info(`${member.firstName} ${member.lastName} is eligible to become a full member`);
+      }
+    }
+    
+    if (member && member.structures && !member.isLeadership) {
+      const isInLeadership = member.structures.some(s => 
+        s === 'senior_leadership' || s === 'youth_leadership'
+      );
+      
+      if (isInLeadership) {
+        updateMember(member.id, { isLeadership: true });
       }
     }
   }, [member, updateMember]);
@@ -135,6 +141,11 @@ const MemberDetail = () => {
     (member.familyId && m.id === member.familyId)
   );
   
+  const isLeadership = member.isLeadership || 
+    (member.structures && member.structures.some(s => 
+      s === 'senior_leadership' || s === 'youth_leadership'
+    ));
+  
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -148,6 +159,11 @@ const MemberDetail = () => {
           {member.isFullMember && (
             <Badge variant="outline" className="ml-2 flex items-center">
               <CheckCircle className="h-3.5 w-3.5 mr-1" /> Full Member
+            </Badge>
+          )}
+          {isLeadership && (
+            <Badge variant="secondary" className="ml-2 flex items-center">
+              <Crown className="h-3.5 w-3.5 mr-1" /> Leadership
             </Badge>
           )}
         </div>

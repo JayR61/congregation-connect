@@ -21,7 +21,11 @@ export const useMemberActions = ({
       // Set newMemberDate if the category is 'new'
       newMemberDate: member.category === 'new' ? new Date() : null,
       // Ensure attachments exists
-      attachments: member.attachments || []
+      attachments: member.attachments || [],
+      // Determine if this is a leadership member based on structures
+      isLeadership: member.structures?.some(s => 
+        s === 'senior_leadership' || s === 'youth_leadership'
+      ) || false
     };
     
     setMembers(prev => [...prev, newMember]);
@@ -40,6 +44,13 @@ export const useMemberActions = ({
           // Handle category change from new to something else
           if (m.category === 'new' && member.category && member.category !== 'new') {
             member.newMemberDate = null;
+          }
+          
+          // Update leadership status if structures are provided
+          if (member.structures) {
+            member.isLeadership = member.structures.some(s => 
+              s === 'senior_leadership' || s === 'youth_leadership'
+            );
           }
           
           return { 

@@ -214,6 +214,7 @@ export interface Member {
   isFullMember?: boolean;
   newMemberDate?: Date | null;
   attachments?: TaskAttachment[];
+  isLeadership?: boolean;
 }
 
 // Attendance interface

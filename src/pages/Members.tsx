@@ -53,6 +53,21 @@ const Members = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Filter members by active status
+  const activeMembers = filteredMembers.filter(member => member.isActive || member.status === 'active');
+  
+  // Filter members by leadership position
+  const leadershipMembers = filteredMembers.filter(member => 
+    member.isLeadership || 
+    (member.structures && member.structures.some(s => 
+      s === 'senior_leadership' || 
+      s === 'youth_leadership'
+    ))
+  );
+  
+  // Filter new members
+  const newMembers = filteredMembers.filter(member => member.category === 'new');
+
   const handleAddMember = () => {
     setSelectedMember(undefined);
     setDialogOpen(true);
@@ -68,6 +83,59 @@ const Members = () => {
     if (!open) {
       setSelectedMember(undefined);
     }
+  };
+
+  const renderMemberList = (memberList: Member[]) => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="p-6 border rounded-md">
+                <div className="flex items-center space-x-4">
+                  <div className="h-12 w-12 rounded-full bg-gray-200"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                    <div className="h-3 w-32 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    if (memberList.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium">No members found</h3>
+          <p className="text-muted-foreground mt-2">
+            Try adjusting your search or filter criteria
+          </p>
+          <Button onClick={handleAddMember} className="mt-4">
+            <UserPlus className="mr-2 h-4 w-4" /> Add Member
+          </Button>
+        </div>
+      );
+    }
+    
+    return viewMode === 'grid' ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {memberList.map((member) => (
+          <MemberCard 
+            key={member.id} 
+            member={member} 
+            onClick={() => navigate(`/members/${member.id}`)}
+          />
+        ))}
+      </div>
+    ) : (
+      <MemberList 
+        members={memberList} 
+        onEdit={handleEditMember}
+      />
+    );
   };
 
   return (
@@ -136,91 +204,21 @@ const Members = () => {
           <TabsTrigger value="new">New Members</TabsTrigger>
           <TabsTrigger value="leadership">Leadership</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="all">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="p-6 border rounded-md">
-                    <div className="flex items-center space-x-4">
-                      <div className="h-12 w-12 rounded-full bg-gray-200"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 w-24 bg-gray-200 rounded"></div>
-                        <div className="h-3 w-32 bg-gray-200 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMembers.map((member) => (
-                <MemberCard 
-                  key={member.id} 
-                  member={member} 
-                  onClick={() => navigate(`/members/${member.id}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <MemberList 
-              members={filteredMembers} 
-              onEdit={handleEditMember}
-            />
-          )}
-
-          {filteredMembers.length === 0 && !isLoading && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium">No members found</h3>
-              <p className="text-muted-foreground mt-2">
-                Try adjusting your search or filter criteria
-              </p>
-              <Button onClick={handleAddMember} className="mt-4">
-                <UserPlus className="mr-2 h-4 w-4" /> Add Member
-              </Button>
-            </div>
-          )}
+          {renderMemberList(filteredMembers)}
         </TabsContent>
         
         <TabsContent value="active">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Active Members</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab shows members with "active" status
-            </p>
-            {members.filter(m => m.status === 'active' || m.isActive).length === 0 ? (
-              <Button onClick={handleAddMember} className="mt-4">
-                <UserPlus className="mr-2 h-4 w-4" /> Add Active Member
-              </Button>
-            ) : (
-              <p className="mt-4">Use the status filter above to see only active members</p>
-            )}
-          </div>
+          {renderMemberList(activeMembers)}
         </TabsContent>
         
         <TabsContent value="new">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">New Members</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab would show recently added members
-            </p>
-            <Button onClick={handleAddMember} className="mt-4">
-              <UserPlus className="mr-2 h-4 w-4" /> Add New Member
-            </Button>
-          </div>
+          {renderMemberList(newMembers)}
         </TabsContent>
         
         <TabsContent value="leadership">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Leadership</h3>
-            <p className="text-muted-foreground mt-2">
-              This tab would show members in leadership positions
-            </p>
-            <Button onClick={handleAddMember} className="mt-4">
-              <UserPlus className="mr-2 h-4 w-4" /> Add Leader
-            </Button>
-          </div>
+          {renderMemberList(leadershipMembers)}
         </TabsContent>
       </Tabs>
       

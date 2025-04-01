@@ -13,7 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  Award,
+  Handshake,
+  Briefcase,
+  Share2
 } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/lib/toast";
@@ -103,6 +107,46 @@ const Sidebar = () => {
           >
             <FileText size={20} />
             {!collapsed && <span>Documents</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/mentorship"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Award size={20} />
+            {!collapsed && <span>Mentorship</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/volunteers"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Handshake size={20} />
+            {!collapsed && <span>Volunteers</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/resources"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Briefcase size={20} />
+            {!collapsed && <span>Resources</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/social-media"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Share2 size={20} />
+            {!collapsed && <span>Social Media</span>}
           </NavLink>
           
           <NavLink

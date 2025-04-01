@@ -19,6 +19,10 @@ import Finance from "./pages/Finance";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Mentorship from "./pages/Mentorship";
+import Volunteers from "./pages/Volunteers";
+import Resources from "./pages/Resources";
+import SocialMedia from "./pages/SocialMedia";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,10 @@ const App = () => (
                 <Route path="/members/:id" element={<Layout><MemberDetail /></Layout>} />
                 <Route path="/finance" element={<Layout><Finance /></Layout>} />
                 <Route path="/documents" element={<Layout><Documents /></Layout>} />
+                <Route path="/mentorship" element={<Layout><Mentorship /></Layout>} />
+                <Route path="/volunteers" element={<Layout><Volunteers /></Layout>} />
+                <Route path="/resources" element={<Layout><Resources /></Layout>} />
+                <Route path="/social-media" element={<Layout><SocialMedia /></Layout>} />
                 <Route path="/settings" element={<Layout><Settings /></Layout>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

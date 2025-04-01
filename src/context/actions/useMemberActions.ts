@@ -1,3 +1,4 @@
+
 import { Member } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -22,7 +23,12 @@ export const useMemberActions = ({
       // Ensure attachments exists
       attachments: member.attachments || [],
       // Determine if this is a leadership member based on structures or positions
-      isLeadership: determineLeadershipStatus(member)
+      isLeadership: determineLeadershipStatus(member),
+      // Initialize mentorship, volunteer, and social media arrays if not present
+      mentorshipPrograms: member.mentorshipPrograms || [],
+      volunteerRoles: member.volunteerRoles || [],
+      socialMediaAccounts: member.socialMediaAccounts || [],
+      resourceBookings: member.resourceBookings || []
     };
     
     setMembers(prev => [...prev, newMember]);
@@ -136,6 +142,19 @@ export const useMemberActions = ({
           if (yearsSinceJoining >= 2) {
             // Just notify, don't automatically change
             toast.info(`${member.firstName} ${member.lastName} is eligible to become a full member`);
+          }
+        }
+        
+        // Check if member should be added to leadership based on their positions or structures
+        if (!member.isLeadership && (member.structures || member.positions)) {
+          const shouldBeLeadership = determineLeadershipStatus(member);
+          if (shouldBeLeadership) {
+            updates = true;
+            return {
+              ...member,
+              isLeadership: true,
+              updatedAt: new Date()
+            };
           }
         }
         

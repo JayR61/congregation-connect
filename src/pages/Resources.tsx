@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -50,9 +49,8 @@ const Resources = () => {
   const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   
-  // State for resources (in a real app, this would come from a backend)
   const [resources, setResources] = useState<ChurchResource[]>([
     {
       id: 'res-1',
@@ -85,7 +83,6 @@ const Resources = () => {
     }
   ]);
   
-  // State for bookings
   const [bookings, setBookings] = useState<ResourceBooking[]>([
     {
       id: 'book-1',
@@ -130,7 +127,7 @@ const Resources = () => {
       resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (resource.location || '').toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesType = typeFilter === '' || resource.type === typeFilter;
+    const matchesType = typeFilter === 'all' || resource.type === typeFilter;
     
     return matchesSearch && matchesType;
   });
@@ -197,7 +194,6 @@ const Resources = () => {
 
     setBookings(prev => [...prev, newBooking]);
     
-    // Update the resource status to reserved
     setResources(prev => prev.map(resource => 
       resource.id === bookingForm.resourceId 
         ? { ...resource, status: 'reserved' } 
@@ -234,7 +230,6 @@ const Resources = () => {
           : b
       ));
       
-      // Update the resource status back to available
       setResources(prev => prev.map(resource => 
         resource.id === booking.resourceId 
           ? { ...resource, status: 'available' } 
@@ -548,7 +543,7 @@ const Resources = () => {
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="room">Rooms</SelectItem>
               <SelectItem value="equipment">Equipment</SelectItem>
               <SelectItem value="vehicle">Vehicles</SelectItem>

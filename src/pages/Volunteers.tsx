@@ -64,7 +64,7 @@ const Volunteers = () => {
   const { members, updateMember } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [areaFilter, setAreaFilter] = useState('');
+  const [areaFilter, setAreaFilter] = useState('all'); // Changed from empty string to 'all'
   const [volunteerData, setVolunteerData] = useState<Partial<Volunteer>>({
     area: '',
     role: '',
@@ -93,7 +93,7 @@ const Volunteers = () => {
       item.member.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.member.lastName.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesArea = areaFilter === '' || item.volunteer.area === areaFilter;
+    const matchesArea = areaFilter === 'all' || item.volunteer.area === areaFilter; // Changed to check for 'all'
     
     return matchesSearch && matchesArea;
   });
@@ -332,7 +332,7 @@ const Volunteers = () => {
               <SelectValue placeholder="Filter by area" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Areas</SelectItem>
+              <SelectItem value="all">All Areas</SelectItem> {/* Changed from empty value to "all" */}
               {uniqueAreas.map(area => (
                 <SelectItem key={area} value={area}>{area}</SelectItem>
               ))}
@@ -557,3 +557,4 @@ const Volunteers = () => {
 };
 
 export default Volunteers;
+

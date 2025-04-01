@@ -23,6 +23,8 @@ import Mentorship from "./pages/Mentorship";
 import Volunteers from "./pages/Volunteers";
 import Resources from "./pages/Resources";
 import SocialMedia from "./pages/SocialMedia";
+import Programmes from "./pages/Programmes";
+import Projects from "./pages/Projects";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,8 @@ const App = () => (
                 <Route path="/volunteers" element={<Layout><Volunteers /></Layout>} />
                 <Route path="/resources" element={<Layout><Resources /></Layout>} />
                 <Route path="/social-media" element={<Layout><SocialMedia /></Layout>} />
+                <Route path="/programmes" element={<Layout><Programmes /></Layout>} />
+                <Route path="/projects" element={<Layout><Projects /></Layout>} />
                 <Route path="/settings" element={<Layout><Settings /></Layout>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

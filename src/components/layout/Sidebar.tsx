@@ -17,7 +17,9 @@ import {
   Award,
   Handshake,
   Briefcase,
-  Share2
+  Share2,
+  Calendar,
+  GraduationCap
 } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/lib/toast";
@@ -127,6 +129,26 @@ const Sidebar = () => {
           >
             <Handshake size={20} />
             {!collapsed && <span>Volunteers</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/programmes"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Calendar size={20} />
+            {!collapsed && <span>Programmes</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/projects"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
+            <Briefcase size={20} />
+            {!collapsed && <span>Projects</span>}
           </NavLink>
           
           <NavLink

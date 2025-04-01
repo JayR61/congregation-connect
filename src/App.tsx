@@ -26,7 +26,14 @@ import SocialMedia from "./pages/SocialMedia";
 import Programmes from "./pages/Programmes";
 import Projects from "./pages/Projects";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -30,6 +29,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -43,7 +53,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { CalendarIcon, Users, GraduationCap, Heart, Church } from "lucide-react";
+import { CalendarIcon, Users, GraduationCap, Heart, Church, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
 
@@ -80,8 +90,8 @@ const Programmes = () => {
   const [isProgrammeDialogOpen, setIsProgrammeDialogOpen] = useState(false);
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null);
+  const [programmeToDelete, setProgrammeToDelete] = useState<string | null>(null);
   
-  // Temporary state for programmes - in a real app this would come from the backend
   const [programmes, setProgrammes] = useState<Programme[]>([
     {
       id: 'prog-1',
@@ -182,7 +192,6 @@ const Programmes = () => {
     }
   ]);
 
-  // Form states
   const [programmeForm, setProgrammeForm] = useState({
     name: '',
     description: '',
@@ -203,18 +212,14 @@ const Programmes = () => {
     notes: ''
   });
 
-  // Filter programmes based on search query and type filter
   const filteredProgrammes = programmes.filter(programme => {
-    // Filter by search query
     const matchesSearch = 
       programme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       programme.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       programme.location.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Filter by type
     const matchesType = typeFilter === 'all' || programme.type === typeFilter;
     
-    // Filter by tab
     const matchesTab = 
       activeTab === 'all' || 
       (activeTab === 'active' && (!programme.endDate || programme.endDate > new Date())) ||
@@ -260,7 +265,6 @@ const Programmes = () => {
 
     setAttendance(prev => [...prev, newAttendance]);
     
-    // Update programme attendance
     if (attendanceForm.isPresent) {
       setProgrammes(prev => prev.map(prog => {
         if (prog.id === selectedProgrammeId && !prog.attendees.includes(attendanceForm.memberId)) {
@@ -277,6 +281,14 @@ const Programmes = () => {
     setIsAttendanceDialogOpen(false);
     resetAttendanceForm();
     toast.success('Attendance recorded successfully');
+  };
+
+  const handleDeleteProgramme = () => {
+    if (programmeToDelete) {
+      setProgrammes(prev => prev.filter(prog => prog.id !== programmeToDelete));
+      setProgrammeToDelete(null);
+      toast.success('Programme deleted successfully');
+    }
   };
 
   const resetProgrammeForm = () => {
@@ -340,6 +352,11 @@ const Programmes = () => {
   const openAttendanceDialog = (programmeId: string) => {
     setSelectedProgrammeId(programmeId);
     setIsAttendanceDialogOpen(true);
+  };
+
+  const confirmDeleteProgramme = (programmeId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setProgrammeToDelete(programmeId);
   };
 
   return (
@@ -419,12 +436,45 @@ const Programmes = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle>{programme.name}</CardTitle>
-                      <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                        <span className="flex items-center">
-                          {getTypeIcon(programme.type)}
-                          <span className="ml-1 capitalize">{programme.type}</span>
-                        </span>
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
+                          <span className="flex items-center">
+                            {getTypeIcon(programme.type)}
+                            <span className="ml-1 capitalize">{programme.type}</span>
+                          </span>
+                        </Badge>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleDeleteProgramme}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <CardDescription>{programme.description}</CardDescription>
                   </CardHeader>
@@ -475,12 +525,45 @@ const Programmes = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle>{programme.name}</CardTitle>
-                      <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                        <span className="flex items-center">
-                          {getTypeIcon(programme.type)}
-                          <span className="ml-1 capitalize">{programme.type}</span>
-                        </span>
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
+                          <span className="flex items-center">
+                            {getTypeIcon(programme.type)}
+                            <span className="ml-1 capitalize">{programme.type}</span>
+                          </span>
+                        </Badge>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleDeleteProgramme}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <CardDescription>{programme.description}</CardDescription>
                   </CardHeader>
@@ -531,12 +614,45 @@ const Programmes = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle>{programme.name}</CardTitle>
-                      <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                        <span className="flex items-center">
-                          {getTypeIcon(programme.type)}
-                          <span className="ml-1 capitalize">{programme.type}</span>
-                        </span>
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
+                          <span className="flex items-center">
+                            {getTypeIcon(programme.type)}
+                            <span className="ml-1 capitalize">{programme.type}</span>
+                          </span>
+                        </Badge>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleDeleteProgramme}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <CardDescription>{programme.description}</CardDescription>
                   </CardHeader>
@@ -582,7 +698,6 @@ const Programmes = () => {
         </Tabs>
       </div>
 
-      {/* Add Programme Dialog */}
       <Dialog open={isProgrammeDialogOpen} onOpenChange={setIsProgrammeDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -762,7 +877,6 @@ const Programmes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Record Attendance Dialog */}
       <Dialog open={isAttendanceDialogOpen} onOpenChange={setIsAttendanceDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>

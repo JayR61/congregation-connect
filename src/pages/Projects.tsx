@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
   Card, 
@@ -48,7 +48,8 @@ import {
   isThisYear,
   isBefore,
   isPast,
-  differenceInCalendarDays
+  differenceInCalendarDays,
+  addDays,
 } from "date-fns";
 import { 
   AlertCircle,
@@ -63,7 +64,9 @@ import {
   Search,
   Plus,
   X,
-  Trash2
+  Trash2,
+  FileCheck,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
@@ -96,6 +99,9 @@ interface Project {
   updates: ProjectUpdate[];
   completionPercentage: number;
   timeline: 'past' | 'current' | 'future';
+  evidence?: ProjectEvidence[];
+  lastUpdateDate?: Date;
+  verified: boolean;
 }
 
 interface TeamMember {
@@ -112,6 +118,17 @@ interface ProjectUpdate {
   description: string;
   author: string;
   completionPercentage?: number;
+}
+
+interface ProjectEvidence {
+  id: string;
+  projectId: string;
+  date: Date;
+  title: string;
+  description: string;
+  fileUrl?: string;
+  fileType?: string;
+  verified: boolean;
 }
 
 interface ProjectFormValues {
@@ -134,98 +151,129 @@ interface UpdateFormValues {
   completionPercentage: number;
 }
 
-interface ProjectCardProps {
-  project: Project;
-  onAddUpdate: () => void;
-  onViewDetails: () => void;
-  onDelete: () => void;
-  formatCurrency: (amount: number) => string;
-  getStatusIcon: (status: string) => React.ReactNode;
-  getStatusBadgeColor: (status: string) => string;
+interface EvidenceFormValues {
+  title: string;
+  description: string;
+  date: Date;
+  fileUrl?: string;
 }
 
+const DEFAULT_CATEGORIES = ['building', 'outreach', 'missions', 'education', 'other'];
+
+// Project Card component
 const ProjectCard = ({ 
   project, 
   onAddUpdate, 
   onViewDetails, 
   onDelete,
-  formatCurrency,
-  getStatusIcon,
-  getStatusBadgeColor 
-}: ProjectCardProps) => {
+  onAddEvidence,
+  formatCurrency, 
+  getStatusIcon, 
+  getStatusBadgeColor,
+  getCategoryBadgeColor
+}) => {
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-xl mr-2">{project.name}</CardTitle>
-          <Badge className={cn("text-xs", getStatusBadgeColor(project.status))}>
-            <span className="flex items-center">
-              {getStatusIcon(project.status)}
-              <span className="ml-1 capitalize">{project.status}</span>
-            </span>
-          </Badge>
+          <CardTitle>{project.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge className={cn("ml-2", getStatusBadgeColor(project.status))}>
+              <span className="flex items-center">
+                {getStatusIcon(project.status)}
+                <span className="ml-1 capitalize">{project.status.replace('-', ' ')}</span>
+              </span>
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <CardDescription className="mt-2 line-clamp-2">
-          {project.description}
-        </CardDescription>
+        <CardDescription>{project.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-          <div>
-            <div className="text-muted-foreground">Start Date</div>
-            <div>{format(project.startDate, 'MMM d, yyyy')}</div>
+      <CardContent className="pb-2">
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">Start Date:</span>
+            <span className="text-sm">{format(project.startDate, 'PPP')}</span>
           </div>
-          <div>
-            <div className="text-muted-foreground">End Date</div>
-            <div>{project.endDate ? format(project.endDate, 'MMM d, yyyy') : 'Not set'}</div>
+          {project.endDate && (
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">End Date:</span>
+              <span className="text-sm">{format(project.endDate, 'PPP')}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">Budget:</span>
+            <span className="text-sm">{formatCurrency(project.budget)}</span>
           </div>
-          <div>
-            <div className="text-muted-foreground">Budget</div>
-            <div>{formatCurrency(project.budget)}</div>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">Spent:</span>
+            <span className="text-sm">{formatCurrency(project.spent)}</span>
           </div>
-          <div>
-            <div className="text-muted-foreground">Spent</div>
-            <div>{formatCurrency(project.spent)}</div>
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Progress:</span>
+              <span className="text-sm">{project.completionPercentage}%</span>
+            </div>
+            <Progress value={project.completionPercentage} />
           </div>
-        </div>
-        <div className="mb-2">
-          <div className="text-muted-foreground text-sm mb-1">Progress</div>
-          <Progress value={project.completionPercentage} className="h-2" />
-          <div className="text-xs text-right mt-1">{project.completionPercentage}%</div>
-        </div>
-        {project.teamMembers.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-4">
-            {project.teamMembers.slice(0, 3).map((member) => (
-              <Avatar key={member.id} className="h-7 w-7">
-                <AvatarFallback className="text-xs">{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-              </Avatar>
-            ))}
-            {project.teamMembers.length > 3 && (
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="text-xs">+{project.teamMembers.length - 3}</AvatarFallback>
-              </Avatar>
+          <div className="flex justify-between items-center">
+            <Badge className={cn("mt-1", getCategoryBadgeColor(project.category))}>
+              {project.category}
+            </Badge>
+            {project.verified ? (
+              <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                <FileCheck className="h-3 w-3" />
+                Verified
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-amber-600 flex items-center gap-1 border-amber-300">
+                <AlertTriangle className="h-3 w-3" />
+                Unverified
+              </Badge>
             )}
           </div>
-        )}
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-between border-t pt-4">
-        <Button variant="outline" size="sm" onClick={onAddUpdate}>
+      <CardFooter className="pt-2 flex gap-2">
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex-1"
+          onClick={onAddUpdate}
+        >
           Add Update
         </Button>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={onViewDetails}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex-1"
+          onClick={onAddEvidence}
+        >
+          Add Evidence
+        </Button>
+        <Button 
+          variant="default" 
+          size="sm"
+          className="flex-1"
+          onClick={onViewDetails}
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          Details
+        </Button>
       </CardFooter>
     </Card>
   );
 };
-
-const DEFAULT_CATEGORIES = ['building', 'outreach', 'missions', 'education', 'other'];
 
 const Projects = () => {
   const { members } = useAppContext();
@@ -235,6 +283,7 @@ const Projects = () => {
   const [timelineFilter, setTimelineFilter] = useState('all');
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isEvidenceDialogOpen, setIsEvidenceDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false);
@@ -244,210 +293,11 @@ const Projects = () => {
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [addingCustomMember, setAddingCustomMember] = useState(false);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
-  
-  // New state for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-
-  // Temporary state for projects
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 'proj-1',
-      name: 'Church Building Renovation',
-      description: 'Complete renovation of the main sanctuary, including new flooring, lighting, and sound system.',
-      status: 'in-progress',
-      startDate: new Date(2023, 0, 15),
-      endDate: new Date(2023, 11, 31),
-      budget: 500000,
-      spent: 250000,
-      category: 'building',
-      objectives: [
-        'Replace flooring throughout the building',
-        'Update sound and lighting systems',
-        'Renovate restrooms',
-        'Repaint interior and exterior'
-      ],
-      teamMembers: [
-        { id: 'member-1', name: 'John Smith', role: 'Project Manager' },
-        { id: 'member-3', name: 'Sarah Johnson', role: 'Coordinator' }
-      ],
-      updates: [
-        {
-          id: 'update-1-1',
-          projectId: 'proj-1',
-          date: new Date(2023, 2, 10),
-          description: 'Flooring has been completed in the main sanctuary.',
-          author: 'member-1',
-          completionPercentage: 25
-        },
-        {
-          id: 'update-1-2',
-          projectId: 'proj-1',
-          date: new Date(2023, 4, 15),
-          description: 'Sound system installation is 50% complete.',
-          author: 'member-3',
-          completionPercentage: 45
-        }
-      ],
-      completionPercentage: 45,
-      timeline: 'current'
-    },
-    {
-      id: 'proj-2',
-      name: 'Community Food Bank',
-      description: 'Annual project to collect and distribute food to needy families in our community.',
-      status: 'completed',
-      startDate: new Date(2023, 5, 1),
-      endDate: new Date(2023, 8, 30),
-      budget: 10000,
-      spent: 9500,
-      category: 'outreach',
-      objectives: [
-        'Collect 5000 pounds of non-perishable food',
-        'Serve 200 families',
-        'Recruit 30 volunteers'
-      ],
-      teamMembers: [
-        { id: 'member-2', name: 'Emily Taylor', role: 'Outreach Director' },
-        { id: 'member-4', name: 'Michael Brown', role: 'Volunteer Coordinator' }
-      ],
-      updates: [
-        {
-          id: 'update-2-1',
-          projectId: 'proj-2',
-          date: new Date(2023, 6, 15),
-          description: 'Collected 3000 pounds of food so far.',
-          author: 'member-2',
-          completionPercentage: 50
-        },
-        {
-          id: 'update-2-2',
-          projectId: 'proj-2',
-          date: new Date(2023, 7, 30),
-          description: 'Successfully distributed food to 175 families.',
-          author: 'member-4',
-          completionPercentage: 85
-        },
-        {
-          id: 'update-2-3',
-          projectId: 'proj-2',
-          date: new Date(2023, 8, 28),
-          description: 'Project completed successfully. Total of 5500 pounds collected and 210 families served.',
-          author: 'member-2',
-          completionPercentage: 100
-        }
-      ],
-      completionPercentage: 100,
-      timeline: 'past'
-    },
-    {
-      id: 'proj-3',
-      name: 'Youth Camp 2024',
-      description: 'Planning for next year\'s youth summer camp.',
-      status: 'planned',
-      startDate: new Date(2024, 5, 15),
-      endDate: new Date(2024, 5, 22),
-      budget: 25000,
-      spent: 0,
-      category: 'education',
-      objectives: [
-        'Secure location and accommodations',
-        'Develop curriculum and activities',
-        'Recruit at least 10 chaperones',
-        'Register at least 100 youth participants'
-      ],
-      teamMembers: [
-        { id: 'member-3', name: 'Sarah Johnson', role: 'Youth Pastor' }
-      ],
-      updates: [
-        {
-          id: 'update-3-1',
-          projectId: 'proj-3',
-          date: new Date(2023, 9, 5),
-          description: 'Initial planning meeting completed. Location options identified.',
-          author: 'member-3',
-          completionPercentage: 10
-        }
-      ],
-      completionPercentage: 10,
-      timeline: 'future'
-    },
-    {
-      id: 'proj-4',
-      name: 'Mission Trip to Ghana',
-      description: 'Two-week mission trip to build a school and provide medical services.',
-      status: 'on-hold',
-      startDate: new Date(2023, 8, 1),
-      endDate: new Date(2023, 8, 15),
-      budget: 75000,
-      spent: 15000,
-      category: 'missions',
-      objectives: [
-        'Raise R75,000 for project expenses',
-        'Recruit 20 volunteers with specific skills',
-        'Complete school building construction',
-        'Provide medical services to at least 500 people'
-      ],
-      teamMembers: [
-        { id: 'member-1', name: 'John Smith', role: 'Missions Director' },
-        { id: 'custom-1', name: 'Dr. Rebecca White', role: 'Medical Team Leader', isCustom: true }
-      ],
-      updates: [
-        {
-          id: 'update-4-1',
-          projectId: 'proj-4',
-          date: new Date(2023, 5, 10),
-          description: 'Trip planning initiated. Currently on hold due to travel restrictions.',
-          author: 'member-1',
-          completionPercentage: 20
-        }
-      ],
-      completionPercentage: 20,
-      timeline: 'current'
-    },
-    {
-      id: 'proj-5',
-      name: 'Digital Ministry Expansion',
-      description: 'Expanding our online presence with improved website, app, and social media strategy.',
-      status: 'in-progress',
-      startDate: new Date(2023, 3, 1),
-      endDate: new Date(2023, 11, 31),
-      budget: 30000,
-      spent: 12000,
-      category: 'digital',
-      objectives: [
-        'Redesign church website',
-        'Develop mobile app',
-        'Establish social media team',
-        'Create content creation strategy',
-        'Improve online giving platform'
-      ],
-      teamMembers: [
-        { id: 'member-2', name: 'Emily Taylor', role: 'Communications Director' },
-        { id: 'custom-2', name: 'James Wilson', role: 'Web Developer', isCustom: true }
-      ],
-      updates: [
-        {
-          id: 'update-5-1',
-          projectId: 'proj-5',
-          date: new Date(2023, 5, 15),
-          description: 'Website redesign complete. App development in progress.',
-          author: 'custom-2',
-          completionPercentage: 40
-        },
-        {
-          id: 'update-5-2',
-          projectId: 'proj-5',
-          date: new Date(2023, 7, 1),
-          description: 'Social media team established with 5 volunteers.',
-          author: 'member-2',
-          completionPercentage: 60
-        }
-      ],
-      completionPercentage: 60,
-      timeline: 'current'
-    }
-  ]);
+  
+  // Empty initial state for projects
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Project form handling
   const projectForm = useForm<ProjectFormValues>({
@@ -474,6 +324,56 @@ const Projects = () => {
       completionPercentage: 0
     }
   });
+  
+  // Evidence form handling
+  const evidenceForm = useForm<EvidenceFormValues>({
+    defaultValues: {
+      title: '',
+      description: '',
+      date: new Date(),
+      fileUrl: ''
+    }
+  });
+
+  // Check for projects that should be moved to past projects
+  useEffect(() => {
+    const checkForStaleProjects = () => {
+      const now = new Date();
+      const updatedProjects = projects.map(project => {
+        // If project has an end date and it has passed more than 30 days ago
+        // and there are no recent updates
+        if (
+          project.endDate && 
+          differenceInCalendarDays(now, project.endDate) > 30 &&
+          project.timeline !== 'past'
+        ) {
+          // Check if there have been any updates in the last 30 days
+          const lastUpdate = project.updates.reduce((latest, update) => {
+            return latest && latest > update.date ? latest : update.date;
+          }, project.lastUpdateDate || null);
+          
+          // If no updates in 30 days or no updates at all
+          if (!lastUpdate || differenceInCalendarDays(now, lastUpdate) > 30) {
+            return { ...project, timeline: 'past' };
+          }
+        }
+        return project;
+      });
+      
+      // Update projects if any changes
+      if (JSON.stringify(updatedProjects) !== JSON.stringify(projects)) {
+        setProjects(updatedProjects);
+        toast.info("Some projects have been moved to Past Projects due to inactivity");
+      }
+    };
+    
+    // Run check when projects change
+    checkForStaleProjects();
+    
+    // Set up daily check
+    const interval = setInterval(checkForStaleProjects, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [projects]);
 
   // Filter projects based on search query, status filter, and timeline filter
   const filteredProjects = projects.filter(project => {
@@ -492,7 +392,8 @@ const Projects = () => {
     const matchesTab = 
       activeTab === 'all' || 
       (activeTab === 'current-year' && isThisYear(project.startDate)) ||
-      (activeTab === 'future' && isFuture(project.startDate));
+      (activeTab === 'future' && isFuture(project.startDate)) ||
+      (activeTab === 'past' && project.timeline === 'past');
     
     return matchesSearch && matchesStatus && matchesTimeline && matchesTab;
   });
@@ -579,7 +480,10 @@ const Projects = () => {
       teamMembers: data.teamMembers || [],
       updates: [],
       completionPercentage: 0,
-      timeline: data.timeline
+      timeline: data.timeline,
+      evidence: [],
+      lastUpdateDate: new Date(),
+      verified: false
     };
 
     setProjects(prev => [...prev, newProject]);
@@ -605,7 +509,8 @@ const Projects = () => {
         return {
           ...project,
           updates: [...project.updates, newUpdate],
-          completionPercentage: data.completionPercentage
+          completionPercentage: data.completionPercentage,
+          lastUpdateDate: new Date()
         };
       }
       return project;
@@ -614,6 +519,39 @@ const Projects = () => {
     setIsUpdateDialogOpen(false);
     updateForm.reset();
     toast.success('Project update added successfully');
+  };
+  
+  const handleAddEvidence = (data: EvidenceFormValues) => {
+    if (!selectedProjectId) return;
+    
+    const newEvidence: ProjectEvidence = {
+      id: `evidence-${selectedProjectId}-${Date.now()}`,
+      projectId: selectedProjectId,
+      date: data.date,
+      title: data.title,
+      description: data.description,
+      fileUrl: data.fileUrl,
+      fileType: data.fileUrl ? data.fileUrl.split('.').pop() : undefined,
+      verified: false
+    };
+    
+    setProjects(prev => prev.map(project => {
+      if (project.id === selectedProjectId) {
+        const updatedEvidence = [...(project.evidence || []), newEvidence];
+        // If there's at least one piece of evidence, mark as verified
+        return {
+          ...project,
+          evidence: updatedEvidence,
+          verified: updatedEvidence.length > 0,
+          lastUpdateDate: new Date()
+        };
+      }
+      return project;
+    }));
+    
+    setIsEvidenceDialogOpen(false);
+    evidenceForm.reset();
+    toast.success('Project evidence added successfully');
   };
 
   // Delete project handler
@@ -633,6 +571,11 @@ const Projects = () => {
       updateForm.setValue('completionPercentage', project.completionPercentage);
       setIsUpdateDialogOpen(true);
     }
+  };
+  
+  const openEvidenceDialog = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setIsEvidenceDialogOpen(true);
   };
 
   // Function to open delete confirmation dialog
@@ -730,7 +673,6 @@ const Projects = () => {
         </Button>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
@@ -772,7 +714,6 @@ const Projects = () => {
         </Card>
       </div>
 
-      {/* Projects tabs and filters */}
       <div className="flex flex-col space-y-4">
         <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
@@ -780,6 +721,7 @@ const Projects = () => {
               <TabsTrigger value="all">All Projects</TabsTrigger>
               <TabsTrigger value="current-year">Current Year</TabsTrigger>
               <TabsTrigger value="future">Future Projects</TabsTrigger>
+              <TabsTrigger value="past">Past Projects</TabsTrigger>
             </TabsList>
             <div className="flex flex-col md:flex-row gap-2">
               <Input
@@ -814,7 +756,6 @@ const Projects = () => {
             </div>
           </div>
 
-          {/* Tab content */}
           <TabsContent value="all" className="mt-0">
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -823,11 +764,13 @@ const Projects = () => {
                     key={project.id}
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
+                    onAddEvidence={() => openEvidenceDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
                     onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
+                    getCategoryBadgeColor={getCategoryBadgeColor}
                   />
                 ))}
               </div>
@@ -845,6 +788,7 @@ const Projects = () => {
           </TabsContent>
 
           <TabsContent value="current-year" className="mt-0">
+            {/* ... same content structure as all tab but with different filtered projects */}
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProjects.map((project) => (
@@ -852,11 +796,13 @@ const Projects = () => {
                     key={project.id}
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
+                    onAddEvidence={() => openEvidenceDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
                     onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
+                    getCategoryBadgeColor={getCategoryBadgeColor}
                   />
                 ))}
               </div>
@@ -874,6 +820,7 @@ const Projects = () => {
           </TabsContent>
 
           <TabsContent value="future" className="mt-0">
+            {/* ... same content structure as all tab but with different filtered projects */}
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProjects.map((project) => (
@@ -881,11 +828,13 @@ const Projects = () => {
                     key={project.id}
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
+                    onAddEvidence={() => openEvidenceDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
                     onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
+                    getCategoryBadgeColor={getCategoryBadgeColor}
                   />
                 ))}
               </div>
@@ -901,12 +850,43 @@ const Projects = () => {
               </div>
             )}
           </TabsContent>
+          
+          <TabsContent value="past" className="mt-0">
+            {filteredProjects.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProjects.map((project) => (
+                  <ProjectCard 
+                    key={project.id}
+                    project={project}
+                    onAddUpdate={() => openUpdateDialog(project.id)}
+                    onAddEvidence={() => openEvidenceDialog(project.id)}
+                    onViewDetails={() => openViewDetails(project)}
+                    onDelete={() => openDeleteDialog(project.id)}
+                    formatCurrency={formatCurrency}
+                    getStatusIcon={getStatusIcon}
+                    getStatusBadgeColor={getStatusBadgeColor}
+                    getCategoryBadgeColor={getCategoryBadgeColor}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No past projects found</h3>
+                <p className="text-muted-foreground mt-1">Projects are automatically moved here when they've been inactive for 30+ days after their end date.</p>
+                <Button className="mt-4" onClick={() => setIsProjectDialogOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add New Project
+                </Button>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
       {/* Add Project Dialog */}
       <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add New Project</DialogTitle>
             <DialogDescription>
@@ -914,7 +894,7 @@ const Projects = () => {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={projectForm.handleSubmit(handleCreateProject)}>
-            <ScrollArea className="pr-4 max-h-[60vh]">
+            <div className="h-[calc(60vh-100px)] overflow-auto pr-4">
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="col-span-2">
@@ -971,66 +951,63 @@ const Projects = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !projectForm.getValues("startDate") && "text-muted-foreground"
-                          )}
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
                           {projectForm.getValues("startDate") ? (
                             format(projectForm.getValues("startDate"), "PPP")
                           ) : (
                             <span>Pick a date</span>
                           )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
                         <Calendar
                           mode="single"
                           selected={projectForm.getValues("startDate")}
-                          onSelect={(date) => date && projectForm.setValue("startDate", date)}
+                          onSelect={(date) => projectForm.setValue("startDate", date as Date)}
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
                   <div className="col-span-1">
-                    <FormLabel htmlFor="endDate">End Date</FormLabel>
+                    <FormLabel htmlFor="endDate">End Date (Optional)</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !projectForm.getValues("endDate") && "text-muted-foreground"
-                          )}
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
                           {projectForm.getValues("endDate") ? (
                             format(projectForm.getValues("endDate"), "PPP")
                           ) : (
                             <span>Pick a date</span>
                           )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
                         <Calendar
                           mode="single"
                           selected={projectForm.getValues("endDate")}
-                          onSelect={(date) => date && projectForm.setValue("endDate", date)}
-                          disabled={(date) => isBefore(date, projectForm.getValues("startDate"))}
+                          onSelect={(date) => projectForm.setValue("endDate", date || undefined)}
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
                   <div className="col-span-1">
-                    <FormLabel htmlFor="budget">Budget</FormLabel>
+                    <FormLabel htmlFor="budget">Budget (ZAR)</FormLabel>
                     <Input
                       id="budget"
                       type="number"
-                      {...projectForm.register("budget", { required: true, min: 0 })}
+                      {...projectForm.register("budget", { 
+                        required: true, 
+                        valueAsNumber: true,
+                        min: 0
+                      })}
                       placeholder="Enter budget amount"
                     />
                   </div>
@@ -1044,214 +1021,219 @@ const Projects = () => {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DEFAULT_CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
-                          </SelectItem>
+                        {DEFAULT_CATEGORIES.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
                         ))}
-                        {customCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
-                          </SelectItem>
+                        {customCategories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
                         ))}
-                        <SelectItem value="custom">Add Custom Category</SelectItem>
+                        <SelectItem value="custom">Custom Category</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  {projectForm.getValues("category") === "custom" && (
-                    <div className="col-span-2">
+                  {projectForm.getValues("category") === 'custom' && (
+                    <div className="col-span-1">
                       <FormLabel htmlFor="customCategory">Custom Category Name</FormLabel>
                       <Input
                         id="customCategory"
                         {...projectForm.register("customCategory")}
-                        placeholder="Enter custom category name"
+                        placeholder="Enter custom category"
                       />
                     </div>
                   )}
                   <div className="col-span-2">
-                    <FormLabel htmlFor="objectives">Objectives</FormLabel>
+                    <FormLabel htmlFor="objectives">
+                      Objectives (One per line)
+                    </FormLabel>
                     <Textarea
                       id="objectives"
                       {...projectForm.register("objectives")}
-                      placeholder="Enter project objectives (one per line)"
-                      className="min-h-[100px]"
+                      placeholder="Enter objectives, one per line"
+                      rows={4}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter one objective per line. Each line will be a separate objective.
-                    </p>
                   </div>
                   <div className="col-span-2">
-                    <FormLabel>Team Members</FormLabel>
-                    <div className="mb-2 flex flex-wrap gap-2">
-                      {projectForm.getValues("teamMembers").map((member) => (
-                        <Badge
-                          key={member.id}
-                          variant="secondary"
-                          className="flex items-center gap-1 p-1 pl-2"
-                        >
-                          <span>
-                            {member.name}
-                            {member.role && ` (${member.role})`}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 hover:bg-transparent"
-                            onClick={() => handleRemoveTeamMember(member.id)}
-                          >
-                            <X className="h-3 w-3" />
-                            <span className="sr-only">Remove</span>
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                    {addingCustomMember ? (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            placeholder="Name"
-                            value={customMemberName}
-                            onChange={(e) => setCustomMemberName(e.target.value)}
-                          />
-                          <Input
-                            placeholder="Role (optional)"
-                            value={customMemberRole}
-                            onChange={(e) => setCustomMemberRole(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleAddCustomMember}
-                            disabled={!customMemberName.trim()}
-                          >
-                            Add
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setAddingCustomMember(false);
-                              setCustomMemberName('');
-                              setCustomMemberRole('');
-                            }}
-                          >
+                    <div className="flex justify-between items-center mb-2">
+                      <FormLabel>Team Members</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAddingCustomMember(!addingCustomMember)}
+                      >
+                        {addingCustomMember ? (
+                          <>
+                            <X className="h-4 w-4 mr-1" />
                             Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <Input
-                          placeholder="Search members..."
-                          value={memberSearchQuery}
-                          onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        />
-                        {memberSearchQuery && filteredMembers.length > 0 && (
-                          <ScrollArea className="h-40 border rounded-md p-2">
-                            {filteredMembers.map((member) => (
-                              <Button
-                                key={member.id}
-                                type="button"
-                                variant="ghost"
-                                className="w-full justify-start"
-                                onClick={() => handleAddExistingMember(member)}
-                              >
-                                <div className="flex items-center">
-                                  <Avatar className="h-6 w-6 mr-2">
-                                    <AvatarFallback className="text-xs">
-                                      {member.firstName[0]}{member.lastName[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{member.firstName} {member.lastName}</span>
-                                </div>
-                              </Button>
-                            ))}
-                          </ScrollArea>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Custom Member
+                          </>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => setAddingCustomMember(true)}
+                      </Button>
+                    </div>
+                    
+                    {/* Add custom member form */}
+                    {addingCustomMember && (
+                      <div className="flex flex-col space-y-2 mb-4 p-3 border rounded-md">
+                        <FormLabel htmlFor="customMemberName">Name</FormLabel>
+                        <Input
+                          id="customMemberName"
+                          value={customMemberName}
+                          onChange={(e) => setCustomMemberName(e.target.value)}
+                          placeholder="Enter member name"
+                        />
+                        <FormLabel htmlFor="customMemberRole">Role (Optional)</FormLabel>
+                        <Input
+                          id="customMemberRole"
+                          value={customMemberRole}
+                          onChange={(e) => setCustomMemberRole(e.target.value)}
+                          placeholder="Enter member role"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={handleAddCustomMember}
+                          disabled={!customMemberName.trim()}
                         >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Custom Member
+                          Add to Team
                         </Button>
                       </div>
                     )}
+                    
+                    {/* Search existing members */}
+                    <div className="mb-4">
+                      <FormLabel htmlFor="memberSearch">Search Church Members</FormLabel>
+                      <div className="relative">
+                        <Input
+                          id="memberSearch"
+                          value={memberSearchQuery}
+                          onChange={(e) => setMemberSearchQuery(e.target.value)}
+                          placeholder="Search members..."
+                          className="pr-8"
+                        />
+                        <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      </div>
+                      
+                      {memberSearchQuery && filteredMembers.length > 0 && (
+                        <div className="mt-1 border rounded-md max-h-40 overflow-y-auto">
+                          {filteredMembers.map(member => (
+                            <div 
+                              key={member.id}
+                              className="p-2 hover:bg-slate-100 cursor-pointer flex items-center"
+                              onClick={() => handleAddExistingMember(member)}
+                            >
+                              <Avatar className="h-6 w-6 mr-2">
+                                {member.profileImage ? (
+                                  <AvatarImage src={member.profileImage} alt={`${member.firstName} ${member.lastName}`} />
+                                ) : (
+                                  <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
+                                )}
+                              </Avatar>
+                              <span>{member.firstName} {member.lastName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Display selected team members */}
+                    <div className="space-y-2">
+                      {projectForm.getValues("teamMembers")?.length > 0 ? (
+                        <div className="space-y-1">
+                          {projectForm.getValues("teamMembers").map(member => (
+                            <div key={member.id} className="flex items-center justify-between p-2 border rounded-md">
+                              <div className="flex items-center">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="text-sm font-medium">{member.name}</div>
+                                  {member.role && <div className="text-xs text-muted-foreground">{member.role}</div>}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveTeamMember(member.id)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center p-4 border border-dashed rounded-md text-muted-foreground">
+                          No team members added yet
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </ScrollArea>
+            </div>
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsProjectDialogOpen(false)}>Cancel</Button>
               <Button type="submit">Create Project</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Add Update Dialog */}
+      {/* Add Project Update Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add Project Update</DialogTitle>
             <DialogDescription>
-              Enter the details of the project update.
+              Record a progress update for this project.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={updateForm.handleSubmit(handleAddUpdate)}>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <FormLabel htmlFor="description">Update Description</FormLabel>
-                <Textarea
-                  id="description"
-                  {...updateForm.register("description", { required: true })}
-                  placeholder="Describe the project update"
-                />
-              </div>
-              <div className="grid gap-2">
+              <div>
                 <FormLabel htmlFor="date">Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !updateForm.getValues("date") && "text-muted-foreground"
-                      )}
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
                       {updateForm.getValues("date") ? (
                         format(updateForm.getValues("date"), "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
                     <Calendar
                       mode="single"
                       selected={updateForm.getValues("date")}
-                      onSelect={(date) => date && updateForm.setValue("date", date)}
+                      onSelect={(date) => updateForm.setValue("date", date as Date)}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="grid gap-2">
-                <div className="flex justify-between">
-                  <FormLabel htmlFor="completionPercentage">Completion Percentage</FormLabel>
-                  <span className="text-sm text-muted-foreground">{updateForm.getValues("completionPercentage")}%</span>
-                </div>
+              <div>
+                <FormLabel htmlFor="description">Update Description</FormLabel>
+                <Textarea
+                  id="description"
+                  {...updateForm.register("description", { required: true })}
+                  placeholder="Describe the progress or update"
+                  rows={4}
+                />
+              </div>
+              <div>
+                <FormLabel htmlFor="completionPercentage">
+                  Completion Percentage: {updateForm.getValues("completionPercentage")}%
+                </FormLabel>
                 <Input
                   id="completionPercentage"
                   type="range"
@@ -1259,19 +1241,90 @@ const Projects = () => {
                   max="100"
                   step="5"
                   {...updateForm.register("completionPercentage", { 
-                    required: true,
-                    valueAsNumber: true 
+                    required: true, 
+                    valueAsNumber: true,
                   })}
-                  className="cursor-pointer"
-                  onChange={(e) => updateForm.setValue("completionPercentage", parseInt(e.target.value))}
+                  className="w-full"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
               <Button type="submit">Add Update</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Project Evidence Dialog */}
+      <Dialog open={isEvidenceDialogOpen} onOpenChange={setIsEvidenceDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add Project Evidence</DialogTitle>
+            <DialogDescription>
+              Provide supporting evidence for this project to verify its authenticity.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={evidenceForm.handleSubmit(handleAddEvidence)}>
+            <div className="grid gap-4 py-4">
+              <div>
+                <FormLabel htmlFor="title">Evidence Title</FormLabel>
+                <Input
+                  id="title"
+                  {...evidenceForm.register("title", { required: true })}
+                  placeholder="Enter a descriptive title for this evidence"
+                />
+              </div>
+              <div>
+                <FormLabel htmlFor="date">Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      {evidenceForm.getValues("date") ? (
+                        format(evidenceForm.getValues("date"), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={evidenceForm.getValues("date")}
+                      onSelect={(date) => evidenceForm.setValue("date", date as Date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <FormLabel htmlFor="description">Description</FormLabel>
+                <Textarea
+                  id="description"
+                  {...evidenceForm.register("description", { required: true })}
+                  placeholder="Describe this evidence and how it verifies the project"
+                  rows={4}
+                />
+              </div>
+              <div>
+                <FormLabel htmlFor="fileUrl">Document/Image URL (Optional)</FormLabel>
+                <Input
+                  id="fileUrl"
+                  {...evidenceForm.register("fileUrl")}
+                  placeholder="Enter URL to supporting document or image"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  In a real application, you would upload files here. For now, you can paste a URL to an external resource.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEvidenceDialogOpen(false)}>Cancel</Button>
+              <Button type="submit">Add Evidence</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1279,16 +1332,16 @@ const Projects = () => {
 
       {/* View Project Details Dialog */}
       <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
           {selectedProject && (
             <>
               <DialogHeader>
-                <div className="flex justify-between items-center">
-                  <DialogTitle>{selectedProject.name}</DialogTitle>
-                  <Badge className={cn("text-xs", getStatusBadgeColor(selectedProject.status))}>
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-xl">{selectedProject.name}</DialogTitle>
+                  <Badge className={cn(getStatusBadgeColor(selectedProject.status))}>
                     <span className="flex items-center">
                       {getStatusIcon(selectedProject.status)}
-                      <span className="ml-1 capitalize">{selectedProject.status}</span>
+                      <span className="ml-1 capitalize">{selectedProject.status.replace('-', ' ')}</span>
                     </span>
                   </Badge>
                 </div>
@@ -1296,120 +1349,178 @@ const Projects = () => {
                   {selectedProject.description}
                 </DialogDescription>
               </DialogHeader>
-              <ScrollArea className="max-h-[60vh]">
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+              
+              <div className="h-[calc(70vh-100px)] overflow-y-auto pr-3">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-sm font-medium">Start Date</h4>
+                      <h4 className="text-sm font-medium mb-1">Start Date</h4>
                       <p>{format(selectedProject.startDate, 'PPP')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium">End Date</h4>
-                      <p>{selectedProject.endDate ? format(selectedProject.endDate, 'PPP') : 'Not set'}</p>
+                      <h4 className="text-sm font-medium mb-1">End Date</h4>
+                      <p>{selectedProject.endDate ? format(selectedProject.endDate, 'PPP') : 'Not specified'}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium">Budget</h4>
+                      <h4 className="text-sm font-medium mb-1">Budget</h4>
                       <p>{formatCurrency(selectedProject.budget)}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium">Spent</h4>
+                      <h4 className="text-sm font-medium mb-1">Spent</h4>
                       <p>{formatCurrency(selectedProject.spent)}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">Category</h4>
+                      <Badge className={cn(getCategoryBadgeColor(selectedProject.category))}>
+                        {selectedProject.category}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">Timeline</h4>
+                      <Badge className={cn(getTimelineBadgeColor(selectedProject.timeline))}>
+                        {selectedProject.timeline}
+                      </Badge>
                     </div>
                     <div className="col-span-2">
                       <h4 className="text-sm font-medium mb-1">Progress</h4>
-                      <div className="flex items-center gap-2">
-                        <Progress value={selectedProject.completionPercentage} className="flex-1 h-2" />
-                        <span className="text-sm font-medium">{selectedProject.completionPercentage}%</span>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span>Current: {selectedProject.completionPercentage}%</span>
+                          <span>Goal: 100%</span>
+                        </div>
+                        <Progress value={selectedProject.completionPercentage} />
                       </div>
                     </div>
                   </div>
 
+                  {/* Objectives */}
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Category</h4>
-                    <Badge className={cn("text-xs", getCategoryBadgeColor(selectedProject.category))}>
-                      {selectedProject.category.charAt(0).toUpperCase() + selectedProject.category.slice(1)}
-                    </Badge>
+                    <h3 className="text-lg font-medium mb-2">Objectives</h3>
+                    {selectedProject.objectives.length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1">
+                        {selectedProject.objectives.map((objective, idx) => (
+                          <li key={idx}>{objective}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground">No objectives defined for this project.</p>
+                    )}
                   </div>
 
+                  {/* Team Members */}
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Timeline</h4>
-                    <Badge className={cn("text-xs", getTimelineBadgeColor(selectedProject.timeline))}>
-                      {selectedProject.timeline.charAt(0).toUpperCase() + selectedProject.timeline.slice(1)}
-                    </Badge>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Objectives</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selectedProject.objectives.map((objective, index) => (
-                        <li key={index} className="text-sm">{objective}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Team Members</h4>
+                    <h3 className="text-lg font-medium mb-2">Team Members</h3>
                     {selectedProject.teamMembers.length > 0 ? (
                       <div className="space-y-2">
-                        {selectedProject.teamMembers.map((member) => (
-                          <div key={member.id} className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback>
-                                {member.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
+                        {selectedProject.teamMembers.map(member => (
+                          <div key={member.id} className="flex items-center border p-2 rounded-md">
+                            <Avatar className="h-8 w-8 mr-2">
+                              <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="text-sm font-medium">{member.name}</p>
-                              {member.role && <p className="text-xs text-muted-foreground">{member.role}</p>}
+                              <div className="font-medium">{member.name}</div>
+                              {member.role && <div className="text-sm text-muted-foreground">{member.role}</div>}
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No team members assigned</p>
+                      <p className="text-muted-foreground">No team members assigned to this project.</p>
                     )}
                   </div>
-
+                  
+                  {/* Evidence */}
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Updates</h4>
-                    {selectedProject.updates.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedProject.updates.map((update) => (
-                          <Card key={update.id} className="relative">
-                            <CardHeader className="pb-2">
-                              <div className="flex justify-between items-center">
-                                <CardTitle className="text-base">
-                                  {update.completionPercentage && (
-                                    <span className="text-sm font-normal text-muted-foreground">
-                                      Updated to {update.completionPercentage}% completion
-                                    </span>
-                                  )}
-                                </CardTitle>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(update.date, 'MMM d, yyyy')}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm">{update.description}</p>
-                            </CardContent>
-                          </Card>
+                    <h3 className="text-lg font-medium mb-2">Supporting Evidence</h3>
+                    {selectedProject.evidence && selectedProject.evidence.length > 0 ? (
+                      <div className="space-y-3">
+                        {selectedProject.evidence.map(evidence => (
+                          <div key={evidence.id} className="border rounded-md p-3">
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-medium">{evidence.title}</h4>
+                              <Badge 
+                                variant={evidence.verified ? "default" : "outline"}
+                                className={evidence.verified ? "bg-green-100 text-green-800 flex items-center gap-1" : "text-amber-600 flex items-center gap-1 border-amber-300"}
+                              >
+                                {evidence.verified ? 
+                                  <><FileCheck className="h-3 w-3" /> Verified</> : 
+                                  <><AlertTriangle className="h-3 w-3" /> Pending Verification</>
+                                }
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">Date: {format(evidence.date, 'PPP')}</p>
+                            <p className="mt-1">{evidence.description}</p>
+                            {evidence.fileUrl && (
+                              <a 
+                                href={evidence.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block mt-2 text-sm text-blue-600 hover:underline"
+                              >
+                                View Document/Image
+                              </a>
+                            )}
+                          </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No updates yet</p>
+                      <div className="text-center p-4 border border-dashed rounded-md">
+                        <p className="text-muted-foreground">No supporting evidence has been added yet.</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={() => {
+                            setSelectedProjectId(selectedProject.id);
+                            setIsViewDetailsOpen(false);
+                            setIsEvidenceDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Evidence
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Updates */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Project Updates</h3>
+                    {selectedProject.updates.length > 0 ? (
+                      <div className="space-y-4">
+                        {selectedProject.updates
+                          .sort((a, b) => b.date.getTime() - a.date.getTime())
+                          .map(update => (
+                            <div key={update.id} className="border-l-4 border-blue-500 pl-3 py-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">{format(update.date, 'PPP')}</p>
+                                  <p className="mt-1">{update.description}</p>
+                                </div>
+                                {update.completionPercentage !== undefined && (
+                                  <Badge variant="outline" className="ml-2">
+                                    {update.completionPercentage}% complete
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No updates recorded for this project yet.</p>
                     )}
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsViewDetailsOpen(false)}>
-                  Close
-                </Button>
-                <Button onClick={() => {
-                  setIsViewDetailsOpen(false);
-                  openUpdateDialog(selectedProject.id);
-                }}>
+                <Button variant="outline" onClick={() => setIsViewDetailsOpen(false)}>Close</Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedProjectId(selectedProject.id);
+                    setIsViewDetailsOpen(false);
+                    setIsUpdateDialogOpen(true);
+                  }}
+                >
                   Add Update
                 </Button>
               </DialogFooter>
@@ -1424,12 +1535,17 @@ const Projects = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the project and all its associated data.
+              This will permanently delete this project and all associated records. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteProject}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

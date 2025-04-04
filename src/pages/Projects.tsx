@@ -84,6 +84,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Make sure the timeline property is properly typed as a union
 interface Project {
   id: string;
   name: string;
@@ -354,7 +355,8 @@ const Projects = () => {
           
           // If no updates in 30 days or no updates at all
           if (!lastUpdate || differenceInCalendarDays(now, lastUpdate) > 30) {
-            return { ...project, timeline: 'past' };
+            // Make sure to use the literal 'past' instead of a string variable
+            return { ...project, timeline: 'past' as 'past' };
           }
         }
         return project;
@@ -1126,11 +1128,8 @@ const Projects = () => {
                               onClick={() => handleAddExistingMember(member)}
                             >
                               <Avatar className="h-6 w-6 mr-2">
-                                {member.profileImage ? (
-                                  <AvatarImage src={member.profileImage} alt={`${member.firstName} ${member.lastName}`} />
-                                ) : (
-                                  <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
-                                )}
+                                {/* Fix: Handle the absence of profileImage */}
+                                <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
                               </Avatar>
                               <span>{member.firstName} {member.lastName}</span>
                             </div>

@@ -1,11 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
   Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
+  CardContent,
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
@@ -32,12 +29,7 @@ import {
   Progress
 } from "@/components/ui/progress";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  FormLabel
 } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -46,16 +38,11 @@ import {
   format, 
   isFuture, 
   isThisYear,
-  isBefore,
-  isPast,
   differenceInCalendarDays,
-  addDays,
 } from "date-fns";
 import { 
   AlertCircle,
   CalendarIcon, 
-  ChevronRight,
-  Eye,
   PlusCircle, 
   Circle,
   CheckCircle2,
@@ -72,7 +59,7 @@ import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
 import { useForm } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +70,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ProjectCard from "@/components/projects/ProjectCard";
+import EvidenceDialog from "@/components/projects/EvidenceDialog";
 
 // Make sure the timeline property is properly typed as a union
 interface Project {
@@ -156,125 +145,10 @@ interface EvidenceFormValues {
   title: string;
   description: string;
   date: Date;
-  fileUrl?: string;
+  file?: File;
 }
 
 const DEFAULT_CATEGORIES = ['building', 'outreach', 'missions', 'education', 'other'];
-
-// Project Card component
-const ProjectCard = ({ 
-  project, 
-  onAddUpdate, 
-  onViewDetails, 
-  onDelete,
-  onAddEvidence,
-  formatCurrency, 
-  getStatusIcon, 
-  getStatusBadgeColor,
-  getCategoryBadgeColor
-}) => {
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle>{project.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge className={cn("ml-2", getStatusBadgeColor(project.status))}>
-              <span className="flex items-center">
-                {getStatusIcon(project.status)}
-                <span className="ml-1 capitalize">{project.status.replace('-', ' ')}</span>
-              </span>
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <CardDescription>{project.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Start Date:</span>
-            <span className="text-sm">{format(project.startDate, 'PPP')}</span>
-          </div>
-          {project.endDate && (
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">End Date:</span>
-              <span className="text-sm">{format(project.endDate, 'PPP')}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Budget:</span>
-            <span className="text-sm">{formatCurrency(project.budget)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Spent:</span>
-            <span className="text-sm">{formatCurrency(project.spent)}</span>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">Progress:</span>
-              <span className="text-sm">{project.completionPercentage}%</span>
-            </div>
-            <Progress value={project.completionPercentage} />
-          </div>
-          <div className="flex justify-between items-center">
-            <Badge className={cn("mt-1", getCategoryBadgeColor(project.category))}>
-              {project.category}
-            </Badge>
-            {project.verified ? (
-              <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-                <FileCheck className="h-3 w-3" />
-                Verified
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-amber-600 flex items-center gap-1 border-amber-300">
-                <AlertTriangle className="h-3 w-3" />
-                Unverified
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="pt-2 flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="flex-1"
-          onClick={onAddUpdate}
-        >
-          Add Update
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="flex-1"
-          onClick={onAddEvidence}
-        >
-          Add Evidence
-        </Button>
-        <Button 
-          variant="default" 
-          size="sm"
-          className="flex-1"
-          onClick={onViewDetails}
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          Details
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
 
 const Projects = () => {
   const { members } = useAppContext();
@@ -323,16 +197,6 @@ const Projects = () => {
       description: '',
       date: new Date(),
       completionPercentage: 0
-    }
-  });
-  
-  // Evidence form handling
-  const evidenceForm = useForm<EvidenceFormValues>({
-    defaultValues: {
-      title: '',
-      description: '',
-      date: new Date(),
-      fileUrl: ''
     }
   });
 
@@ -532,8 +396,8 @@ const Projects = () => {
       date: data.date,
       title: data.title,
       description: data.description,
-      fileUrl: data.fileUrl,
-      fileType: data.fileUrl ? data.fileUrl.split('.').pop() : undefined,
+      fileUrl: data.file ? URL.createObjectURL(data.file) : undefined,
+      fileType: data.file ? data.file.type.split('/')[0] : undefined,
       verified: false
     };
     
@@ -552,7 +416,6 @@ const Projects = () => {
     }));
     
     setIsEvidenceDialogOpen(false);
-    evidenceForm.reset();
     toast.success('Project evidence added successfully');
   };
 
@@ -564,31 +427,6 @@ const Projects = () => {
       setProjectToDelete(null);
       toast.success('Project deleted successfully');
     }
-  };
-
-  const openUpdateDialog = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setSelectedProjectId(projectId);
-      updateForm.setValue('completionPercentage', project.completionPercentage);
-      setIsUpdateDialogOpen(true);
-    }
-  };
-  
-  const openEvidenceDialog = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setIsEvidenceDialogOpen(true);
-  };
-
-  // Function to open delete confirmation dialog
-  const openDeleteDialog = (projectId: string) => {
-    setProjectToDelete(projectId);
-    setDeleteDialogOpen(true);
-  };
-
-  const openViewDetails = (project: Project) => {
-    setSelectedProject(project);
-    setIsViewDetailsOpen(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -662,8 +500,34 @@ const Projects = () => {
     }
   };
 
+  // Functions to handle dialogs
+  const openUpdateDialog = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProjectId(projectId);
+      updateForm.setValue('completionPercentage', project.completionPercentage);
+      setIsUpdateDialogOpen(true);
+    }
+  };
+  
+  const openEvidenceDialog = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setIsEvidenceDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (projectId: string) => {
+    setProjectToDelete(projectId);
+    setDeleteDialogOpen(true);
+  };
+  
+  const openViewDetails = (project: Project) => {
+    setSelectedProject(project);
+    setIsViewDetailsOpen(true);
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 max-w-full lg:max-w-7xl">
+      {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Church Projects</h1>
@@ -675,6 +539,7 @@ const Projects = () => {
         </Button>
       </div>
 
+      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
@@ -758,6 +623,7 @@ const Projects = () => {
             </div>
           </div>
 
+          {/* Tab content */}
           <TabsContent value="all" className="mt-0">
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -790,7 +656,6 @@ const Projects = () => {
           </TabsContent>
 
           <TabsContent value="current-year" className="mt-0">
-            {/* ... same content structure as all tab but with different filtered projects */}
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProjects.map((project) => (
@@ -822,7 +687,6 @@ const Projects = () => {
           </TabsContent>
 
           <TabsContent value="future" className="mt-0">
-            {/* ... same content structure as all tab but with different filtered projects */}
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProjects.map((project) => (
@@ -1128,7 +992,6 @@ const Projects = () => {
                               onClick={() => handleAddExistingMember(member)}
                             >
                               <Avatar className="h-6 w-6 mr-2">
-                                {/* Fix: Handle the absence of profileImage */}
                                 <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
                               </Avatar>
                               <span>{member.firstName} {member.lastName}</span>
@@ -1255,79 +1118,12 @@ const Projects = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add Project Evidence Dialog */}
-      <Dialog open={isEvidenceDialogOpen} onOpenChange={setIsEvidenceDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add Project Evidence</DialogTitle>
-            <DialogDescription>
-              Provide supporting evidence for this project to verify its authenticity.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={evidenceForm.handleSubmit(handleAddEvidence)}>
-            <div className="grid gap-4 py-4">
-              <div>
-                <FormLabel htmlFor="title">Evidence Title</FormLabel>
-                <Input
-                  id="title"
-                  {...evidenceForm.register("title", { required: true })}
-                  placeholder="Enter a descriptive title for this evidence"
-                />
-              </div>
-              <div>
-                <FormLabel htmlFor="date">Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      {evidenceForm.getValues("date") ? (
-                        format(evidenceForm.getValues("date"), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={evidenceForm.getValues("date")}
-                      onSelect={(date) => evidenceForm.setValue("date", date as Date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <FormLabel htmlFor="description">Description</FormLabel>
-                <Textarea
-                  id="description"
-                  {...evidenceForm.register("description", { required: true })}
-                  placeholder="Describe this evidence and how it verifies the project"
-                  rows={4}
-                />
-              </div>
-              <div>
-                <FormLabel htmlFor="fileUrl">Document/Image URL (Optional)</FormLabel>
-                <Input
-                  id="fileUrl"
-                  {...evidenceForm.register("fileUrl")}
-                  placeholder="Enter URL to supporting document or image"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  In a real application, you would upload files here. For now, you can paste a URL to an external resource.
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsEvidenceDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Add Evidence</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Evidence Dialog */}
+      <EvidenceDialog 
+        open={isEvidenceDialogOpen}
+        onOpenChange={setIsEvidenceDialogOpen}
+        onSubmit={handleAddEvidence}
+      />
 
       {/* View Project Details Dialog */}
       <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>

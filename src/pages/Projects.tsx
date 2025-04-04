@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -62,13 +61,24 @@ import {
   XCircle,
   Search,
   Plus,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
 import { useForm } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Project {
   id: string;
@@ -143,6 +153,10 @@ const Projects = () => {
   const [addingCustomMember, setAddingCustomMember] = useState(false);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   
+  // New state for delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
   // Temporary state for projects
   const [projects, setProjects] = useState<Project[]>([
     {
@@ -510,6 +524,16 @@ const Projects = () => {
     toast.success('Project update added successfully');
   };
 
+  // Delete project handler
+  const handleDeleteProject = () => {
+    if (projectToDelete) {
+      setProjects(prev => prev.filter(project => project.id !== projectToDelete));
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+      toast.success('Project deleted successfully');
+    }
+  };
+
   const openUpdateDialog = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (project) {
@@ -517,6 +541,12 @@ const Projects = () => {
       updateForm.setValue('completionPercentage', project.completionPercentage);
       setIsUpdateDialogOpen(true);
     }
+  };
+
+  // Function to open delete confirmation dialog
+  const openDeleteDialog = (projectId: string) => {
+    setProjectToDelete(projectId);
+    setDeleteDialogOpen(true);
   };
 
   const openViewDetails = (project: Project) => {
@@ -699,6 +729,7 @@ const Projects = () => {
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
+                    onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
@@ -727,6 +758,7 @@ const Projects = () => {
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
+                    onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
@@ -755,6 +787,7 @@ const Projects = () => {
                     project={project}
                     onAddUpdate={() => openUpdateDialog(project.id)}
                     onViewDetails={() => openViewDetails(project)}
+                    onDelete={() => openDeleteDialog(project.id)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
@@ -836,518 +869,4 @@ const Projects = () => {
                         <SelectItem value="current">Current Project</SelectItem>
                         <SelectItem value="future">Future Project</SelectItem>
                       </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="category">Category</FormLabel>
-                    <Select 
-                      defaultValue={projectForm.getValues("category")}
-                      onValueChange={(value) => projectForm.setValue("category", value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DEFAULT_CATEGORIES.map(category => (
-                          <SelectItem key={category} value={category}>{category.charAt(0).toUpperCase() + category.slice(1)}</SelectItem>
-                        ))}
-                        {customCategories.map(category => (
-                          <SelectItem key={category} value={category}>{category.charAt(0).toUpperCase() + category.slice(1)}</SelectItem>
-                        ))}
-                        <SelectItem value="custom">Add Custom Category</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {projectForm.getValues("category") === "custom" && (
-                    <div className="col-span-1">
-                      <FormLabel htmlFor="customCategory">Custom Category</FormLabel>
-                      <Input
-                        id="customCategory"
-                        {...projectForm.register("customCategory")}
-                        placeholder="Enter custom category"
-                      />
-                    </div>
-                  )}
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="budget">Budget (ZAR)</FormLabel>
-                    <Input
-                      id="budget"
-                      type="number"
-                      {...projectForm.register("budget", { required: true, min: 0, valueAsNumber: true })}
-                      placeholder="Enter budget amount"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="startDate">Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !projectForm.getValues("startDate") && "text-muted-foreground"
-                          )}
-                        >
-                          {projectForm.getValues("startDate") ? (
-                            format(projectForm.getValues("startDate"), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={projectForm.getValues("startDate")}
-                          onSelect={(date) => date && projectForm.setValue("startDate", date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="endDate">End Date (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !projectForm.getValues("endDate") && "text-muted-foreground"
-                          )}
-                        >
-                          {projectForm.getValues("endDate") ? (
-                            format(projectForm.getValues("endDate"), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={projectForm.getValues("endDate")}
-                          onSelect={(date) => projectForm.setValue("endDate", date || undefined)}
-                          initialFocus
-                          disabled={(date) => date < projectForm.getValues("startDate")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <FormLabel>Team Members</FormLabel>
-                    <div className="border rounded-md p-3">
-                      {/* Search or Add Custom Member */}
-                      {addingCustomMember ? (
-                        <div className="flex flex-col gap-2 mb-3">
-                          <div className="flex gap-2">
-                            <Input 
-                              value={customMemberName}
-                              onChange={(e) => setCustomMemberName(e.target.value)}
-                              placeholder="Enter member name"
-                              className="flex-1"
-                            />
-                            <Input 
-                              value={customMemberRole}
-                              onChange={(e) => setCustomMemberRole(e.target.value)}
-                              placeholder="Role (optional)"
-                              className="flex-1"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              type="button"
-                              onClick={handleAddCustomMember}
-                              disabled={!customMemberName.trim()}
-                              className="flex-1"
-                            >
-                              Add Custom Member
-                            </Button>
-                            <Button 
-                              type="button"
-                              variant="outline"
-                              onClick={() => setAddingCustomMember(false)}
-                              className="flex-1"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2 mb-3">
-                          <div className="relative flex-1">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              value={memberSearchQuery}
-                              onChange={(e) => setMemberSearchQuery(e.target.value)}
-                              placeholder="Search members..."
-                              className="pl-8"
-                            />
-                            {memberSearchQuery && (
-                              <div className="absolute w-full bg-white border rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
-                                {filteredMembers.length > 0 ? (
-                                  filteredMembers.map(member => (
-                                    <div 
-                                      key={member.id}
-                                      className="p-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                                      onClick={() => handleAddExistingMember(member)}
-                                    >
-                                      <Avatar className="h-6 w-6 mr-2">
-                                        <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
-                                      </Avatar>
-                                      <span>{member.firstName} {member.lastName}</span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="p-2 text-muted-foreground">No matches found</div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <Button 
-                            type="button"
-                            variant="outline"
-                            onClick={() => setAddingCustomMember(true)}
-                          >
-                            <Plus className="h-4 w-4 mr-1" /> Custom
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Selected Members */}
-                      <div className="flex flex-wrap gap-2">
-                        {(projectForm.getValues("teamMembers") || []).map(member => (
-                          <Badge 
-                            key={member.id}
-                            variant="secondary"
-                            className="flex items-center gap-1 px-3 py-1.5"
-                          >
-                            <span>{member.name}</span>
-                            {member.role && (
-                              <span className="text-xs text-muted-foreground ml-1">({member.role})</span>
-                            )}
-                            <button
-                              type="button"
-                              className="ml-1 rounded-full hover:bg-gray-200 p-0.5"
-                              onClick={() => handleRemoveTeamMember(member.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                        {(projectForm.getValues("teamMembers") || []).length === 0 && (
-                          <div className="text-sm text-muted-foreground py-1">
-                            No team members added yet.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <FormLabel htmlFor="objectives">Objectives (one per line)</FormLabel>
-                    <Textarea
-                      id="objectives"
-                      {...projectForm.register("objectives")}
-                      placeholder="Enter project objectives (one per line)"
-                      rows={5}
-                    />
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsProjectDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Create Project</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Update Dialog */}
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add Project Update</DialogTitle>
-            <DialogDescription>
-              Record an update for the selected project.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={updateForm.handleSubmit(handleAddUpdate)}>
-            <div className="grid gap-4 py-4">
-              <div>
-                <FormLabel htmlFor="date">Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !updateForm.getValues("date") && "text-muted-foreground"
-                      )}
-                    >
-                      {updateForm.getValues("date") ? (
-                        format(updateForm.getValues("date"), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={updateForm.getValues("date")}
-                      onSelect={(date) => date && updateForm.setValue("date", date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <FormLabel htmlFor="description">Update Description</FormLabel>
-                <Textarea
-                  id="description"
-                  {...updateForm.register("description", { required: true })}
-                  placeholder="Describe the project update"
-                  rows={4}
-                />
-              </div>
-              <div>
-                <FormLabel htmlFor="completionPercentage">
-                  Completion Percentage: {updateForm.watch("completionPercentage")}%
-                </FormLabel>
-                <Input
-                  id="completionPercentage"
-                  type="range"
-                  min="0"
-                  max="100"
-                  {...updateForm.register("completionPercentage", { valueAsNumber: true })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Add Update</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Project Details Dialog */}
-      <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          {selectedProject && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedProject.name}</DialogTitle>
-                <DialogDescription>
-                  {selectedProject.description}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <Badge className={cn(getStatusBadgeColor(selectedProject.status), "flex items-center")}>
-                    {getStatusIcon(selectedProject.status)}
-                    <span className="ml-1 capitalize">{selectedProject.status}</span>
-                  </Badge>
-                  <Badge className={cn(getCategoryBadgeColor(selectedProject.category))}>
-                    <span className="capitalize">{selectedProject.category}</span>
-                  </Badge>
-                  <Badge className={cn(getTimelineBadgeColor(selectedProject.timeline))}>
-                    <span className="capitalize">{selectedProject.timeline} project</span>
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium">Progress</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Progress value={selectedProject.completionPercentage} className="h-2 flex-1" />
-                      <span className="text-sm font-medium w-10 text-right">{selectedProject.completionPercentage}%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Budget</h3>
-                    <p className="text-sm mt-1">{formatCurrency(selectedProject.budget)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Spent</h3>
-                    <p className="text-sm mt-1">{formatCurrency(selectedProject.spent)} 
-                      <span className="text-muted-foreground ml-1">
-                        ({Math.round((selectedProject.spent / selectedProject.budget) * 100)}%)
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Remaining</h3>
-                    <p className="text-sm mt-1">{formatCurrency(selectedProject.budget - selectedProject.spent)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Start Date</h3>
-                    <p className="text-sm mt-1">{format(selectedProject.startDate, 'PPP')}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">End Date</h3>
-                    <p className="text-sm mt-1">{selectedProject.endDate ? format(selectedProject.endDate, 'PPP') : 'Not set'}</p>
-                  </div>
-                </div>
-
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium mb-2">Team Members ({selectedProject.teamMembers.length})</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.teamMembers.map(member => (
-                      <Badge key={member.id} variant="outline" className="flex items-center gap-1">
-                        {member.name}
-                        {member.role && <span className="text-xs text-muted-foreground">({member.role})</span>}
-                      </Badge>
-                    ))}
-                    {selectedProject.teamMembers.length === 0 && (
-                      <p className="text-sm text-muted-foreground">No team members assigned</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium mb-2">Objectives</h3>
-                  {selectedProject.objectives.length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selectedProject.objectives.map((objective, index) => (
-                        <li key={index} className="text-sm">{objective}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No objectives defined</p>
-                  )}
-                </div>
-
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium mb-2">Updates ({selectedProject.updates.length})</h3>
-                  {selectedProject.updates.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedProject.updates.map(update => (
-                        <div key={update.id} className="border rounded p-3">
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium">{format(update.date, 'PPP')}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {update.completionPercentage && `${update.completionPercentage}% complete`}
-                            </span>
-                          </div>
-                          <p className="text-sm">{update.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No updates recorded yet.</p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={() => openUpdateDialog(selectedProject.id)}>Add Update</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-// Separate component for project cards
-const ProjectCard = ({ 
-  project, 
-  onAddUpdate, 
-  onViewDetails,
-  formatCurrency,
-  getStatusIcon,
-  getStatusBadgeColor
-}: { 
-  project: Project; 
-  onAddUpdate: () => void;
-  onViewDetails: () => void;
-  formatCurrency: (amount: number) => string;
-  getStatusIcon: (status: string) => React.ReactNode;
-  getStatusBadgeColor: (status: string) => string;
-}) => {
-  return (
-    <Card className="h-full flex flex-col overflow-hidden border-2 hover:border-primary/30 transition-all duration-200">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start space-x-2">
-          <div>
-            <CardTitle className="text-lg line-clamp-1">{project.name}</CardTitle>
-            <CardDescription className="line-clamp-2 mt-1">{project.description}</CardDescription>
-          </div>
-          <Badge className={cn("shrink-0 flex items-center space-x-1", getStatusBadgeColor(project.status))}>
-            {getStatusIcon(project.status)}
-            <span className="ml-1 capitalize">{project.status}</span>
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-3 flex-1">
-        <div className="space-y-3">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm font-medium">{project.completionPercentage}%</span>
-            </div>
-            <Progress value={project.completionPercentage} className="h-2" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-sm text-muted-foreground">Start:</span>
-              <div className="text-sm font-medium">{format(project.startDate, 'PP')}</div>
-            </div>
-            <div>
-              <span className="text-sm text-muted-foreground">Budget:</span>
-              <div className="text-sm font-medium">{formatCurrency(project.budget)}</div>
-            </div>
-          </div>
-          <div className="mt-1">
-            <span className="text-sm text-muted-foreground">Team:</span>
-            <div className="flex -space-x-2 mt-1 overflow-hidden">
-              {project.teamMembers.slice(0, 3).map((member, index) => (
-                <Avatar key={member.id} className="h-6 w-6 border-2 border-background">
-                  <AvatarFallback className="text-xs">{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-              ))}
-              {project.teamMembers.length > 3 && (
-                <Avatar className="h-6 w-6 border-2 border-background">
-                  <AvatarFallback className="text-xs bg-muted">+{project.teamMembers.length - 3}</AvatarFallback>
-                </Avatar>
-              )}
-              {project.teamMembers.length === 0 && (
-                <span className="text-sm">No members assigned</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="pt-1 flex justify-between gap-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onAddUpdate}
-          className="flex-1"
-        >
-          <PlusCircle className="h-4 w-4 mr-1" />
-          Update
-        </Button>
-        <Button 
-          variant="secondary" 
-          size="sm"
-          onClick={onViewDetails}
-          className="flex-1"
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          Details
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
-
-export default Projects;
+                    </

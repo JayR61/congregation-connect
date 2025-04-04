@@ -94,14 +94,8 @@ const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
-  const formContext = useFormContext()
+  const { formItemId = "", error } = useFormFieldOrDefault();
   
-  if (!formContext) {
-    return <Label ref={ref} className={className} {...props} />
-  }
-  
-  const { error, formItemId } = useFormField()
-
   return (
     <Label
       ref={ref}
@@ -117,7 +111,7 @@ const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  const { error, formItemId = "", formDescriptionId = "", formMessageId = "" } = useFormFieldOrDefault();
 
   return (
     <Slot
@@ -139,7 +133,7 @@ const FormDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField()
+  const { formDescriptionId = "" } = useFormFieldOrDefault();
 
   return (
     <p
@@ -156,7 +150,7 @@ const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
+  const { error, formMessageId = "" } = useFormFieldOrDefault();
   const body = error ? String(error?.message) : children
 
   if (!body) {
@@ -175,6 +169,32 @@ const FormMessage = React.forwardRef<
   )
 })
 FormMessage.displayName = "FormMessage"
+
+function useFormFieldOrDefault() {
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
+  const formContext = useFormContext();
+  
+  if (!formContext || !fieldContext) {
+    return { 
+      error: undefined, 
+      formItemId: "",
+      formDescriptionId: "",
+      formMessageId: ""
+    };
+  }
+  
+  try {
+    return useFormField();
+  } catch (error) {
+    return { 
+      error: undefined, 
+      formItemId: "",
+      formDescriptionId: "",
+      formMessageId: ""
+    };
+  }
+}
 
 export {
   useFormField,

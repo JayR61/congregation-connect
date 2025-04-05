@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ExternalLink, Eye } from 'lucide-react';
+import { X, Download, ExternalLink } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentPreviewProps {
@@ -35,7 +35,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ isOpen, onClose, docu
 
   const handleDownload = () => {
     if (!document) return;
-    // Fix: Use the global window.document instead of the prop named document
+    // Use window.document instead of document to avoid name collision
     const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.name;

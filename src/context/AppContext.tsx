@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment } from '../types';
 import { 
@@ -71,21 +70,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
 
+  const notificationActions = useNotificationActions({
+    notifications,
+    setNotifications
+  });
+
+  const addNotification = notificationActions.addNotification;
+
   const taskActions = useTaskActions({
     tasks,
     setTasks,
     currentUser,
     members,
-    addNotification: (notification) => {
-      const newNotification: Notification = {
-        ...notification,
-        id: `notif-${Date.now()}`,
-        createdAt: new Date(),
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev]);
-    }
+    addNotification
   });
 
   const transactionActions = useTransactionActions({
@@ -107,60 +104,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentUser
   });
 
-  const notificationActions = useNotificationActions({
-    notifications,
-    setNotifications
-  });
-
-  // Check for member status updates on initial load and daily
   useEffect(() => {
-    // Check on initial load
-    memberActions.checkMemberStatusUpdates();
-    
-    // Set up a daily check (24 hours)
-    const interval = setInterval(() => {
+    try {
       memberActions.checkMemberStatusUpdates();
-    }, 24 * 60 * 60 * 1000);
-    
-    return () => clearInterval(interval);
+      
+      const interval = setInterval(() => {
+        memberActions.checkMemberStatusUpdates();
+      }, 24 * 60 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    } catch (e) {
+      console.error("Error checking member status:", e);
+    }
   }, []);
 
+  const contextValue = {
+    currentUser,
+    notifications,
+    markNotificationAsRead: notificationActions.markNotificationAsRead,
+    addNotification,
+    tasks,
+    taskCategories,
+    addTask: taskActions.addTask,
+    updateTask: taskActions.updateTask,
+    deleteTask: taskActions.deleteTask,
+    addTaskComment: taskActions.addTaskComment,
+    transactions,
+    financeCategories,
+    addTransaction: transactionActions.addTransaction,
+    updateTransaction: transactionActions.updateTransaction,
+    deleteTransaction: transactionActions.deleteTransaction,
+    members,
+    addMember: memberActions.addMember,
+    updateMember: memberActions.updateMember,
+    deleteMember: memberActions.deleteMember,
+    checkMemberStatusUpdates: memberActions.checkMemberStatusUpdates,
+    documents,
+    folders,
+    addDocument: documentActions.addDocument,
+    updateDocument: documentActions.updateDocument,
+    deleteDocument: documentActions.deleteDocument,
+    addFolder: documentActions.addFolder,
+    updateFolder: documentActions.updateFolder,
+    deleteFolder: documentActions.deleteFolder,
+    shareDocument: documentActions.shareDocument,
+    moveDocument: documentActions.moveDocument,
+    addDocumentVersion: documentActions.addDocumentVersion
+  };
+
   return (
-    <AppContext.Provider
-      value={{
-        currentUser,
-        notifications,
-        markNotificationAsRead: notificationActions.markNotificationAsRead,
-        addNotification: notificationActions.addNotification,
-        tasks,
-        taskCategories,
-        addTask: taskActions.addTask,
-        updateTask: taskActions.updateTask,
-        deleteTask: taskActions.deleteTask,
-        addTaskComment: taskActions.addTaskComment,
-        transactions,
-        financeCategories,
-        addTransaction: transactionActions.addTransaction,
-        updateTransaction: transactionActions.updateTransaction,
-        deleteTransaction: transactionActions.deleteTransaction,
-        members,
-        addMember: memberActions.addMember,
-        updateMember: memberActions.updateMember,
-        deleteMember: memberActions.deleteMember,
-        checkMemberStatusUpdates: memberActions.checkMemberStatusUpdates,
-        documents,
-        folders,
-        addDocument: documentActions.addDocument,
-        updateDocument: documentActions.updateDocument,
-        deleteDocument: documentActions.deleteDocument,
-        addFolder: documentActions.addFolder,
-        updateFolder: documentActions.updateFolder,
-        deleteFolder: documentActions.deleteFolder,
-        shareDocument: documentActions.shareDocument,
-        moveDocument: documentActions.moveDocument,
-        addDocumentVersion: documentActions.addDocumentVersion
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

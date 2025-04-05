@@ -124,8 +124,7 @@ const Projects = () => {
   const handleCreateProject = () => {
     // Validate required fields
     if (!newProject.name || !newProject.description || !newProject.startDate || !newProject.category) {
-      toast({
-        description: "Please fill out all required fields.",
+      toast("Please fill out all required fields.", {
         variant: "destructive"
       });
       return;
@@ -133,8 +132,7 @@ const Projects = () => {
     
     // Check if custom category is provided when 'custom' category is selected
     if (newProject.category === 'custom' && !newProject.customCategory) {
-      toast({
-        description: "Please provide a name for your custom category.",
+      toast("Please provide a name for your custom category.", {
         variant: "destructive"
       });
       return;
@@ -143,16 +141,14 @@ const Projects = () => {
     // Check if goal information is complete
     if (newProject.hasGoal) {
       if (!newProject.goalTarget) {
-        toast({
-          description: "Please provide a target for your goal.",
+        toast("Please provide a target for your goal.", {
           variant: "destructive"
         });
         return;
       }
       
       if (newProject.goalType === 'custom' && !newProject.customGoalName) {
-        toast({
-          description: "Please provide a name for your custom goal.",
+        toast("Please provide a name for your custom goal.", {
           variant: "destructive"
         });
         return;
@@ -215,9 +211,7 @@ const Projects = () => {
     });
     setNewProjectDialogOpen(false);
     
-    toast({
-      description: `${project.name} has been created successfully.`
-    });
+    toast(`${project.name} has been created successfully.`);
   };
   
   const handleAddUpdate = (project: any) => {
@@ -242,8 +236,7 @@ const Projects = () => {
   
   const handleSaveUpdate = () => {
     if (!currentProject || !newUpdate.description) {
-      toast({
-        description: "Please provide a description for the update.",
+      toast("Please provide a description for the update.", {
         variant: "destructive"
       });
       return;
@@ -276,9 +269,7 @@ const Projects = () => {
       expense: 0,
     });
     
-    toast({
-      description: `Update has been added to ${updatedProject.name}.`
-    });
+    toast(`Update has been added to ${updatedProject.name}.`);
   };
   
   const handleDeleteProject = (project: any) => {
@@ -293,9 +284,7 @@ const Projects = () => {
     setConfirmDeleteOpen(false);
     setCurrentProject(null);
     
-    toast({
-      description: "The project has been deleted successfully."
-    });
+    toast("The project has been deleted successfully.");
   };
   
   const handleSaveEvidence = (files: File[], description: string) => {
@@ -326,9 +315,7 @@ const Projects = () => {
     setEvidenceDialogOpen(false);
     setCurrentProject(null);
     
-    toast({
-      description: `${newEvidence.length} file(s) added as evidence.`
-    });
+    toast(`${newEvidence.length} file(s) added as evidence.`);
   };
   
   const handleViewDocument = (document: any) => {

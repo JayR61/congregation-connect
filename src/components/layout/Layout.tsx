@@ -2,7 +2,6 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import { useAppContext } from "@/context/AppContext";
 
 interface LayoutProps {
   children: React.ReactNode;

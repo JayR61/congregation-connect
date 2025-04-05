@@ -1,297 +1,185 @@
 
-import React, { useState, useRef } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { 
-  Upload, 
-  X, 
-  CalendarIcon, 
-  FileText, 
-  FileImage, 
-  Video, 
-  FileAudio, 
-  File 
-} from 'lucide-react';
-import { toast } from '@/lib/toast';
-import { useForm } from 'react-hook-form';
+import { Upload, X, FileText, FileImage, Video, FileAudio, File } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EvidenceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: EvidenceFormValues) => void;
+  onSave: (files: File[], description: string) => void;
 }
 
-interface EvidenceFormValues {
-  title: string;
-  description: string;
-  date: Date;
-  file?: File;
-}
-
-const EvidenceDialog: React.FC<EvidenceDialogProps> = ({ open, onOpenChange, onSubmit }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const form = useForm<EvidenceFormValues>({
-    defaultValues: {
-      title: '',
-      description: '',
-      date: new Date(),
-    }
-  });
-
-  // Reset form when dialog opens/closes
-  React.useEffect(() => {
-    if (!open) {
-      form.reset();
-      setFile(null);
-    }
-  }, [open, form]);
+const EvidenceDialog: React.FC<EvidenceDialogProps> = ({ open, onOpenChange, onSave }) => {
+  const [files, setFiles] = useState<File[]>([]);
+  const [description, setDescription] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      
-      // If no title is set, use the file name (without extension)
-      if (!form.getValues('title')) {
-        const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
-        form.setValue('title', fileName);
-      }
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
     }
   };
-  
-  const handleDrop = (e: React.DragEvent) => {
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragging(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      setFile(droppedFile);
-      
-      // If no title is set, use the file name (without extension)
-      if (!form.getValues('title')) {
-        const fileName = droppedFile.name.split('.').slice(0, -1).join('.');
-        form.setValue('title', fileName);
-      }
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const newFiles = Array.from(e.dataTransfer.files);
+      setFiles(prev => [...prev, ...newFiles]);
     }
   };
-  
-  const handleDragOver = (e: React.DragEvent) => {
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragging(true);
   };
-  
-  const detectFileType = (file: File): string => {
-    // Check if it's an image
-    if (file.type.startsWith('image/')) {
-      return 'image';
-    }
-    
-    // Check if it's a video
-    if (file.type.startsWith('video/')) {
-      return 'video';
-    }
-    
-    // Check if it's an audio
-    if (file.type.startsWith('audio/')) {
-      return 'audio';
-    }
-    
-    // Check file extension
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    
-    switch (extension) {
-      case 'pdf':
-        return 'pdf';
-      case 'doc':
-      case 'docx':
-        return 'doc';
-      case 'xls':
-      case 'xlsx':
-        return 'excel';
-      case 'ppt':
-      case 'pptx':
-        return 'powerpoint';
-      case 'txt':
-        return 'text';
-      default:
-        return file.type || 'unknown';
-    }
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
-  
+
+  const handleRemoveFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSave = () => {
+    onSave(files, description);
+    setFiles([]);
+    setDescription('');
+  };
+
   const getFileIcon = (file: File) => {
-    const fileType = detectFileType(file);
+    const type = file.type;
     
-    switch (fileType) {
-      case 'image':
-        return <FileImage className="h-10 w-10 text-blue-500" />;
-      case 'video':
-        return <Video className="h-10 w-10 text-purple-500" />;
-      case 'audio':
-        return <FileAudio className="h-10 w-10 text-green-500" />;
-      case 'pdf':
-        return <FileText className="h-10 w-10 text-red-500" />;
-      default:
-        return <File className="h-10 w-10 text-gray-500" />;
+    if (type.startsWith('image/')) {
+      return <FileImage className="h-6 w-6 text-blue-500" />;
+    } else if (type === 'application/pdf') {
+      return <FileText className="h-6 w-6 text-red-500" />;
+    } else if (type.startsWith('video/')) {
+      return <Video className="h-6 w-6 text-purple-500" />;
+    } else if (type.startsWith('audio/')) {
+      return <FileAudio className="h-6 w-6 text-green-500" />;
+    } else {
+      return <File className="h-6 w-6 text-gray-500" />;
     }
   };
-  
-  const handleSubmit = form.handleSubmit(async (data) => {
-    try {
-      setIsUploading(true);
-      
-      if (file) {
-        // In a real app, you would upload the file to cloud storage
-        // For now, we'll create an object URL
-        const fileUrl = URL.createObjectURL(file);
-        
-        onSubmit({
-          ...data,
-          file: file
-        });
-      } else {
-        onSubmit(data);
-      }
-      
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error uploading evidence:', error);
-      toast.error('Failed to upload evidence');
-    } finally {
-      setIsUploading(false);
-    }
-  });
-  
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleClose = () => {
+    setFiles([]);
+    setDescription('');
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add Project Evidence</DialogTitle>
-          <DialogDescription>
-            Provide supporting evidence for this project to verify its authenticity.
-          </DialogDescription>
+          <DialogTitle>Add Evidence</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[60vh] pr-4 overflow-auto">
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              {file ? (
-                <div className="flex items-center p-3 border rounded-md">
-                  <div className="mr-2 flex-shrink-0">
-                    {getFileIcon(file)}
-                  </div>
-                  <div className="flex-1 truncate min-w-0">
-                    <p className="font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {(file.size / 1024).toFixed(2)} KB • {file.type || 'Unknown type'}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="flex-shrink-0"
-                    onClick={() => setFile(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                >
-                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                  <p className="font-medium">Click to select a file</p>
-                  <p className="text-sm text-muted-foreground">
-                    or drag and drop here
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Support for images, videos, documents, PDFs, and more
-                  </p>
-                  <input
-                    type="file"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="*/*" // Accept all file types
-                  />
-                </div>
-              )}
-              
-              <div className="grid gap-2">
-                <Label htmlFor="title">Evidence Title</Label>
-                <Input
-                  id="title"
-                  {...form.register('title', { required: true })}
-                  placeholder="Enter evidence title"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="date">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      {form.getValues('date') ? (
-                        format(form.getValues('date'), 'PPP')
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.getValues('date')}
-                      onSelect={(date) => form.setValue('date', date as Date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  {...form.register('description', { required: true })}
-                  placeholder="Describe this evidence and how it verifies the project"
-                  rows={3}
-                />
-              </div>
+        <ScrollArea className="flex-1 w-full max-h-[60vh]">
+          <div className="py-4 space-y-4">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm font-medium mb-1">Drop your files here or click to upload</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Supports all file types
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById('file-upload')?.click()}
+                className="mt-2"
+              >
+                Select Files
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                accept="*/*"
+              />
             </div>
             
-            <DialogFooter className="flex justify-between sm:justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isUploading}>
-                {isUploading ? 'Uploading...' : 'Upload Evidence'}
-              </Button>
-            </DialogFooter>
-          </form>
+            {files.length > 0 && (
+              <div className="space-y-2">
+                <Label>Selected Files ({files.length})</Label>
+                <div className="max-h-[200px] overflow-auto border rounded-md">
+                  {files.map((file, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-2 border-b last:border-b-0"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        {getFileIcon(file)}
+                        <div className="truncate">
+                          <p className="text-sm font-medium truncate" title={file.name}>
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveFile(index)}
+                        className="h-8 w-8 flex-shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="evidence-description">Description</Label>
+              <Textarea
+                id="evidence-description"
+                placeholder="Provide context for these files..."
+                className="resize-none"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
         </ScrollArea>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>Cancel</Button>
+          <Button 
+            onClick={handleSave}
+            disabled={files.length === 0}
+          >
+            Save Evidence
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

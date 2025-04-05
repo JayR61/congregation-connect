@@ -1,1644 +1,1149 @@
 
-import { useState, useEffect } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 import { 
-  Card, 
-  CardContent,
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Progress
-} from "@/components/ui/progress";
-import {
-  FormLabel
-} from "@/components/ui/form";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
-  format, 
-  isFuture, 
-  isThisYear,
-  differenceInCalendarDays,
-} from "date-fns";
-import { 
-  AlertCircle,
-  CalendarIcon, 
   PlusCircle, 
-  Circle,
-  CheckCircle2,
+  CheckCircle, 
+  XCircle, 
+  BarChart, 
+  Calendar, 
+  Loader2, 
   Clock,
-  XCircle,
-  Search,
-  Plus,
-  X,
-  Trash2,
-  FileCheck,
   AlertTriangle,
-  User
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  ArrowUpRight
+} from 'lucide-react';
+import { ProjectCard } from '@/components/projects';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAppContext } from '@/context/AppContext';
+import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/lib/toast';
-import { useForm } from "react-hook-form";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import ProjectCard from "@/components/projects/ProjectCard";
-import EvidenceDialog from "@/components/projects/EvidenceDialog";
-
-// Make sure the timeline property is properly typed as a union
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'planned' | 'in-progress' | 'completed' | 'on-hold';
-  startDate: Date;
-  endDate?: Date;
-  budget: number;
-  spent: number;
-  category: string;
-  objectives: string[];
-  teamMembers: TeamMember[];
-  updates: ProjectUpdate[];
-  completionPercentage: number;
-  timeline: 'past' | 'current' | 'future';
-  evidence?: ProjectEvidence[];
-  lastUpdateDate?: Date;
-  verified: boolean;
-  projectType?: string;
-  target?: number;
-  targetType?: 'money' | 'quantity';
-  donationItems?: string[];
-}
-
-interface TeamMember {
-  id: string;
-  name: string;
-  role?: string;
-  isCustom?: boolean;
-  isOutsideMember?: boolean;
-  organization?: string;
-}
-
-interface ProjectUpdate {
-  id: string;
-  projectId: string;
-  date: Date;
-  description: string;
-  author: string;
-  completionPercentage?: number;
-  expenseAmount?: number;
-  expenseDescription?: string;
-}
-
-interface ProjectEvidence {
-  id: string;
-  projectId: string;
-  date: Date;
-  title: string;
-  description: string;
-  fileUrl?: string;
-  fileType?: string;
-  verified: boolean;
-}
-
-interface ProjectFormValues {
-  name: string;
-  description: string;
-  status: 'planned' | 'in-progress' | 'completed' | 'on-hold';
-  startDate: Date;
-  endDate?: Date;
-  budget: number;
-  category: string;
-  customCategory?: string;
-  objectives: string;
-  teamMembers: TeamMember[];
-  timeline: 'past' | 'current' | 'future';
-  projectType: string;
-  target?: number;
-  targetType?: 'money' | 'quantity';
-  donationItems?: string;
-}
-
-interface UpdateFormValues {
-  description: string;
-  date: Date;
-  completionPercentage: number;
-  expenseAmount?: number;
-  expenseDescription?: string;
-}
-
-interface EvidenceFormValues {
-  title: string;
-  description: string;
-  date: Date;
-  file?: File;
-}
-
-interface OutsideMemberFormValues {
-  name: string;
-  role?: string;
-  organization?: string;
-}
-
-const DEFAULT_CATEGORIES = ['building', 'outreach', 'missions', 'education', 'other'];
-const PROJECT_TYPES = ['standard', 'fundraising', 'donation', 'event', 'other'];
+import EvidenceDialog from '@/components/projects/EvidenceDialog';
+import DocumentPreview from '@/components/projects/DocumentPreview';
+import { saveProjects, getProjects } from '@/services/localStorage';
 
 const Projects = () => {
-  const { members } = useAppContext();
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [timelineFilter, setTimelineFilter] = useState('all');
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [isEvidenceDialogOpen, setIsEvidenceDialogOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false);
-  const [customMemberName, setCustomMemberName] = useState('');
-  const [customMemberRole, setCustomMemberRole] = useState('');
-  const [customCategoryName, setCustomCategoryName] = useState('');
-  const [memberSearchQuery, setMemberSearchQuery] = useState('');
-  const [addingCustomMember, setAddingCustomMember] = useState(false);
-  const [addingOutsideMember, setAddingOutsideMember] = useState(false);
-  const [outsideMember, setOutsideMember] = useState<OutsideMemberFormValues>({
+  // State for projects
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Dialog states
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [documentPreviewOpen, setDocumentPreviewOpen] = useState(false);
+  
+  // Data states
+  const [currentProject, setCurrentProject] = useState<any>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [newUpdate, setNewUpdate] = useState({
+    description: '',
+    completionPercentage: 0,
+    expense: 0,
+  });
+  
+  // Form states for new project
+  const [newProject, setNewProject] = useState({
     name: '',
-    role: '',
-    organization: ''
+    description: '',
+    startDate: new Date(),
+    endDate: null as Date | null,
+    budget: 0,
+    status: 'pending',
+    category: 'event',
+    teamMembers: [] as string[],
+    externalMembers: [] as { name: string; email?: string; phone?: string }[],
+    verified: false,
+    customCategory: '',
+    hasGoal: false,
+    goalType: 'financial',
+    customGoalName: '',
+    goalTarget: '',
   });
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+  const { members } = useAppContext();
   
-  // Empty initial state for projects
-  const [projects, setProjects] = useState<Project[]>([]);
-
-  // Project form handling
-  const projectForm = useForm<ProjectFormValues>({
-    defaultValues: {
-      name: '',
-      description: '',
-      status: 'planned',
-      startDate: new Date(),
-      endDate: undefined,
-      budget: 0,
-      category: '',
-      customCategory: '',
-      objectives: '',
-      teamMembers: [],
-      timeline: 'current',
-      projectType: 'standard',
-      target: undefined,
-      targetType: undefined,
-      donationItems: ''
-    }
-  });
-
-  // Update form handling
-  const updateForm = useForm<UpdateFormValues>({
-    defaultValues: {
-      description: '',
-      date: new Date(),
-      completionPercentage: 0,
-      expenseAmount: 0,
-      expenseDescription: ''
-    }
-  });
-
-  // Check for projects that should be moved to past projects
+  // Load projects from localStorage on component mount
   useEffect(() => {
-    const checkForStaleProjects = () => {
-      const now = new Date();
-      const updatedProjects = projects.map(project => {
-        // If project has an end date and it has passed more than 30 days ago
-        // and there are no recent updates
-        if (
-          project.endDate && 
-          differenceInCalendarDays(now, project.endDate) > 30 &&
-          project.timeline !== 'past'
-        ) {
-          // Check if there have been any updates in the last 30 days
-          const lastUpdate = project.updates.reduce((latest, update) => {
-            return latest && latest > update.date ? latest : update.date;
-          }, project.lastUpdateDate || null);
-          
-          // If no updates in 30 days or no updates at all
-          if (!lastUpdate || differenceInCalendarDays(now, lastUpdate) > 30) {
-            // Make sure to use the literal 'past' instead of a string variable
-            return { ...project, timeline: 'past' as 'past' };
-          }
-        }
-        return project;
-      });
-      
-      // Update projects if any changes
-      if (JSON.stringify(updatedProjects) !== JSON.stringify(projects)) {
-        setProjects(updatedProjects);
-        toast.info("Some projects have been moved to Past Projects due to inactivity");
-      }
-    };
-    
-    // Run check when projects change
-    checkForStaleProjects();
-    
-    // Set up daily check
-    const interval = setInterval(checkForStaleProjects, 24 * 60 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [projects]);
-
-  // Filter projects based on search query, status filter, and timeline filter
-  const filteredProjects = projects.filter(project => {
-    // Filter by search query
-    const matchesSearch = 
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Filter by status
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    
-    // Filter by timeline
-    const matchesTimeline = timelineFilter === 'all' || project.timeline === timelineFilter;
-    
-    // Filter by tab
-    const matchesTab = 
-      activeTab === 'all' || 
-      (activeTab === 'current-year' && isThisYear(project.startDate)) ||
-      (activeTab === 'future' && isFuture(project.startDate)) ||
-      (activeTab === 'past' && project.timeline === 'past');
-    
-    return matchesSearch && matchesStatus && matchesTimeline && matchesTab;
-  });
-
-  // Filter members based on search query
-  const filteredMembers = members.filter(member => 
-    (member.firstName + ' ' + member.lastName)
-      .toLowerCase()
-      .includes(memberSearchQuery.toLowerCase())
-  );
-
-  const handleAddCustomMember = () => {
-    if (customMemberName.trim()) {
-      const newMember: TeamMember = {
-        id: `custom-${Date.now()}`,
-        name: customMemberName.trim(),
-        role: customMemberRole.trim() || undefined,
-        isCustom: true
-      };
-
-      const currentMembers = projectForm.getValues("teamMembers") || [];
-      projectForm.setValue("teamMembers", [...currentMembers, newMember]);
-      
-      // Reset form
-      setCustomMemberName('');
-      setCustomMemberRole('');
-      setAddingCustomMember(false);
-      toast.success(`Added ${newMember.name} to the team`);
+    const savedProjects = getProjects();
+    if (savedProjects && savedProjects.length > 0) {
+      setProjects(savedProjects);
     }
-  };
+    setIsLoading(false);
+  }, []);
   
-  const handleAddOutsideMember = () => {
-    if (outsideMember.name.trim()) {
-      const newMember: TeamMember = {
-        id: `outside-${Date.now()}`,
-        name: outsideMember.name.trim(),
-        role: outsideMember.role?.trim() || undefined,
-        isOutsideMember: true,
-        organization: outsideMember.organization?.trim() || undefined
-      };
-
-      const currentMembers = projectForm.getValues("teamMembers") || [];
-      projectForm.setValue("teamMembers", [...currentMembers, newMember]);
-      
-      // Reset form
-      setOutsideMember({
-        name: '',
-        role: '',
-        organization: ''
-      });
-      setAddingOutsideMember(false);
-      toast.success(`Added outside member ${newMember.name} to the team`);
+  // Save projects to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      saveProjects(projects);
     }
-  };
+  }, [projects, isLoading]);
 
-  const handleAddExistingMember = (member: any) => {
-    const currentMembers = projectForm.getValues("teamMembers") || [];
-    
-    // Check if member is already added
-    if (currentMembers.some(m => m.id === member.id)) {
-      toast.info("This member is already in the team");
+  // Categories
+  const categories = [
+    { id: 'event', label: 'Event', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+    { id: 'building', label: 'Building', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+    { id: 'missions', label: 'Missions', color: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300' },
+    { id: 'outreach', label: 'Outreach', color: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' },
+    { id: 'fundraising', label: 'Fundraising', color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
+    { id: 'donation', label: 'Donation', color: 'bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-300' },
+    { id: 'custom', label: 'Custom', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' },
+  ];
+  
+  // Statuses
+  const statuses = [
+    { id: 'pending', label: 'Pending', icon: <Clock className="h-4 w-4" />, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300' },
+    { id: 'in-progress', label: 'In Progress', icon: <Loader2 className="h-4 w-4 animate-spin" />, color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+    { id: 'completed', label: 'Completed', icon: <CheckCircle className="h-4 w-4" />, color: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300' },
+    { id: 'cancelled', label: 'Cancelled', icon: <XCircle className="h-4 w-4" />, color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
+    { id: 'on-hold', label: 'On Hold', icon: <AlertTriangle className="h-4 w-4" />, color: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300' },
+  ];
+
+  // Handlers
+  const handleCreateProject = () => {
+    // Validate required fields
+    if (!newProject.name || !newProject.description || !newProject.startDate || !newProject.category) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill out all required fields.",
+        variant: "destructive"
+      });
       return;
     }
     
-    const newMember: TeamMember = {
-      id: member.id,
-      name: `${member.firstName} ${member.lastName}`,
-      role: member.role || undefined
-    };
+    // Check if custom category is provided when 'custom' category is selected
+    if (newProject.category === 'custom' && !newProject.customCategory) {
+      toast({
+        title: "Custom Category Required",
+        description: "Please provide a name for your custom category.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    projectForm.setValue("teamMembers", [...currentMembers, newMember]);
-    setMemberSearchQuery('');
-    toast.success(`Added ${newMember.name} to the team`);
-  };
-
-  const handleRemoveTeamMember = (memberId: string) => {
-    const currentMembers = projectForm.getValues("teamMembers") || [];
-    projectForm.setValue("teamMembers", currentMembers.filter(m => m.id !== memberId));
-  };
-
-  const handleCreateProject = (data: ProjectFormValues) => {
-    const objectivesArray = data.objectives
-      .split('\n')
-      .filter(objective => objective.trim() !== '');
-
-    // Handle custom category
-    let category = data.category;
-    if (data.category === 'custom' && data.customCategory) {
-      category = data.customCategory.trim();
+    // Check if goal information is complete
+    if (newProject.hasGoal) {
+      if (!newProject.goalTarget) {
+        toast({
+          title: "Goal Target Required",
+          description: "Please provide a target for your goal.",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      // Add to custom categories if not already there
-      if (!customCategories.includes(category)) {
-        setCustomCategories([...customCategories, category]);
+      if (newProject.goalType === 'custom' && !newProject.customGoalName) {
+        toast({
+          title: "Custom Goal Name Required",
+          description: "Please provide a name for your custom goal.",
+          variant: "destructive"
+        });
+        return;
       }
     }
-    
-    // Handle donation items if applicable
-    let donationItems: string[] = [];
-    if (data.projectType === 'donation' && data.donationItems) {
-      donationItems = data.donationItems
-        .split('\n')
-        .filter(item => item.trim() !== '');
-    }
 
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      name: data.name,
-      description: data.description,
-      status: data.status,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      budget: data.budget,
+    // Create new project object
+    const categoryLabel = newProject.category === 'custom' 
+      ? newProject.customCategory 
+      : categories.find(c => c.id === newProject.category)?.label || newProject.category;
+    
+    // Process goal information
+    const goalData = newProject.hasGoal ? {
+      type: newProject.goalType,
+      name: newProject.goalType === 'custom' ? newProject.customGoalName : 'Fundraising',
+      target: newProject.goalType === 'financial' ? parseFloat(newProject.goalTarget) : newProject.goalTarget
+    } : null;
+
+    const project = {
+      id: `project-${Date.now()}`,
+      name: newProject.name,
+      description: newProject.description,
+      startDate: newProject.startDate,
+      endDate: newProject.endDate,
+      budget: parseFloat(newProject.budget as unknown as string) || 0,
       spent: 0,
-      category: category,
-      objectives: objectivesArray,
-      teamMembers: data.teamMembers || [],
-      updates: [],
       completionPercentage: 0,
-      timeline: data.timeline,
+      status: newProject.status,
+      category: categoryLabel,
+      categoryId: newProject.category,
+      teamMembers: newProject.teamMembers,
+      externalMembers: newProject.externalMembers,
+      verified: newProject.verified,
+      createdAt: new Date(),
+      updates: [],
       evidence: [],
-      lastUpdateDate: new Date(),
-      verified: false,
-      projectType: data.projectType,
-      target: data.target,
-      targetType: data.targetType,
-      donationItems: donationItems
+      goal: goalData
     };
 
-    setProjects(prev => [...prev, newProject]);
-    setIsProjectDialogOpen(false);
-    projectForm.reset();
-    toast.success('Project created successfully');
-  };
-
-  const handleAddUpdate = (data: UpdateFormValues) => {
-    if (!selectedProjectId) return;
-
-    const newUpdate: ProjectUpdate = {
-      id: `update-${selectedProjectId}-${Date.now()}`,
-      projectId: selectedProjectId,
-      date: data.date,
-      description: data.description,
-      author: 'current-user', // Using the current user ID
-      completionPercentage: data.completionPercentage,
-      expenseAmount: data.expenseAmount,
-      expenseDescription: data.expenseDescription
-    };
+    // Add to projects state
+    setProjects([...projects, project]);
     
-    // Calculate new spent amount if expense was provided
-    let newSpent = 0;
-    if (data.expenseAmount && data.expenseAmount > 0) {
-      newSpent = data.expenseAmount;
-    }
-
-    setProjects(prev => prev.map(project => {
-      if (project.id === selectedProjectId) {
-        return {
-          ...project,
-          updates: [...project.updates, newUpdate],
-          completionPercentage: data.completionPercentage,
-          spent: project.spent + newSpent,
-          lastUpdateDate: new Date()
-        };
-      }
-      return project;
-    }));
-
-    setIsUpdateDialogOpen(false);
-    updateForm.reset();
-    toast.success('Project update added successfully');
+    // Reset form and close dialog
+    setNewProject({
+      name: '',
+      description: '',
+      startDate: new Date(),
+      endDate: null,
+      budget: 0,
+      status: 'pending',
+      category: 'event',
+      teamMembers: [],
+      externalMembers: [],
+      verified: false,
+      customCategory: '',
+      hasGoal: false,
+      goalType: 'financial',
+      customGoalName: '',
+      goalTarget: '',
+    });
+    setNewProjectDialogOpen(false);
+    
+    toast({
+      title: "Project Created",
+      description: `${project.name} has been created successfully.`
+    });
   };
   
-  const handleAddEvidence = (data: EvidenceFormValues) => {
-    if (!selectedProjectId) return;
+  const handleAddUpdate = (project: any) => {
+    setCurrentProject(project);
+    setNewUpdate({
+      description: '',
+      completionPercentage: project.completionPercentage || 0,
+      expense: 0,
+    });
+    setUpdateDialogOpen(true);
+  };
+  
+  const handleAddEvidence = (project: any) => {
+    setCurrentProject(project);
+    setEvidenceDialogOpen(true);
+  };
+  
+  const handleViewDetails = (project: any) => {
+    setCurrentProject(project);
+    setDetailsDialogOpen(true);
+  };
+  
+  const handleSaveUpdate = () => {
+    if (!currentProject || !newUpdate.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a description for the update.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    const newEvidence: ProjectEvidence = {
-      id: `evidence-${selectedProjectId}-${Date.now()}`,
-      projectId: selectedProjectId,
-      date: data.date,
-      title: data.title,
-      description: data.description,
-      fileUrl: data.file ? URL.createObjectURL(data.file) : undefined,
-      fileType: data.file ? data.file.type.split('/')[0] : undefined,
-      verified: false
+    const update = {
+      id: `update-${Date.now()}`,
+      description: newUpdate.description,
+      completionPercentage: newUpdate.completionPercentage,
+      expense: parseFloat(newUpdate.expense as unknown as string) || 0,
+      date: new Date()
     };
     
-    setProjects(prev => prev.map(project => {
-      if (project.id === selectedProjectId) {
-        const updatedEvidence = [...(project.evidence || []), newEvidence];
-        // If there's at least one piece of evidence, mark as verified
-        return {
-          ...project,
-          evidence: updatedEvidence,
-          verified: updatedEvidence.length > 0,
-          lastUpdateDate: new Date()
-        };
-      }
-      return project;
-    }));
+    const updatedProject = {
+      ...currentProject,
+      updates: [...(currentProject.updates || []), update],
+      completionPercentage: newUpdate.completionPercentage,
+      spent: (currentProject.spent || 0) + (update.expense || 0)
+    };
     
-    setIsEvidenceDialogOpen(false);
-    toast.success('Project evidence added successfully');
+    setProjects(
+      projects.map(p => p.id === currentProject.id ? updatedProject : p)
+    );
+    
+    setUpdateDialogOpen(false);
+    setCurrentProject(null);
+    setNewUpdate({
+      description: '',
+      completionPercentage: 0,
+      expense: 0,
+    });
+    
+    toast({
+      title: "Update Added",
+      description: `Update has been added to ${updatedProject.name}.`
+    });
   };
-
-  // Delete project handler
-  const handleDeleteProject = () => {
-    if (projectToDelete) {
-      setProjects(prev => prev.filter(project => project.id !== projectToDelete));
-      setDeleteDialogOpen(false);
-      setProjectToDelete(null);
-      toast.success('Project deleted successfully');
-    }
+  
+  const handleDeleteProject = (project: any) => {
+    setCurrentProject(project);
+    setConfirmDeleteOpen(true);
   };
-
+  
+  const confirmDelete = () => {
+    if (!currentProject) return;
+    
+    setProjects(projects.filter(p => p.id !== currentProject.id));
+    setConfirmDeleteOpen(false);
+    setCurrentProject(null);
+    
+    toast({
+      title: "Project Deleted",
+      description: "The project has been deleted successfully."
+    });
+  };
+  
+  const handleSaveEvidence = (files: File[], description: string) => {
+    if (!currentProject) return;
+    
+    const newEvidence = files.map(file => {
+      const url = URL.createObjectURL(file);
+      return {
+        id: `evidence-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: file.name,
+        description: description,
+        type: file.type,
+        size: file.size,
+        url: url,
+        date: new Date()
+      };
+    });
+    
+    const updatedProject = {
+      ...currentProject,
+      evidence: [...(currentProject.evidence || []), ...newEvidence]
+    };
+    
+    setProjects(
+      projects.map(p => p.id === currentProject.id ? updatedProject : p)
+    );
+    
+    setEvidenceDialogOpen(false);
+    setCurrentProject(null);
+    
+    toast({
+      title: "Evidence Added",
+      description: `${newEvidence.length} file(s) added as evidence.`
+    });
+  };
+  
+  const handleViewDocument = (document: any) => {
+    setSelectedDocument(document);
+    setDocumentPreviewOpen(true);
+  };
+  
+  // Helper functions
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ZA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'ZAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      currency: 'USD'
     }).format(amount);
   };
-
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'planned':
-        return <Circle className="h-4 w-4 text-blue-500" />;
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'on-hold':
-        return <XCircle className="h-4 w-4 text-gray-500" />;
-      default:
-        return <Circle className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch(status) {
-      case 'planned':
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case 'in-progress':
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case 'completed':
-        return "bg-green-100 text-green-800 border-green-300";
-      case 'on-hold':
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getCategoryBadgeColor = (category: string) => {
-    switch(category) {
-      case 'building':
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      case 'outreach':
-        return "bg-pink-100 text-pink-800 border-pink-300";
-      case 'missions':
-        return "bg-indigo-100 text-indigo-800 border-indigo-300";
-      case 'education':
-        return "bg-green-100 text-green-800 border-green-300";
-      case 'digital':
-        return "bg-cyan-100 text-cyan-800 border-cyan-300";
-      case 'other':
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getTimelineBadgeColor = (timeline: string) => {
-    switch(timeline) {
-      case 'past':
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      case 'current':
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case 'future':
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  // Functions to handle dialogs
-  const openUpdateDialog = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setSelectedProjectId(projectId);
-      updateForm.setValue('completionPercentage', project.completionPercentage);
-      setIsUpdateDialogOpen(true);
-    }
+  
+  const getStatusIcon = (statusId: string) => {
+    const status = statuses.find(s => s.id === statusId);
+    return status?.icon || <Clock className="h-4 w-4" />;
   };
   
-  const openEvidenceDialog = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setIsEvidenceDialogOpen(true);
+  const getStatusBadgeColor = (statusId: string) => {
+    const status = statuses.find(s => s.id === statusId);
+    return status?.color || 'bg-gray-100 text-gray-800';
   };
   
-  const openDeleteDialog = (projectId: string) => {
-    setProjectToDelete(projectId);
-    setDeleteDialogOpen(true);
+  const getCategoryBadgeColor = (categoryName: string) => {
+    const category = categories.find(c => c.label === categoryName);
+    return category?.color || 'bg-gray-100 text-gray-800';
   };
   
-  const openViewDetails = (project: Project) => {
-    setSelectedProject(project);
-    setIsViewDetailsOpen(true);
-  };
-
-  // Handle project type change
-  const handleProjectTypeChange = (value: string) => {
-    projectForm.setValue("projectType", value);
-    
-    // Reset target fields when changing project type
-    if (value === 'fundraising') {
-      projectForm.setValue("targetType", "money");
-    } else if (value === 'donation') {
-      projectForm.setValue("targetType", "quantity");
-    } else {
-      projectForm.setValue("targetType", undefined);
-      projectForm.setValue("target", undefined);
-    }
-  };
-
+  const [newExternalMember, setNewExternalMember] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
+  
   return (
-    <div className="container mx-auto py-6 px-4 max-w-full lg:max-w-7xl">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Church Projects</h1>
-          <p className="text-muted-foreground mt-1">Manage and track all church projects in one place</p>
+          <h1 className="text-2xl font-bold">Projects</h1>
+          <p className="text-muted-foreground">Manage church projects, initiatives and campaigns</p>
         </div>
-        <Button onClick={() => setIsProjectDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Project
+        <Button className="mt-4 md:mt-0" onClick={() => setNewProjectDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Project
         </Button>
       </div>
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{projects.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {projects.filter(p => p.status === 'in-progress').length}
+      
+      <Tabs defaultValue="all" className="mb-6">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All Projects</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="mt-0">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {formatCurrency(projects.reduce((acc, curr) => acc + curr.budget, 0))}
+          ) : projects.length === 0 ? (
+            <div className="text-center p-12 border border-dashed rounded-lg">
+              <h3 className="text-lg font-medium mb-2">No Projects Yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first project to get started.</p>
+              <Button onClick={() => setNewProjectDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Project
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Spent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {formatCurrency(projects.reduce((acc, curr) => acc + curr.spent, 0))}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map(project => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onAddUpdate={() => handleAddUpdate(project)}
+                  onViewDetails={() => handleViewDetails(project)}
+                  onDelete={() => handleDeleteProject(project)}
+                  onAddEvidence={() => handleAddEvidence(project)}
+                  formatCurrency={formatCurrency}
+                  getStatusIcon={getStatusIcon}
+                  getStatusBadgeColor={getStatusBadgeColor}
+                  getCategoryBadgeColor={getCategoryBadgeColor}
+                />
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-col space-y-4">
-        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
-            <TabsList>
-              <TabsTrigger value="all">All Projects</TabsTrigger>
-              <TabsTrigger value="current-year">Current Year</TabsTrigger>
-              <TabsTrigger value="future">Future Projects</TabsTrigger>
-              <TabsTrigger value="past">Past Projects</TabsTrigger>
-            </TabsList>
-            <div className="flex flex-col md:flex-row gap-2">
-              <Input
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-48 lg:w-64"
-              />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="planned">Planned</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={timelineFilter} onValueChange={setTimelineFilter}>
-                <SelectTrigger className="w-full md:w-40">
-                  <SelectValue placeholder="Timeline" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Timelines</SelectItem>
-                  <SelectItem value="past">Past Projects</SelectItem>
-                  <SelectItem value="current">Current Projects</SelectItem>
-                  <SelectItem value="future">Future Projects</SelectItem>
-                </SelectContent>
-              </Select>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="active" className="mt-0">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          </div>
-
-          {/* Tab content */}
-          <TabsContent value="all" className="mt-0">
-            {filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.map((project) => (
-                  <ProjectCard 
+          ) : projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').length === 0 ? (
+            <div className="text-center p-12 border border-dashed rounded-lg">
+              <h3 className="text-lg font-medium mb-2">No Active Projects</h3>
+              <p className="text-muted-foreground mb-4">Create a new project or check completed projects.</p>
+              <Button onClick={() => setNewProjectDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Project
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects
+                .filter(p => p.status !== 'completed' && p.status !== 'cancelled')
+                .map(project => (
+                  <ProjectCard
                     key={project.id}
                     project={project}
-                    onAddUpdate={() => openUpdateDialog(project.id)}
-                    onAddEvidence={() => openEvidenceDialog(project.id)}
-                    onViewDetails={() => openViewDetails(project)}
-                    onDelete={() => openDeleteDialog(project.id)}
+                    onAddUpdate={() => handleAddUpdate(project)}
+                    onViewDetails={() => handleViewDetails(project)}
+                    onDelete={() => handleDeleteProject(project)}
+                    onAddEvidence={() => handleAddEvidence(project)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
                     getCategoryBadgeColor={getCategoryBadgeColor}
                   />
                 ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No projects found</h3>
-                <p className="text-muted-foreground mt-1">Try adjusting your filters or create a new project.</p>
-                <Button className="mt-4" onClick={() => setIsProjectDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add New Project
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="current-year" className="mt-0">
-            {filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.map((project) => (
-                  <ProjectCard 
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="completed" className="mt-0">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : projects.filter(p => p.status === 'completed').length === 0 ? (
+            <div className="text-center p-12 border border-dashed rounded-lg">
+              <h3 className="text-lg font-medium mb-2">No Completed Projects</h3>
+              <p className="text-muted-foreground">Projects will appear here when they are marked as completed.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects
+                .filter(p => p.status === 'completed')
+                .map(project => (
+                  <ProjectCard
                     key={project.id}
                     project={project}
-                    onAddUpdate={() => openUpdateDialog(project.id)}
-                    onAddEvidence={() => openEvidenceDialog(project.id)}
-                    onViewDetails={() => openViewDetails(project)}
-                    onDelete={() => openDeleteDialog(project.id)}
+                    onAddUpdate={() => handleAddUpdate(project)}
+                    onViewDetails={() => handleViewDetails(project)}
+                    onDelete={() => handleDeleteProject(project)}
+                    onAddEvidence={() => handleAddEvidence(project)}
                     formatCurrency={formatCurrency}
                     getStatusIcon={getStatusIcon}
                     getStatusBadgeColor={getStatusBadgeColor}
                     getCategoryBadgeColor={getCategoryBadgeColor}
                   />
                 ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No projects found for current year</h3>
-                <p className="text-muted-foreground mt-1">Try adjusting your filters or create a new project.</p>
-                <Button className="mt-4" onClick={() => setIsProjectDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add New Project
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="future" className="mt-0">
-            {filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.map((project) => (
-                  <ProjectCard 
-                    key={project.id}
-                    project={project}
-                    onAddUpdate={() => openUpdateDialog(project.id)}
-                    onAddEvidence={() => openEvidenceDialog(project.id)}
-                    onViewDetails={() => openViewDetails(project)}
-                    onDelete={() => openDeleteDialog(project.id)}
-                    formatCurrency={formatCurrency}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeColor={getStatusBadgeColor}
-                    getCategoryBadgeColor={getCategoryBadgeColor}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No future projects found</h3>
-                <p className="text-muted-foreground mt-1">Start planning for the future by creating new projects.</p>
-                <Button className="mt-4" onClick={() => setIsProjectDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add New Project
-                </Button>
-              </div>
-            )}
-          </TabsContent>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+      
+      {/* New Project Dialog */}
+      <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Add a new project or initiative for your church.
+            </DialogDescription>
+          </DialogHeader>
           
-          <TabsContent value="past" className="mt-0">
-            {filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProjects.map((project) => (
-                  <ProjectCard 
-                    key={project.id}
-                    project={project}
-                    onAddUpdate={() => openUpdateDialog(project.id)}
-                    onAddEvidence={() => openEvidenceDialog(project.id)}
-                    onViewDetails={() => openViewDetails(project)}
-                    onDelete={() => openDeleteDialog(project.id)}
-                    formatCurrency={formatCurrency}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeColor={getStatusBadgeColor}
-                    getCategoryBadgeColor={getCategoryBadgeColor}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No past projects found</h3>
-                <p className="text-muted-foreground mt-1">Projects are automatically moved here when they've been inactive for 30+ days after their end date.</p>
-                <Button className="mt-4" onClick={() => setIsProjectDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add New Project
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Add Project Dialog */}
-      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Add New Project</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new church project.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={projectForm.handleSubmit(handleCreateProject)}>
-            <div className="h-[calc(60vh-100px)] overflow-auto pr-4">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <FormLabel htmlFor="name">Project Name</FormLabel>
-                    <Input
-                      id="name"
-                      {...projectForm.register("name", { required: true })}
-                      placeholder="Enter project name"
-                    />
-                  </div>
-                  
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="projectType">Project Type</FormLabel>
-                    <Select 
-                      defaultValue={projectForm.getValues("projectType")}
-                      onValueChange={handleProjectTypeChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select project type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROJECT_TYPES.map(type => (
-                          <SelectItem key={type} value={type}>
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {(projectForm.getValues("projectType") === 'fundraising' || 
-                    projectForm.getValues("projectType") === 'donation') && (
-                    <div className="col-span-1">
-                      <FormLabel htmlFor="target">
-                        {projectForm.getValues("projectType") === 'fundraising' ? 'Target Amount (ZAR)' : 'Target Quantity'}
-                      </FormLabel>
-                      <Input
-                        id="target"
-                        type="number"
-                        {...projectForm.register("target", { 
-                          valueAsNumber: true,
-                          min: 0
-                        })}
-                        placeholder={projectForm.getValues("projectType") === 'fundraising' ? 
-                          "Enter target amount" : "Enter target quantity"}
-                      />
-                    </div>
-                  )}
-                  
-                  {projectForm.getValues("projectType") === 'donation' && (
-                    <div className="col-span-2">
-                      <FormLabel htmlFor="donationItems">
-                        Donation Items (One per line)
-                      </FormLabel>
-                      <Textarea
-                        id="donationItems"
-                        {...projectForm.register("donationItems")}
-                        placeholder="Enter donation items, one per line"
-                        rows={3}
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="col-span-2">
-                    <FormLabel htmlFor="description">Description</FormLabel>
-                    <Textarea
-                      id="description"
-                      {...projectForm.register("description", { required: true })}
-                      placeholder="Enter project description"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="status">Status</FormLabel>
-                    <Select 
-                      defaultValue={projectForm.getValues("status")}
-                      onValueChange={(value) => projectForm.setValue("status", value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="on-hold">On Hold</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="timeline">Timeline</FormLabel>
-                    <Select 
-                      defaultValue={projectForm.getValues("timeline")}
-                      onValueChange={(value) => projectForm.setValue("timeline", value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timeline" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="past">Past Project</SelectItem>
-                        <SelectItem value="current">Current Project</SelectItem>
-                        <SelectItem value="future">Future Project</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="startDate">Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          {projectForm.getValues("startDate") ? (
-                            format(projectForm.getValues("startDate"), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={projectForm.getValues("startDate")}
-                          onSelect={(date) => projectForm.setValue("startDate", date as Date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="endDate">End Date (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          {projectForm.getValues("endDate") ? (
-                            format(projectForm.getValues("endDate"), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={projectForm.getValues("endDate")}
-                          onSelect={(date) => projectForm.setValue("endDate", date || undefined)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="budget">Budget (ZAR)</FormLabel>
-                    <Input
-                      id="budget"
-                      type="number"
-                      {...projectForm.register("budget", { 
-                        required: true, 
-                        valueAsNumber: true,
-                        min: 0
-                      })}
-                      placeholder="Enter budget amount"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <FormLabel htmlFor="category">Category</FormLabel>
-                    <Select 
-                      defaultValue={projectForm.getValues("category")}
-                      onValueChange={(value) => projectForm.setValue("category", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DEFAULT_CATEGORIES.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
-                        ))}
-                        {customCategories.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
-                        ))}
-                        <SelectItem value="custom">Custom Category</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {projectForm.getValues("category") === 'custom' && (
-                    <div className="col-span-1">
-                      <FormLabel htmlFor="customCategory">Custom Category Name</FormLabel>
-                      <Input
-                        id="customCategory"
-                        {...projectForm.register("customCategory")}
-                        placeholder="Enter custom category"
-                      />
-                    </div>
-                  )}
-                  <div className="col-span-2">
-                    <FormLabel htmlFor="objectives">
-                      Objectives (One per line)
-                    </FormLabel>
-                    <Textarea
-                      id="objectives"
-                      {...projectForm.register("objectives")}
-                      placeholder="Enter objectives, one per line"
-                      rows={4}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <div className="flex justify-between items-center mb-2">
-                      <FormLabel>Team Members</FormLabel>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAddingCustomMember(!addingCustomMember);
-                            setAddingOutsideMember(false);
-                          }}
-                        >
-                          {addingCustomMember ? (
-                            <>
-                              <X className="h-4 w-4 mr-1" />
-                              Cancel
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add Custom Member
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAddingOutsideMember(!addingOutsideMember);
-                            setAddingCustomMember(false);
-                          }}
-                        >
-                          {addingOutsideMember ? (
-                            <>
-                              <X className="h-4 w-4 mr-1" />
-                              Cancel
-                            </>
-                          ) : (
-                            <>
-                              <User className="h-4 w-4 mr-1" />
-                              Add Outside Member
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Add custom member form */}
-                    {addingCustomMember && (
-                      <div className="flex flex-col space-y-2 mb-4 p-3 border rounded-md">
-                        <FormLabel htmlFor="customMemberName">Name</FormLabel>
-                        <Input
-                          id="customMemberName"
-                          value={customMemberName}
-                          onChange={(e) => setCustomMemberName(e.target.value)}
-                          placeholder="Enter member name"
-                        />
-                        <FormLabel htmlFor="customMemberRole">Role (Optional)</FormLabel>
-                        <Input
-                          id="customMemberRole"
-                          value={customMemberRole}
-                          onChange={(e) => setCustomMemberRole(e.target.value)}
-                          placeholder="Enter member role"
-                        />
-                        <Button 
-                          type="button" 
-                          size="sm" 
-                          onClick={handleAddCustomMember}
-                          disabled={!customMemberName.trim()}
-                        >
-                          Add to Team
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {/* Add outside member form */}
-                    {addingOutsideMember && (
-                      <div className="flex flex-col space-y-2 mb-4 p-3 border rounded-md">
-                        <FormLabel htmlFor="outsideMemberName">Name</FormLabel>
-                        <Input
-                          id="outsideMemberName"
-                          value={outsideMember.name}
-                          onChange={(e) => setOutsideMember({...outsideMember, name: e.target.value})}
-                          placeholder="Enter outside member name"
-                        />
-                        <FormLabel htmlFor="outsideMemberRole">Role (Optional)</FormLabel>
-                        <Input
-                          id="outsideMemberRole"
-                          value={outsideMember.role}
-                          onChange={(e) => setOutsideMember({...outsideMember, role: e.target.value})}
-                          placeholder="Enter outside member role"
-                        />
-                        <FormLabel htmlFor="outsideMemberOrganization">Organization (Optional)</FormLabel>
-                        <Input
-                          id="outsideMemberOrganization"
-                          value={outsideMember.organization}
-                          onChange={(e) => setOutsideMember({...outsideMember, organization: e.target.value})}
-                          placeholder="Enter organization name"
-                        />
-                        <Button 
-                          type="button" 
-                          size="sm" 
-                          onClick={handleAddOutsideMember}
-                          disabled={!outsideMember.name.trim()}
-                        >
-                          Add Outside Member
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {/* Search existing members */}
-                    <div className="mb-4">
-                      <FormLabel htmlFor="memberSearch">Search Church Members</FormLabel>
-                      <div className="relative">
-                        <Input
-                          id="memberSearch"
-                          value={memberSearchQuery}
-                          onChange={(e) => setMemberSearchQuery(e.target.value)}
-                          placeholder="Search members..."
-                          className="pr-8"
-                        />
-                        <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      </div>
-                      
-                      {memberSearchQuery && filteredMembers.length > 0 && (
-                        <div className="mt-1 border rounded-md max-h-40 overflow-y-auto">
-                          {filteredMembers.map(member => (
-                            <div 
-                              key={member.id}
-                              className="p-2 hover:bg-slate-100 cursor-pointer flex items-center"
-                              onClick={() => handleAddExistingMember(member)}
-                            >
-                              <Avatar className="h-6 w-6 mr-2">
-                                <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
-                              </Avatar>
-                              <span>{member.firstName} {member.lastName}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Display selected team members */}
-                    <div className="space-y-2">
-                      {projectForm.getValues("teamMembers")?.length > 0 ? (
-                        <div className="space-y-1">
-                          {projectForm.getValues("teamMembers").map(member => (
-                            <div key={member.id} className="flex items-center justify-between p-2 border rounded-md">
-                              <div className="flex items-center">
-                                <Avatar className="h-6 w-6 mr-2">
-                                  <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="text-sm font-medium">{member.name}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {member.role && <span>{member.role}</span>}
-                                    {member.isOutsideMember && member.organization && (
-                                      <span>{member.role ? ' • ' : ''}{member.organization}</span>
-                                    )}
-                                    {member.isOutsideMember && (
-                                      <span className="ml-1 text-blue-500">(Outside Member)</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveTeamMember(member.id)}
-                                className="h-7 w-7 p-0"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center p-4 border border-dashed rounded-md text-muted-foreground">
-                          No team members added yet
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Project Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter project name"
+                value={newProject.name}
+                onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+              />
             </div>
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsProjectDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Create Project</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Project Update Dialog */}
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add Project Update</DialogTitle>
-            <DialogDescription>
-              Record a progress update for this project.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={updateForm.handleSubmit(handleAddUpdate)}>
-            <div className="grid gap-4 py-4">
-              <div>
-                <FormLabel htmlFor="date">Date</FormLabel>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe the project"
+                value={newProject.description}
+                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                className="min-h-[100px]"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Start Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      {updateForm.getValues("date") ? (
-                        format(updateForm.getValues("date"), "PPP")
-                      ) : (
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      {newProject.startDate ? format(newProject.startDate, "PPP") : (
                         <span>Pick a date</span>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <Calendar className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
-                    <Calendar
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
                       mode="single"
-                      selected={updateForm.getValues("date")}
-                      onSelect={(date) => updateForm.setValue("date", date as Date)}
+                      selected={newProject.startDate}
+                      onSelect={(date) => setNewProject({...newProject, startDate: date || new Date()})}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div>
-                <FormLabel htmlFor="description">Update Description</FormLabel>
-                <Textarea
-                  id="description"
-                  {...updateForm.register("description", { required: true })}
-                  placeholder="Describe the progress or update"
-                  rows={4}
-                />
-              </div>
-              <div>
-                <FormLabel htmlFor="completionPercentage">
-                  Completion Percentage: {updateForm.getValues("completionPercentage")}%
-                </FormLabel>
-                <Input
-                  id="completionPercentage"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  {...updateForm.register("completionPercentage", { 
-                    required: true, 
-                    valueAsNumber: true,
-                  })}
-                  className="w-full"
-                />
-              </div>
               
-              <div>
-                <FormLabel htmlFor="expenseAmount">Expense Amount (ZAR)</FormLabel>
+              <div className="grid gap-2">
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      {newProject.endDate ? format(newProject.endDate, "PPP") : (
+                        <span>Optional</span>
+                      )}
+                      <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={newProject.endDate || undefined}
+                      onSelect={(date) => setNewProject({...newProject, endDate: date})}
+                      initialFocus
+                      disabled={(date) => date < (newProject.startDate || new Date())}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={newProject.status} 
+                onValueChange={(value) => setNewProject({...newProject, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map(status => (
+                    <SelectItem key={status.id} value={status.id}>
+                      <div className="flex items-center">
+                        <span className="mr-2">{status.icon}</span>
+                        <span>{status.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category</Label>
+              <Select 
+                value={newProject.category} 
+                onValueChange={(value) => setNewProject({...newProject, category: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {newProject.category === 'custom' && (
+              <div className="grid gap-2">
+                <Label htmlFor="customCategory">Custom Category Name</Label>
                 <Input
-                  id="expenseAmount"
-                  type="number"
-                  {...updateForm.register("expenseAmount", { 
-                    valueAsNumber: true,
-                    min: 0
-                  })}
-                  placeholder="Enter expense amount (optional)"
+                  id="customCategory"
+                  placeholder="Enter custom category name"
+                  value={newProject.customCategory}
+                  onChange={(e) => setNewProject({...newProject, customCategory: e.target.value})}
                 />
               </div>
-              
-              <div>
-                <FormLabel htmlFor="expenseDescription">Expense Description</FormLabel>
-                <Textarea
-                  id="expenseDescription"
-                  {...updateForm.register("expenseDescription")}
-                  placeholder="Describe what this expense was for"
-                  rows={2}
+            )}
+            
+            <div className="grid gap-2">
+              <Label htmlFor="budget">Budget</Label>
+              <Input
+                id="budget"
+                placeholder="Enter budget amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newProject.budget || ''}
+                onChange={(e) => setNewProject({...newProject, budget: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="hasGoal">Project Goal</Label>
+                <Switch 
+                  id="hasGoal" 
+                  checked={newProject.hasGoal}
+                  onCheckedChange={(checked) => setNewProject({...newProject, hasGoal: checked})}
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Add Update</Button>
-            </DialogFooter>
-          </form>
+            
+            {newProject.hasGoal && (
+              <>
+                <div className="grid gap-2">
+                  <Label>Goal Type</Label>
+                  <RadioGroup 
+                    value={newProject.goalType}
+                    onValueChange={(value) => setNewProject({...newProject, goalType: value})}
+                    className="flex flex-col space-y-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="financial" id="financial" />
+                      <Label htmlFor="financial" className="cursor-pointer">Financial Fundraising</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="custom" id="custom" />
+                      <Label htmlFor="custom" className="cursor-pointer">Custom Goal</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                {newProject.goalType === 'custom' && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="customGoalName">Custom Goal Name</Label>
+                    <Input
+                      id="customGoalName"
+                      placeholder="Enter goal name (e.g., Number of Attendees)"
+                      value={newProject.customGoalName}
+                      onChange={(e) => setNewProject({...newProject, customGoalName: e.target.value})}
+                    />
+                  </div>
+                )}
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="goalTarget">
+                    {newProject.goalType === 'financial' ? 'Fundraising Target' : 'Goal Target'}
+                  </Label>
+                  <Input
+                    id="goalTarget"
+                    placeholder={newProject.goalType === 'financial' ? "Enter amount to raise" : "Enter target value"}
+                    value={newProject.goalTarget}
+                    onChange={(e) => setNewProject({...newProject, goalTarget: e.target.value})}
+                    type={newProject.goalType === 'financial' ? "number" : "text"}
+                    min={newProject.goalType === 'financial' ? "0" : undefined}
+                    step={newProject.goalType === 'financial' ? "0.01" : undefined}
+                  />
+                </div>
+              </>
+            )}
+            
+            <Separator className="my-2" />
+            
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label>Team Members</Label>
+                <div className="text-xs text-muted-foreground">
+                  {newProject.teamMembers.length} selected
+                </div>
+              </div>
+              <Select
+                onValueChange={(value) => {
+                  if (!newProject.teamMembers.includes(value)) {
+                    setNewProject({
+                      ...newProject, 
+                      teamMembers: [...newProject.teamMembers, value]
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Add team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.filter(m => !newProject.teamMembers.includes(m.id)).map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.firstName} {member.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {newProject.teamMembers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {newProject.teamMembers.map(memberId => {
+                    const member = members.find(m => m.id === memberId);
+                    return (
+                      <Badge 
+                        key={memberId} 
+                        variant="secondary"
+                        className="flex items-center gap-1 pl-2"
+                      >
+                        {member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 ml-1 text-muted-foreground hover:text-destructive"
+                          onClick={() => {
+                            setNewProject({
+                              ...newProject,
+                              teamMembers: newProject.teamMembers.filter(id => id !== memberId)
+                            });
+                          }}
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label>External Collaborators</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Input
+                  placeholder="Name"
+                  value={newExternalMember.name}
+                  onChange={(e) => setNewExternalMember({...newExternalMember, name: e.target.value})}
+                />
+                <Input
+                  placeholder="Email (optional)"
+                  type="email"
+                  value={newExternalMember.email}
+                  onChange={(e) => setNewExternalMember({...newExternalMember, email: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 mt-2 gap-2">
+                <Input
+                  placeholder="Phone (optional)"
+                  value={newExternalMember.phone}
+                  onChange={(e) => setNewExternalMember({...newExternalMember, phone: e.target.value})}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (!newExternalMember.name) return;
+                    
+                    setNewProject({
+                      ...newProject,
+                      externalMembers: [
+                        ...newProject.externalMembers,
+                        {...newExternalMember}
+                      ]
+                    });
+                    setNewExternalMember({name: '', email: '', phone: ''});
+                  }}
+                  disabled={!newExternalMember.name}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+              
+              {newProject.externalMembers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {newProject.externalMembers.map((member, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant="outline"
+                      className="flex items-center gap-1 pl-2"
+                    >
+                      {member.name}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 ml-1 text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          setNewProject({
+                            ...newProject,
+                            externalMembers: newProject.externalMembers.filter((_, i) => i !== idx)
+                          });
+                        }}
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="grid gap-2">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="verified" 
+                  checked={newProject.verified}
+                  onCheckedChange={(checked) => setNewProject({...newProject, verified: checked})}
+                />
+                <Label htmlFor="verified" className="cursor-pointer">Mark as verified project</Label>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewProjectDialogOpen(false)}>Cancel</Button>
+            <Button type="submit" onClick={handleCreateProject}>Create Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Update Dialog */}
+      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add Project Update</DialogTitle>
+            <DialogDescription>
+              Record progress, changes or news about the project.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="update-description">Update Description</Label>
+              <Textarea
+                id="update-description"
+                placeholder="What's happening with the project?"
+                className="min-h-[100px]"
+                value={newUpdate.description}
+                onChange={(e) => setNewUpdate({...newUpdate, description: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="completion">Progress (%)</Label>
+              <div className="flex items-center">
+                <Input
+                  id="completion"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Completion percentage"
+                  value={newUpdate.completionPercentage}
+                  onChange={(e) => setNewUpdate({
+                    ...newUpdate, 
+                    completionPercentage: Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                  })}
+                />
+                <span className="ml-2 text-sm text-muted-foreground">%</span>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="expense">Expense</Label>
+              <div className="flex items-center">
+                <span className="mr-2 text-sm text-muted-foreground">$</span>
+                <Input
+                  id="expense"
+                  type="number"
+                  placeholder="Amount spent"
+                  min="0"
+                  step="0.01"
+                  value={newUpdate.expense || ''}
+                  onChange={(e) => setNewUpdate({
+                    ...newUpdate, 
+                    expense: parseFloat(e.target.value) || 0
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveUpdate}>Save Update</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
       {/* Evidence Dialog */}
-      <EvidenceDialog 
-        open={isEvidenceDialogOpen}
-        onOpenChange={setIsEvidenceDialogOpen}
-        onSubmit={handleAddEvidence}
+      <EvidenceDialog
+        open={evidenceDialogOpen}
+        onOpenChange={setEvidenceDialogOpen}
+        onSave={handleSaveEvidence}
       />
 
-      {/* View Project Details Dialog */}
-      <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
-          {selectedProject && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-xl">{selectedProject.name}</DialogTitle>
-                  <Badge className={cn(getStatusBadgeColor(selectedProject.status))}>
-                    <span className="flex items-center">
-                      {getStatusIcon(selectedProject.status)}
-                      <span className="ml-1 capitalize">{selectedProject.status.replace('-', ' ')}</span>
-                    </span>
-                  </Badge>
-                </div>
-                <DialogDescription>
-                  {selectedProject.description}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="h-[calc(70vh-100px)] overflow-y-auto pr-3">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Project Type Info */}
-                    {selectedProject.projectType && (
-                      <div className="col-span-2">
-                        <h4 className="text-sm font-medium mb-1">Project Type</h4>
-                        <p className="capitalize">{selectedProject.projectType}</p>
-                        
-                        {selectedProject.projectType === 'fundraising' && selectedProject.target && (
-                          <div className="mt-2">
-                            <h4 className="text-sm font-medium mb-1">Fundraising Target</h4>
-                            <div className="flex items-center">
-                              <span>{formatCurrency(selectedProject.target)}</span>
-                              <Progress 
-                                value={(selectedProject.spent / selectedProject.target) * 100}
-                                className="ml-4 flex-1"
-                              />
-                              <span className="ml-2">
-                                {Math.round((selectedProject.spent / selectedProject.target) * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {selectedProject.projectType === 'donation' && selectedProject.donationItems && selectedProject.donationItems.length > 0 && (
-                          <div className="mt-2">
-                            <h4 className="text-sm font-medium mb-1">Donation Items</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {selectedProject.donationItems.map((item, idx) => (
-                                <li key={idx}>{item}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Start Date</h4>
-                      <p>{format(selectedProject.startDate, 'PPP')}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">End Date</h4>
-                      <p>{selectedProject.endDate ? format(selectedProject.endDate, 'PPP') : 'Not specified'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Budget</h4>
-                      <p>{formatCurrency(selectedProject.budget)}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Spent</h4>
-                      <p>{formatCurrency(selectedProject.spent)}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Category</h4>
-                      <Badge className={cn(getCategoryBadgeColor(selectedProject.category))}>
-                        {selectedProject.category}
-                      </Badge>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Timeline</h4>
-                      <Badge className={cn(getTimelineBadgeColor(selectedProject.timeline))}>
-                        {selectedProject.timeline}
-                      </Badge>
-                    </div>
-                    <div className="col-span-2">
-                      <h4 className="text-sm font-medium mb-1">Progress</h4>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span>Current: {selectedProject.completionPercentage}%</span>
-                          <span>Goal: 100%</span>
-                        </div>
-                        <Progress value={selectedProject.completionPercentage} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Objectives */}
+      {/* Document Preview Dialog */}
+      <DocumentPreview
+        isOpen={documentPreviewOpen}
+        onClose={() => setDocumentPreviewOpen(false)}
+        document={selectedDocument}
+      />
+      
+      {/* Project Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[95vh]">
+          <DialogHeader>
+            <DialogTitle>{currentProject?.name}</DialogTitle>
+            <DialogDescription>
+              Project details and history
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[70vh]">
+            <div className="grid gap-4 py-4">
+              {/* Project Info */}
+              <div className="grid gap-2">
+                <h3 className="text-lg font-semibold">Project Information</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="font-medium">Status:</div>
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Objectives</h3>
-                    {selectedProject.objectives.length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {selectedProject.objectives.map((objective, idx) => (
-                          <li key={idx}>{objective}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted-foreground">No objectives defined for this project.</p>
-                    )}
-                  </div>
-
-                  {/* Team Members */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Team Members</h3>
-                    {selectedProject.teamMembers.length > 0 ? (
-                      <div className="space-y-2">
-                        {selectedProject.teamMembers.map(member => (
-                          <div key={member.id} className="flex items-center border p-2 rounded-md">
-                            <Avatar className="h-8 w-8 mr-2">
-                              <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{member.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {member.role && <span>{member.role}</span>}
-                                {member.isOutsideMember && member.organization && (
-                                  <span>{member.role ? ' • ' : ''}{member.organization}</span>
-                                )}
-                                {member.isOutsideMember && (
-                                  <span className="ml-1 text-blue-500">(Outside Member)</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No team members assigned to this project.</p>
-                    )}
+                    <Badge className={getStatusBadgeColor(currentProject?.status)}>
+                      {currentProject?.status?.replace('-', ' ')}
+                    </Badge>
                   </div>
                   
-                  {/* Evidence */}
+                  <div className="font-medium">Category:</div>
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Supporting Evidence</h3>
-                    {selectedProject.evidence && selectedProject.evidence.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedProject.evidence.map(evidence => (
-                          <div key={evidence.id} className="border rounded-md p-3">
-                            <div className="flex justify-between items-start">
-                              <h4 className="font-medium">{evidence.title}</h4>
-                              <Badge 
-                                variant={evidence.verified ? "default" : "outline"}
-                                className={evidence.verified ? "bg-green-100 text-green-800 flex items-center gap-1" : "text-amber-600 flex items-center gap-1 border-amber-300"}
-                              >
-                                {evidence.verified ? 
-                                  <><FileCheck className="h-3 w-3" /> Verified</> : 
-                                  <><AlertTriangle className="h-3 w-3" /> Pending Verification</>
-                                }
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">Date: {format(evidence.date, 'PPP')}</p>
-                            <p className="mt-1">{evidence.description}</p>
-                            {evidence.fileUrl && (
-                              <a 
-                                href={evidence.fileUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block mt-2 text-sm text-blue-600 hover:underline"
-                              >
-                                View Document/Image
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center p-4 border border-dashed rounded-md">
-                        <p className="text-muted-foreground">No supporting evidence has been added yet.</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-2"
-                          onClick={() => {
-                            setSelectedProjectId(selectedProject.id);
-                            setIsViewDetailsOpen(false);
-                            setIsEvidenceDialogOpen(true);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Evidence
-                        </Button>
-                      </div>
-                    )}
+                    <Badge className={getCategoryBadgeColor(currentProject?.category)}>
+                      {currentProject?.category}
+                    </Badge>
                   </div>
-
-                  {/* Updates */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Project Updates</h3>
-                    {selectedProject.updates.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedProject.updates
-                          .sort((a, b) => b.date.getTime() - a.date.getTime())
-                          .map(update => (
-                            <div key={update.id} className="border-l-4 border-blue-500 pl-3 py-1">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <p className="text-sm text-muted-foreground">{format(update.date, 'PPP')}</p>
-                                  <p className="mt-1">{update.description}</p>
-                                  
-                                  {/* Show expense information if available */}
-                                  {update.expenseAmount && update.expenseAmount > 0 && (
-                                    <div className="mt-2 p-2 bg-amber-50 rounded-md">
-                                      <p className="text-sm font-medium">Expense: {formatCurrency(update.expenseAmount)}</p>
-                                      {update.expenseDescription && (
-                                        <p className="text-sm text-muted-foreground">{update.expenseDescription}</p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                {update.completionPercentage !== undefined && (
-                                  <Badge variant="outline" className="ml-2">
-                                    {update.completionPercentage}% complete
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))
+                  
+                  <div className="font-medium">Start Date:</div>
+                  <div>{currentProject?.startDate ? format(new Date(currentProject.startDate), "PPP") : 'N/A'}</div>
+                  
+                  <div className="font-medium">End Date:</div>
+                  <div>{currentProject?.endDate ? format(new Date(currentProject.endDate), "PPP") : 'N/A'}</div>
+                  
+                  {currentProject?.budget > 0 && (
+                    <>
+                      <div className="font-medium">Budget:</div>
+                      <div>{currentProject ? formatCurrency(currentProject.budget) : 'N/A'}</div>
+                      
+                      <div className="font-medium">Spent:</div>
+                      <div>{currentProject ? formatCurrency(currentProject.spent || 0) : '$0.00'}</div>
+                      
+                      <div className="font-medium">Remaining:</div>
+                      <div>{currentProject ? formatCurrency(currentProject.budget - (currentProject.spent || 0)) : 'N/A'}</div>
+                    </>
+                  )}
+                  
+                  {currentProject?.goal && (
+                    <>
+                      <div className="font-medium">
+                        {currentProject.goal.type === 'financial' ? 'Fundraising Target:' : `${currentProject.goal.name} Goal:`}
+                      </div>
+                      <div>
+                        {currentProject.goal.type === 'financial' 
+                          ? formatCurrency(currentProject.goal.target) 
+                          : currentProject.goal.target
                         }
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground">No updates recorded for this project yet.</p>
-                    )}
+                    </>
+                  )}
+                  
+                  <div className="font-medium">Completion:</div>
+                  <div className="flex items-center gap-2">
+                    <Progress value={currentProject?.completionPercentage || 0} className="w-20" />
+                    <span>{currentProject?.completionPercentage || 0}%</span>
                   </div>
                 </div>
+                
+                <div className="mt-2">
+                  <div className="font-medium mb-1">Description:</div>
+                  <p className="text-sm text-muted-foreground">{currentProject?.description}</p>
+                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsViewDetailsOpen(false)}>Close</Button>
-                <Button 
-                  onClick={() => {
-                    setSelectedProjectId(selectedProject.id);
-                    setIsViewDetailsOpen(false);
-                    setIsUpdateDialogOpen(true);
-                  }}
-                >
-                  Add Update
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+              
+              <Separator />
+              
+              {/* Team Members */}
+              <div className="grid gap-2">
+                <h3 className="text-lg font-semibold">Team</h3>
+                
+                {(!currentProject?.teamMembers?.length && !currentProject?.externalMembers?.length) && (
+                  <p className="text-sm text-muted-foreground">No team members assigned to this project.</p>
+                )}
+                
+                {currentProject?.teamMembers?.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-sm font-medium mb-1">Church Members:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {currentProject?.teamMembers.map((memberId: string) => {
+                        const member = members.find(m => m.id === memberId);
+                        return (
+                          <Badge key={memberId} variant="secondary">
+                            {member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {currentProject?.externalMembers?.length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium mb-1">External Collaborators:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {currentProject?.externalMembers.map((member: any, idx: number) => (
+                        <Badge key={idx} variant="outline">
+                          {member.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <Separator />
+              
+              {/* Updates History */}
+              <div className="grid gap-2">
+                <h3 className="text-lg font-semibold">Updates</h3>
+                
+                {!currentProject?.updates?.length ? (
+                  <p className="text-sm text-muted-foreground">No updates recorded yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {currentProject.updates.map((update: any) => (
+                      <div key={update.id} className="bg-muted/50 p-3 rounded-md">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="font-medium">{format(new Date(update.date), "PPP")}</div>
+                          <Badge variant="outline">{update.completionPercentage}% Complete</Badge>
+                        </div>
+                        <p className="text-sm">{update.description}</p>
+                        {update.expense > 0 && (
+                          <div className="mt-2 text-sm flex items-center gap-2">
+                            <Badge variant="outline" className="text-orange-600">
+                              Expense: {formatCurrency(update.expense)}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <Separator />
+              
+              {/* Evidence */}
+              <div className="grid gap-2">
+                <h3 className="text-lg font-semibold">Evidence & Documents</h3>
+                
+                {!currentProject?.evidence?.length ? (
+                  <p className="text-sm text-muted-foreground">No evidence uploaded yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {currentProject.evidence.map((doc: any) => (
+                      <div key={doc.id} className="bg-muted/50 p-2 rounded-md flex items-center gap-2">
+                        <div className="flex-1 truncate">
+                          <div className="font-medium truncate">{doc.name}</div>
+                          <div className="text-xs text-muted-foreground">{format(new Date(doc.date), "PP")}</div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewDocument(doc)}
+                          className="flex-shrink-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+            <Button onClick={() => {
+              setDetailsDialogOpen(false);
+              handleAddUpdate(currentProject);
+            }}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Update
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this project and all associated records. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteProject}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      
+      {/* Confirm Delete Dialog */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this project? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-sm font-medium">{currentProject?.name}</p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

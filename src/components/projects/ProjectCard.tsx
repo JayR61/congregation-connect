@@ -41,7 +41,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     <Card className="overflow-hidden h-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle>{project.name}</CardTitle>
+          <CardTitle className="truncate pr-2" title={project.name}>{project.name}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge className={cn("ml-2", getStatusBadgeColor(project.status))}>
               <span className="flex items-center">
@@ -63,7 +63,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </Button>
           </div>
         </div>
-        <CardDescription>{project.description}</CardDescription>
+        <CardDescription className="line-clamp-2" title={project.description}>
+          {project.description}
+        </CardDescription>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="space-y-2">
@@ -77,14 +79,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               <span className="text-sm">{new Date(project.endDate).toLocaleDateString()}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Budget:</span>
-            <span className="text-sm">{formatCurrency(project.budget)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Spent:</span>
-            <span className="text-sm">{formatCurrency(project.spent)}</span>
-          </div>
+          {project.budget > 0 && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Budget:</span>
+                <span className="text-sm">{formatCurrency(project.budget)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Spent:</span>
+                <span className="text-sm">{formatCurrency(project.spent)}</span>
+              </div>
+            </>
+          )}
+          {project.goal && project.goal.type === 'financial' && (
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Fundraising Target:</span>
+              <span className="text-sm">{formatCurrency(project.goal.target)}</span>
+            </div>
+          )}
+          {project.goal && project.goal.type === 'custom' && (
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">{project.goal.name}:</span>
+              <span className="text-sm">{project.goal.target}</span>
+            </div>
+          )}
           <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Progress:</span>

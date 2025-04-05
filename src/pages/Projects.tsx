@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -53,7 +54,8 @@ import {
   X,
   Trash2,
   FileCheck,
-  AlertTriangle
+  AlertTriangle,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
@@ -92,6 +94,10 @@ interface Project {
   evidence?: ProjectEvidence[];
   lastUpdateDate?: Date;
   verified: boolean;
+  projectType?: string;
+  target?: number;
+  targetType?: 'money' | 'quantity';
+  donationItems?: string[];
 }
 
 interface TeamMember {
@@ -99,6 +105,8 @@ interface TeamMember {
   name: string;
   role?: string;
   isCustom?: boolean;
+  isOutsideMember?: boolean;
+  organization?: string;
 }
 
 interface ProjectUpdate {
@@ -108,6 +116,8 @@ interface ProjectUpdate {
   description: string;
   author: string;
   completionPercentage?: number;
+  expenseAmount?: number;
+  expenseDescription?: string;
 }
 
 interface ProjectEvidence {
@@ -133,12 +143,18 @@ interface ProjectFormValues {
   objectives: string;
   teamMembers: TeamMember[];
   timeline: 'past' | 'current' | 'future';
+  projectType: string;
+  target?: number;
+  targetType?: 'money' | 'quantity';
+  donationItems?: string;
 }
 
 interface UpdateFormValues {
   description: string;
   date: Date;
   completionPercentage: number;
+  expenseAmount?: number;
+  expenseDescription?: string;
 }
 
 interface EvidenceFormValues {
@@ -148,7 +164,14 @@ interface EvidenceFormValues {
   file?: File;
 }
 
+interface OutsideMemberFormValues {
+  name: string;
+  role?: string;
+  organization?: string;
+}
+
 const DEFAULT_CATEGORIES = ['building', 'outreach', 'missions', 'education', 'other'];
+const PROJECT_TYPES = ['standard', 'fundraising', 'donation', 'event', 'other'];
 
 const Projects = () => {
   const { members } = useAppContext();
@@ -167,6 +190,12 @@ const Projects = () => {
   const [customCategoryName, setCustomCategoryName] = useState('');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [addingCustomMember, setAddingCustomMember] = useState(false);
+  const [addingOutsideMember, setAddingOutsideMember] = useState(false);
+  const [outsideMember, setOutsideMember] = useState<OutsideMemberFormValues>({
+    name: '',
+    role: '',
+    organization: ''
+  });
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -187,7 +216,11 @@ const Projects = () => {
       customCategory: '',
       objectives: '',
       teamMembers: [],
-      timeline: 'current'
+      timeline: 'current',
+      projectType: 'standard',
+      target: undefined,
+      targetType: undefined,
+      donationItems: ''
     }
   });
 
@@ -196,7 +229,9 @@ const Projects = () => {
     defaultValues: {
       description: '',
       date: new Date(),
-      completionPercentage: 0
+      completionPercentage: 0,
+      expenseAmount: 0,
+      expenseDescription: ''
     }
   });
 
@@ -290,6 +325,30 @@ const Projects = () => {
       toast.success(`Added ${newMember.name} to the team`);
     }
   };
+  
+  const handleAddOutsideMember = () => {
+    if (outsideMember.name.trim()) {
+      const newMember: TeamMember = {
+        id: `outside-${Date.now()}`,
+        name: outsideMember.name.trim(),
+        role: outsideMember.role?.trim() || undefined,
+        isOutsideMember: true,
+        organization: outsideMember.organization?.trim() || undefined
+      };
+
+      const currentMembers = projectForm.getValues("teamMembers") || [];
+      projectForm.setValue("teamMembers", [...currentMembers, newMember]);
+      
+      // Reset form
+      setOutsideMember({
+        name: '',
+        role: '',
+        organization: ''
+      });
+      setAddingOutsideMember(false);
+      toast.success(`Added outside member ${newMember.name} to the team`);
+    }
+  };
 
   const handleAddExistingMember = (member: any) => {
     const currentMembers = projectForm.getValues("teamMembers") || [];
@@ -331,6 +390,14 @@ const Projects = () => {
         setCustomCategories([...customCategories, category]);
       }
     }
+    
+    // Handle donation items if applicable
+    let donationItems: string[] = [];
+    if (data.projectType === 'donation' && data.donationItems) {
+      donationItems = data.donationItems
+        .split('\n')
+        .filter(item => item.trim() !== '');
+    }
 
     const newProject: Project = {
       id: `proj-${Date.now()}`,
@@ -349,7 +416,11 @@ const Projects = () => {
       timeline: data.timeline,
       evidence: [],
       lastUpdateDate: new Date(),
-      verified: false
+      verified: false,
+      projectType: data.projectType,
+      target: data.target,
+      targetType: data.targetType,
+      donationItems: donationItems
     };
 
     setProjects(prev => [...prev, newProject]);
@@ -367,8 +438,16 @@ const Projects = () => {
       date: data.date,
       description: data.description,
       author: 'current-user', // Using the current user ID
-      completionPercentage: data.completionPercentage
+      completionPercentage: data.completionPercentage,
+      expenseAmount: data.expenseAmount,
+      expenseDescription: data.expenseDescription
     };
+    
+    // Calculate new spent amount if expense was provided
+    let newSpent = 0;
+    if (data.expenseAmount && data.expenseAmount > 0) {
+      newSpent = data.expenseAmount;
+    }
 
     setProjects(prev => prev.map(project => {
       if (project.id === selectedProjectId) {
@@ -376,6 +455,7 @@ const Projects = () => {
           ...project,
           updates: [...project.updates, newUpdate],
           completionPercentage: data.completionPercentage,
+          spent: project.spent + newSpent,
           lastUpdateDate: new Date()
         };
       }
@@ -523,6 +603,21 @@ const Projects = () => {
   const openViewDetails = (project: Project) => {
     setSelectedProject(project);
     setIsViewDetailsOpen(true);
+  };
+
+  // Handle project type change
+  const handleProjectTypeChange = (value: string) => {
+    projectForm.setValue("projectType", value);
+    
+    // Reset target fields when changing project type
+    if (value === 'fundraising') {
+      projectForm.setValue("targetType", "money");
+    } else if (value === 'donation') {
+      projectForm.setValue("targetType", "quantity");
+    } else {
+      projectForm.setValue("targetType", undefined);
+      projectForm.setValue("target", undefined);
+    }
   };
 
   return (
@@ -771,6 +866,59 @@ const Projects = () => {
                       placeholder="Enter project name"
                     />
                   </div>
+                  
+                  <div className="col-span-1">
+                    <FormLabel htmlFor="projectType">Project Type</FormLabel>
+                    <Select 
+                      defaultValue={projectForm.getValues("projectType")}
+                      onValueChange={handleProjectTypeChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_TYPES.map(type => (
+                          <SelectItem key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {(projectForm.getValues("projectType") === 'fundraising' || 
+                    projectForm.getValues("projectType") === 'donation') && (
+                    <div className="col-span-1">
+                      <FormLabel htmlFor="target">
+                        {projectForm.getValues("projectType") === 'fundraising' ? 'Target Amount (ZAR)' : 'Target Quantity'}
+                      </FormLabel>
+                      <Input
+                        id="target"
+                        type="number"
+                        {...projectForm.register("target", { 
+                          valueAsNumber: true,
+                          min: 0
+                        })}
+                        placeholder={projectForm.getValues("projectType") === 'fundraising' ? 
+                          "Enter target amount" : "Enter target quantity"}
+                      />
+                    </div>
+                  )}
+                  
+                  {projectForm.getValues("projectType") === 'donation' && (
+                    <div className="col-span-2">
+                      <FormLabel htmlFor="donationItems">
+                        Donation Items (One per line)
+                      </FormLabel>
+                      <Textarea
+                        id="donationItems"
+                        {...projectForm.register("donationItems")}
+                        placeholder="Enter donation items, one per line"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                  
                   <div className="col-span-2">
                     <FormLabel htmlFor="description">Description</FormLabel>
                     <Textarea
@@ -921,24 +1069,50 @@ const Projects = () => {
                   <div className="col-span-2">
                     <div className="flex justify-between items-center mb-2">
                       <FormLabel>Team Members</FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAddingCustomMember(!addingCustomMember)}
-                      >
-                        {addingCustomMember ? (
-                          <>
-                            <X className="h-4 w-4 mr-1" />
-                            Cancel
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Custom Member
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAddingCustomMember(!addingCustomMember);
+                            setAddingOutsideMember(false);
+                          }}
+                        >
+                          {addingCustomMember ? (
+                            <>
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add Custom Member
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAddingOutsideMember(!addingOutsideMember);
+                            setAddingCustomMember(false);
+                          }}
+                        >
+                          {addingOutsideMember ? (
+                            <>
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
+                            </>
+                          ) : (
+                            <>
+                              <User className="h-4 w-4 mr-1" />
+                              Add Outside Member
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     
                     {/* Add custom member form */}
@@ -965,6 +1139,41 @@ const Projects = () => {
                           disabled={!customMemberName.trim()}
                         >
                           Add to Team
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Add outside member form */}
+                    {addingOutsideMember && (
+                      <div className="flex flex-col space-y-2 mb-4 p-3 border rounded-md">
+                        <FormLabel htmlFor="outsideMemberName">Name</FormLabel>
+                        <Input
+                          id="outsideMemberName"
+                          value={outsideMember.name}
+                          onChange={(e) => setOutsideMember({...outsideMember, name: e.target.value})}
+                          placeholder="Enter outside member name"
+                        />
+                        <FormLabel htmlFor="outsideMemberRole">Role (Optional)</FormLabel>
+                        <Input
+                          id="outsideMemberRole"
+                          value={outsideMember.role}
+                          onChange={(e) => setOutsideMember({...outsideMember, role: e.target.value})}
+                          placeholder="Enter outside member role"
+                        />
+                        <FormLabel htmlFor="outsideMemberOrganization">Organization (Optional)</FormLabel>
+                        <Input
+                          id="outsideMemberOrganization"
+                          value={outsideMember.organization}
+                          onChange={(e) => setOutsideMember({...outsideMember, organization: e.target.value})}
+                          placeholder="Enter organization name"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={handleAddOutsideMember}
+                          disabled={!outsideMember.name.trim()}
+                        >
+                          Add Outside Member
                         </Button>
                       </div>
                     )}
@@ -1013,7 +1222,15 @@ const Projects = () => {
                                 </Avatar>
                                 <div>
                                   <div className="text-sm font-medium">{member.name}</div>
-                                  {member.role && <div className="text-xs text-muted-foreground">{member.role}</div>}
+                                  <div className="text-xs text-muted-foreground">
+                                    {member.role && <span>{member.role}</span>}
+                                    {member.isOutsideMember && member.organization && (
+                                      <span>{member.role ? ' • ' : ''}{member.organization}</span>
+                                    )}
+                                    {member.isOutsideMember && (
+                                      <span className="ml-1 text-blue-500">(Outside Member)</span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <Button
@@ -1109,6 +1326,29 @@ const Projects = () => {
                   className="w-full"
                 />
               </div>
+              
+              <div>
+                <FormLabel htmlFor="expenseAmount">Expense Amount (ZAR)</FormLabel>
+                <Input
+                  id="expenseAmount"
+                  type="number"
+                  {...updateForm.register("expenseAmount", { 
+                    valueAsNumber: true,
+                    min: 0
+                  })}
+                  placeholder="Enter expense amount (optional)"
+                />
+              </div>
+              
+              <div>
+                <FormLabel htmlFor="expenseDescription">Expense Description</FormLabel>
+                <Textarea
+                  id="expenseDescription"
+                  {...updateForm.register("expenseDescription")}
+                  placeholder="Describe what this expense was for"
+                  rows={2}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
@@ -1148,6 +1388,41 @@ const Projects = () => {
               <div className="h-[calc(70vh-100px)] overflow-y-auto pr-3">
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
+                    {/* Project Type Info */}
+                    {selectedProject.projectType && (
+                      <div className="col-span-2">
+                        <h4 className="text-sm font-medium mb-1">Project Type</h4>
+                        <p className="capitalize">{selectedProject.projectType}</p>
+                        
+                        {selectedProject.projectType === 'fundraising' && selectedProject.target && (
+                          <div className="mt-2">
+                            <h4 className="text-sm font-medium mb-1">Fundraising Target</h4>
+                            <div className="flex items-center">
+                              <span>{formatCurrency(selectedProject.target)}</span>
+                              <Progress 
+                                value={(selectedProject.spent / selectedProject.target) * 100}
+                                className="ml-4 flex-1"
+                              />
+                              <span className="ml-2">
+                                {Math.round((selectedProject.spent / selectedProject.target) * 100)}%
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {selectedProject.projectType === 'donation' && selectedProject.donationItems && selectedProject.donationItems.length > 0 && (
+                          <div className="mt-2">
+                            <h4 className="text-sm font-medium mb-1">Donation Items</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {selectedProject.donationItems.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  
                     <div>
                       <h4 className="text-sm font-medium mb-1">Start Date</h4>
                       <p>{format(selectedProject.startDate, 'PPP')}</p>
@@ -1214,7 +1489,15 @@ const Projects = () => {
                             </Avatar>
                             <div>
                               <div className="font-medium">{member.name}</div>
-                              {member.role && <div className="text-sm text-muted-foreground">{member.role}</div>}
+                              <div className="text-sm text-muted-foreground">
+                                {member.role && <span>{member.role}</span>}
+                                {member.isOutsideMember && member.organization && (
+                                  <span>{member.role ? ' • ' : ''}{member.organization}</span>
+                                )}
+                                {member.isOutsideMember && (
+                                  <span className="ml-1 text-blue-500">(Outside Member)</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1290,6 +1573,16 @@ const Projects = () => {
                                 <div>
                                   <p className="text-sm text-muted-foreground">{format(update.date, 'PPP')}</p>
                                   <p className="mt-1">{update.description}</p>
+                                  
+                                  {/* Show expense information if available */}
+                                  {update.expenseAmount && update.expenseAmount > 0 && (
+                                    <div className="mt-2 p-2 bg-amber-50 rounded-md">
+                                      <p className="text-sm font-medium">Expense: {formatCurrency(update.expenseAmount)}</p>
+                                      {update.expenseDescription && (
+                                        <p className="text-sm text-muted-foreground">{update.expenseDescription}</p>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                                 {update.completionPercentage !== undefined && (
                                   <Badge variant="outline" className="ml-2">

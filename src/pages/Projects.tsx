@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress } from '@/components/ui/progress';
 import { 
   PlusCircle, 
   CheckCircle, 
@@ -23,9 +24,10 @@ import {
   Loader2, 
   Clock,
   AlertTriangle,
-  ArrowUpRight
+  ArrowUpRight,
+  Eye
 } from 'lucide-react';
-import { ProjectCard } from '@/components/projects';
+import { ProjectCard } from '@/components/projects/ProjectCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';

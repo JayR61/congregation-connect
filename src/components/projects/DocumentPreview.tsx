@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ExternalLink } from 'lucide-react';
+import { X, Download, ExternalLink, Eye } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentPreviewProps {
@@ -31,6 +31,14 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ isOpen, onClose, docu
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleDownload = () => {
+    if (!document) return;
+    const a = document.createElement('a');
+    a.href = document.url;
+    a.download = document.name;
+    a.click();
   };
 
   return (
@@ -109,12 +117,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ isOpen, onClose, docu
             <Button variant="outline" onClick={() => window.open(document.url, '_blank')}>
               <ExternalLink className="mr-2 h-4 w-4" /> Open in New Tab
             </Button>
-            <Button onClick={() => {
-              const a = document.createElement('a');
-              a.href = document.url;
-              a.download = document.name;
-              a.click();
-            }} className="ml-2">
+            <Button onClick={handleDownload} className="ml-2">
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
           </div>

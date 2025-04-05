@@ -335,7 +335,6 @@ const Projects = () => {
     description: ''
   });
 
-  // Update the formatCurrency function to use South African Rand
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
@@ -392,7 +391,6 @@ const Projects = () => {
     }
   };
 
-  // Add a function to filter projects by timeframe
   const getFilteredProjects = (timeframe: 'all' | 'past' | 'future' | 'current') => {
     let filtered = [...projects];
     
@@ -537,7 +535,6 @@ const Projects = () => {
         <Button onClick={() => setIsCreatingProject(true)}>Create New Project</Button>
       </div>
       
-      {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
@@ -580,7 +577,6 @@ const Projects = () => {
       </div>
 
       <div className="space-y-5">
-        {/* Filters */}
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-background rounded-lg p-3 border">
           <Input
             type="search"
@@ -618,7 +614,6 @@ const Projects = () => {
           </div>
         </div>
 
-        {/* Tabs for Project Timeframes */}
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="all">All Projects</TabsTrigger>
@@ -627,7 +622,6 @@ const Projects = () => {
             <TabsTrigger value="past">Past</TabsTrigger>
           </TabsList>
 
-          {/* Tab Content */}
           <TabsContent value="all" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {getFilteredProjects('all').map((project) => (
@@ -726,7 +720,6 @@ const Projects = () => {
         </Tabs>
       </div>
 
-      {/* Project Creation Dialog */}
       <Dialog open={isCreatingProject} onOpenChange={setIsCreatingProject}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -890,4 +883,175 @@ const Projects = () => {
                     type="number"
                     id="goalTarget"
                     value={String(newProject.goal.target)}
-                    onChange={(e) => setNewProject({ ...newProject, goal: { ...newProject.goal, target:
+                    onChange={(e) => setNewProject({ ...newProject, goal: { ...newProject.goal, target: e.target.value } })}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreatingProject(false)}>Cancel</Button>
+            <Button onClick={handleCreateProject}>Create Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {selectedProject && (
+        <Dialog open={isViewingProjectDetails} onOpenChange={handleCloseDetails}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedProject.name}</DialogTitle>
+              <DialogDescription>
+                Project Details
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium">Category</h3>
+                  <p className="mt-1">{selectedProject.category}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium">Status</h3>
+                  <p className="mt-1">{selectedProject.status.replace('-', ' ')}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium">Start Date</h3>
+                  <p className="mt-1">{new Date(selectedProject.startDate).toLocaleDateString()}</p>
+                </div>
+                {selectedProject.endDate && (
+                  <div>
+                    <h3 className="text-sm font-medium">End Date</h3>
+                    <p className="mt-1">{new Date(selectedProject.endDate).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Description</h3>
+                <p className="mt-1">{selectedProject.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium">Budget</h3>
+                  <p className="mt-1">{formatCurrency(selectedProject.budget)}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium">Spent</h3>
+                  <p className="mt-1">{formatCurrency(selectedProject.spent)}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Goal</h3>
+                <p className="mt-1">
+                  {selectedProject.goal.type === 'financial' 
+                    ? `Fundraising Target: ${formatCurrency(Number(selectedProject.goal.target))}` 
+                    : `${selectedProject.goal.name}: ${selectedProject.goal.target}`}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Progress</h3>
+                <div className="mt-1">
+                  <Progress value={selectedProject.completionPercentage} />
+                  <p className="mt-1 text-right text-sm">{selectedProject.completionPercentage}%</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Updates</h3>
+                {selectedProject.updates.length === 0 && (
+                  <p className="mt-1 text-muted-foreground">No updates yet.</p>
+                )}
+                {selectedProject.updates.length > 0 && (
+                  <div className="mt-1 space-y-2">
+                    {selectedProject.updates.map((update, index) => (
+                      <div key={index} className="border p-3 rounded-md">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium">{new Date(update.date).toLocaleDateString()}</p>
+                        </div>
+                        <p className="mt-1">{update.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Evidence</h3>
+                {selectedProject.evidence.length === 0 && (
+                  <p className="mt-1 text-muted-foreground">No evidence uploaded yet.</p>
+                )}
+                {selectedProject.evidence.length > 0 && (
+                  <div className="mt-1 space-y-2">
+                    {selectedProject.evidence.map((evidence, index) => (
+                      <div key={index} className="border p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          <p className="text-sm font-medium">{evidence.file}</p>
+                        </div>
+                        <p className="mt-1">{evidence.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseDetails}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <Dialog open={isAddingUpdate} onOpenChange={(open) => !open && setIsAddingUpdate(false)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add Project Update</DialogTitle>
+            <DialogDescription>
+              Provide a new update for the project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid gap-4">
+              <Label htmlFor="update-content">Update Content</Label>
+              <Textarea
+                id="update-content"
+                placeholder="What's new with this project?"
+                value={newUpdateContent}
+                onChange={(e) => setNewUpdateContent(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddingUpdate(false)}>Cancel</Button>
+            <Button 
+              onClick={() => selectedProjectIdForUpdate && handleUpdateSubmit(selectedProjectIdForUpdate, newUpdateContent)}
+              disabled={!newUpdateContent}
+            >
+              Save Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {addEvidenceProjectId && (
+        <EvidenceDialog
+          open={!!addEvidenceProjectId}
+          onOpenChange={() => setAddEvidenceProjectId(null)}
+          onSave={(files, description) => {
+            if (addEvidenceProjectId) {
+              const fileName = files.length > 0 ? files[0].name : "evidence.pdf";
+              handleEvidenceSubmit(addEvidenceProjectId, { file: fileName, description });
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Projects;

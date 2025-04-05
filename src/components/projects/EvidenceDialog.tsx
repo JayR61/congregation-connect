@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useForm } from 'react-hook-form';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EvidenceDialogProps {
   open: boolean;
@@ -177,7 +178,7 @@ const EvidenceDialog: React.FC<EvidenceDialogProps> = ({ open, onOpenChange, onS
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Add Project Evidence</DialogTitle>
           <DialogDescription>
@@ -185,109 +186,112 @@ const EvidenceDialog: React.FC<EvidenceDialogProps> = ({ open, onOpenChange, onS
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {file ? (
-              <div className="flex items-center p-3 border rounded-md">
-                <div className="mr-2">
-                  {getFileIcon(file)}
+        <ScrollArea className="max-h-[60vh] pr-4 overflow-auto">
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              {file ? (
+                <div className="flex items-center p-3 border rounded-md">
+                  <div className="mr-2 flex-shrink-0">
+                    {getFileIcon(file)}
+                  </div>
+                  <div className="flex-1 truncate min-w-0">
+                    <p className="font-medium truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {(file.size / 1024).toFixed(2)} KB • {file.type || 'Unknown type'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={() => setFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex-1 truncate">
-                  <p className="font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(file.size / 1024).toFixed(2)} KB • {file.type || 'Unknown type'}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFile(null)}
+              ) : (
+                <div
+                  className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
                 >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-              >
-                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                <p className="font-medium">Click to select a file</p>
-                <p className="text-sm text-muted-foreground">
-                  or drag and drop here
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Support for images, videos, documents, PDFs, and more
-                </p>
-                <input
-                  type="file"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="*/*" // Accept all file types
+                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="font-medium">Click to select a file</p>
+                  <p className="text-sm text-muted-foreground">
+                    or drag and drop here
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Support for images, videos, documents, PDFs, and more
+                  </p>
+                  <input
+                    type="file"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="*/*" // Accept all file types
+                  />
+                </div>
+              )}
+              
+              <div className="grid gap-2">
+                <Label htmlFor="title">Evidence Title</Label>
+                <Input
+                  id="title"
+                  {...form.register('title', { required: true })}
+                  placeholder="Enter evidence title"
                 />
               </div>
-            )}
-            
-            <div className="grid gap-2">
-              <Label htmlFor="title">Evidence Title</Label>
-              <Input
-                id="title"
-                {...form.register('title', { required: true })}
-                placeholder="Enter evidence title"
-              />
+              
+              <div className="grid gap-2">
+                <Label htmlFor="date">Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      {form.getValues('date') ? (
+                        format(form.getValues('date'), 'PPP')
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.getValues('date')}
+                      onSelect={(date) => form.setValue('date', date as Date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  {...form.register('description', { required: true })}
+                  placeholder="Describe this evidence and how it verifies the project"
+                  rows={3}
+                />
+              </div>
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="date">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    {form.getValues('date') ? (
-                      format(form.getValues('date'), 'PPP')
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={form.getValues('date')}
-                    onSelect={(date) => form.setValue('date', date as Date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                {...form.register('description', { required: true })}
-                placeholder="Describe this evidence and how it verifies the project"
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? 'Uploading...' : 'Upload Evidence'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="flex justify-between sm:justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? 'Uploading...' : 'Upload Evidence'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -57,6 +57,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 onDelete();
               }}
+              title="Delete Project"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -109,11 +110,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 flex gap-2">
+      <CardFooter className="pt-2 flex justify-around gap-2">
         <Button 
           variant="outline" 
           size="icon"
-          className="flex-1 h-9"
+          className="h-9 w-9 flex-shrink-0"
           onClick={onAddUpdate}
           title="Add Update"
         >
@@ -122,7 +123,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <Button 
           variant="outline" 
           size="icon"
-          className="flex-1 h-9"
+          className="h-9 w-9 flex-shrink-0"
           onClick={onAddEvidence}
           title="Add Evidence"
         >
@@ -131,7 +132,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <Button 
           variant="default" 
           size="icon"
-          className="flex-1 h-9"
+          className="h-9 w-9 flex-shrink-0"
           onClick={onViewDetails}
           title="View Details"
         >

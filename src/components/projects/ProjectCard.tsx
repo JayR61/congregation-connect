@@ -57,7 +57,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 onDelete();
               }}
-              title="Delete Project"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -134,7 +133,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           size="icon"
           className="h-9 w-9 flex-shrink-0"
           onClick={onAddUpdate}
-          title="Add Update"
+          aria-label="Add Update"
         >
           <PlusCircle className="h-4 w-4" />
         </Button>
@@ -143,7 +142,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           size="icon"
           className="h-9 w-9 flex-shrink-0"
           onClick={onAddEvidence}
-          title="Add Evidence"
+          aria-label="Add Evidence"
         >
           <FileText className="h-4 w-4" />
         </Button>
@@ -152,7 +151,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           size="icon"
           className="h-9 w-9 flex-shrink-0"
           onClick={onViewDetails}
-          title="View Details"
+          aria-label="View Details"
         >
           <Eye className="h-4 w-4" />
         </Button>
@@ -161,4 +160,5 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   );
 };
 
+// Export as default export
 export default ProjectCard;

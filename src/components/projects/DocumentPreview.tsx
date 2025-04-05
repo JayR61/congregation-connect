@@ -35,7 +35,8 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ isOpen, onClose, docu
 
   const handleDownload = () => {
     if (!document) return;
-    const a = document.createElement('a');
+    // Fix: Use the global window.document instead of the prop named document
+    const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.name;
     a.click();

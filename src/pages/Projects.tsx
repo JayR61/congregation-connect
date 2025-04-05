@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -27,7 +26,7 @@ import {
   ArrowUpRight,
   Eye
 } from 'lucide-react';
-import { ProjectCard } from '@/components/projects/ProjectCard';
+import ProjectCard from '@/components/projects/ProjectCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -126,7 +125,6 @@ const Projects = () => {
     // Validate required fields
     if (!newProject.name || !newProject.description || !newProject.startDate || !newProject.category) {
       toast({
-        title: "Missing Fields",
         description: "Please fill out all required fields.",
         variant: "destructive"
       });
@@ -136,7 +134,6 @@ const Projects = () => {
     // Check if custom category is provided when 'custom' category is selected
     if (newProject.category === 'custom' && !newProject.customCategory) {
       toast({
-        title: "Custom Category Required",
         description: "Please provide a name for your custom category.",
         variant: "destructive"
       });
@@ -147,7 +144,6 @@ const Projects = () => {
     if (newProject.hasGoal) {
       if (!newProject.goalTarget) {
         toast({
-          title: "Goal Target Required",
           description: "Please provide a target for your goal.",
           variant: "destructive"
         });
@@ -156,7 +152,6 @@ const Projects = () => {
       
       if (newProject.goalType === 'custom' && !newProject.customGoalName) {
         toast({
-          title: "Custom Goal Name Required",
           description: "Please provide a name for your custom goal.",
           variant: "destructive"
         });
@@ -221,7 +216,6 @@ const Projects = () => {
     setNewProjectDialogOpen(false);
     
     toast({
-      title: "Project Created",
       description: `${project.name} has been created successfully.`
     });
   };
@@ -249,7 +243,6 @@ const Projects = () => {
   const handleSaveUpdate = () => {
     if (!currentProject || !newUpdate.description) {
       toast({
-        title: "Missing Information",
         description: "Please provide a description for the update.",
         variant: "destructive"
       });
@@ -284,7 +277,6 @@ const Projects = () => {
     });
     
     toast({
-      title: "Update Added",
       description: `Update has been added to ${updatedProject.name}.`
     });
   };
@@ -302,7 +294,6 @@ const Projects = () => {
     setCurrentProject(null);
     
     toast({
-      title: "Project Deleted",
       description: "The project has been deleted successfully."
     });
   };
@@ -336,7 +327,6 @@ const Projects = () => {
     setCurrentProject(null);
     
     toast({
-      title: "Evidence Added",
       description: `${newEvidence.length} file(s) added as evidence.`
     });
   };

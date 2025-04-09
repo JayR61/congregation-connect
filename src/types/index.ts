@@ -1,3 +1,4 @@
+
 // Task related types
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -366,6 +367,13 @@ export interface Volunteer {
   notes?: string;
 }
 
+// Adding maintenanceHistory type for church resources
+export interface MaintenanceRecord {
+  date: Date;
+  notes: string;
+  cost: number;
+}
+
 export interface ChurchResource {
   id: string;
   name: string;
@@ -377,6 +385,8 @@ export interface ChurchResource {
   maintenanceSchedule?: Date;
   acquisitionDate?: Date;
   notes?: string;
+  category?: string;
+  maintenanceHistory?: MaintenanceRecord[];
 }
 
 export interface ResourceBooking {

@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Dialog, 
   DialogContent, 
@@ -16,98 +15,116 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ProgrammeReminder, Programme, Member } from '@/types';
-import { Bell, CalendarIcon, Mail } from 'lucide-react';
-import { format, isAfter } from "date-fns";
+import { Bell, Calendar as CalendarIcon, Clock, Send, Check, X, AlertTriangle } from 'lucide-react';
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ReminderManagerProps {
   programmes: Programme[];
   reminders: ProgrammeReminder[];
   members: Member[];
-  onCreateReminder: (reminder: Omit<ProgrammeReminder, 'id' | 'sentAt' | 'status'>) => ProgrammeReminder | null;
-  onCheckReminders: () => ProgrammeReminder[];
+  onAddReminder: (reminder: Omit<ProgrammeReminder, 'id' | 'createdAt' | 'updatedAt'>) => ProgrammeReminder | null;
+  onSendReminder: (reminderId: string) => boolean;
+  onCancelReminder: (reminderId: string) => boolean;
 }
 
 export const ReminderManager = ({ 
   programmes, 
   reminders,
   members,
-  onCreateReminder,
-  onCheckReminders
+  onAddReminder,
+  onSendReminder,
+  onCancelReminder
 }: ReminderManagerProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<{[key: string]: boolean}>({});
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedRecipients, setSelectedRecipients] = useState<{[key: string]: boolean}>({});
+  const [selectAll, setSelectAll] = useState(false);
   
   const [form, setForm] = useState({
     programmeId: '',
-    type: 'email' as ProgrammeReminder['type'],
-    schedule: 'day_before' as ProgrammeReminder['schedule'],
-    customTime: new Date(),
-    message: ''
+    title: '',
+    message: '',
+    scheduledDate: new Date(),
+    status: 'scheduled' as const,
+    recipients: [] as string[]
   });
   
   const resetForm = () => {
     setForm({
       programmeId: '',
-      type: 'email',
-      schedule: 'day_before',
-      customTime: new Date(),
-      message: ''
+      title: '',
+      message: '',
+      scheduledDate: new Date(),
+      status: 'scheduled',
+      recipients: []
     });
-    setSelectedMembers({});
+    setSelectedRecipients({});
+    setSelectAll(false);
   };
   
-  const handleMemberSelectionChange = (memberId: string, checked: boolean) => {
-    setSelectedMembers(prev => ({
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    
+    if (checked) {
+      const allMembers = members.reduce((acc, member) => {
+        acc[member.id] = true;
+        return acc;
+      }, {} as {[key: string]: boolean});
+      
+      setSelectedRecipients(allMembers);
+    } else {
+      setSelectedRecipients({});
+    }
+  };
+  
+  const handleSelectMember = (memberId: string, checked: boolean) => {
+    setSelectedRecipients(prev => ({
       ...prev,
       [memberId]: checked
     }));
+    
+    // Check if all are selected
+    const updatedRecipients = {
+      ...selectedRecipients,
+      [memberId]: checked
+    };
+    
+    const allSelected = members.every(member => 
+      updatedRecipients[member.id] === true
+    );
+    
+    setSelectAll(allSelected);
   };
   
   const handleSubmit = () => {
-    const selectedMemberIds = Object.entries(selectedMembers)
-      .filter(([_, isSelected]) => isSelected)
+    // Get selected recipient IDs
+    const recipientIds = Object.entries(selectedRecipients)
+      .filter(([_, selected]) => selected)
       .map(([id, _]) => id);
     
-    if (selectedMemberIds.length === 0) return;
+    if (!form.programmeId || !form.title || !form.message || recipientIds.length === 0) {
+      // Show error
+      return;
+    }
     
-    onCreateReminder({
-      programmeId: form.programmeId,
-      type: form.type,
-      schedule: form.schedule,
-      customTime: form.schedule === 'custom' ? form.customTime : undefined,
-      recipientIds: selectedMemberIds,
-      message: form.message || undefined
-    });
+    const reminderData = {
+      ...form,
+      recipients: recipientIds
+    };
     
+    onAddReminder(reminderData);
     setIsDialogOpen(false);
     resetForm();
-  };
-  
-  const handleCheckReminders = async () => {
-    setIsProcessing(true);
-    
-    try {
-      const sentReminders = await onCheckReminders();
-      console.log('Sent reminders:', sentReminders);
-    } finally {
-      setIsProcessing(false);
-    }
   };
   
   // Get programme name by ID
@@ -116,156 +133,135 @@ export const ReminderManager = ({
     return programme ? programme.name : 'Unknown Programme';
   };
   
-  // Get member names by IDs
-  const getMemberNames = (memberIds: string[]) => {
-    return memberIds.map(id => {
-      const member = members.find(m => m.id === id);
-      return member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
-    });
-  };
-  
-  // Group reminders by programme
-  const remindersByProgramme = reminders.reduce((acc, reminder) => {
-    if (!acc[reminder.programmeId]) {
-      acc[reminder.programmeId] = [];
-    }
-    acc[reminder.programmeId].push(reminder);
-    return acc;
-  }, {} as Record<string, ProgrammeReminder[]>);
-  
-  // Get status badge style
-  const getStatusBadge = (status: ProgrammeReminder['status']) => {
-    switch (status) {
-      case 'scheduled':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'sent':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // Get recipient names
+  const getRecipientNames = (recipientIds: string[]) => {
+    const recipientMembers = members.filter(m => recipientIds.includes(m.id));
+    if (recipientMembers.length <= 2) {
+      return recipientMembers.map(m => `${m.firstName} ${m.lastName}`).join(', ');
+    } else {
+      return `${recipientMembers[0].firstName} ${recipientMembers[0].lastName} and ${recipientMembers.length - 1} others`;
     }
   };
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Reminders</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Reminders & Notifications</h2>
           <p className="text-muted-foreground">
-            Schedule email notifications for programme participants.
+            Set up automated reminders for programme participants.
           </p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleCheckReminders}
-            disabled={isProcessing}
-          >
-            <Bell className="mr-2 h-4 w-4" /> Check Pending Reminders
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Mail className="mr-2 h-4 w-4" /> Create Reminder
-          </Button>
-        </div>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Bell className="mr-2 h-4 w-4" /> Add Reminder
+        </Button>
       </div>
       
-      {Object.keys(remindersByProgramme).length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p className="text-muted-foreground mb-4">No reminders scheduled yet.</p>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              Create Your First Reminder
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(remindersByProgramme).map(([programmeId, programmeReminders]) => (
-            <Card key={programmeId}>
-              <CardHeader>
-                <CardTitle>{getProgrammeName(programmeId)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="max-h-[300px] pr-4">
-                  <div className="space-y-4">
-                    {programmeReminders.map(reminder => (
-                      <div key={reminder.id} className="border rounded-lg p-4">
-                        <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
-                          <div className="flex items-center">
-                            {reminder.type === 'email' ? (
-                              <Mail className="h-4 w-4 mr-2" />
-                            ) : (
-                              <Bell className="h-4 w-4 mr-2" />
-                            )}
-                            <span className="font-medium">
-                              {reminder.type === 'email' ? 'Email Reminder' : 'Notification'}
-                            </span>
-                          </div>
-                          
-                          <Badge className={getStatusBadge(reminder.status)}>
-                            {reminder.status}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <h4 className="text-sm font-medium">Schedule</h4>
-                            <p className="text-sm">
-                              {reminder.schedule === 'day_before' && 'One day before'}
-                              {reminder.schedule === 'hour_before' && 'One hour before'}
-                              {reminder.schedule === 'week_before' && 'One week before'}
-                              {reminder.schedule === 'custom' && reminder.customTime && (
-                                <>Custom time: {format(new Date(reminder.customTime), 'PPp')}</>
-                              )}
-                            </p>
-                          </div>
-                          
-                          {reminder.sentAt && (
-                            <div>
-                              <h4 className="text-sm font-medium">Sent At</h4>
-                              <p className="text-sm">{format(new Date(reminder.sentAt), 'PPp')}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="mb-3">
-                          <h4 className="text-sm font-medium">Recipients</h4>
-                          <p className="text-sm">
-                            {getMemberNames(reminder.recipientIds).join(', ')}
-                          </p>
-                        </div>
-                        
-                        {reminder.message && (
-                          <div>
-                            <h4 className="text-sm font-medium">Message</h4>
-                            <p className="text-sm border-l-2 pl-2 mt-1">
-                              {reminder.message}
-                            </p>
-                          </div>
+      <div className="space-y-4">
+        {reminders.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-6">
+                <p className="text-muted-foreground mb-4">No reminders scheduled yet.</p>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  Create Your First Reminder
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          reminders.map(reminder => (
+            <Card key={reminder.id} className={cn(
+              "border-l-4",
+              reminder.status === 'sent' ? "border-l-green-500" :
+              reminder.status === 'cancelled' ? "border-l-gray-400" :
+              new Date(reminder.scheduledDate) < new Date() ? "border-l-red-500" :
+              "border-l-blue-500"
+            )}>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="font-medium text-lg">{reminder.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {getProgrammeName(reminder.programmeId)}
+                    </p>
+                    <div className="flex flex-wrap gap-y-1 gap-x-3 text-sm">
+                      <span className="flex items-center">
+                        <CalendarIcon className="mr-1 h-3 w-3" /> 
+                        {format(new Date(reminder.scheduledDate), 'PPP')}
+                      </span>
+                      <span className="flex items-center">
+                        <Clock className="mr-1 h-3 w-3" /> 
+                        {format(new Date(reminder.scheduledDate), 'p')}
+                      </span>
+                      <span className={cn(
+                        "flex items-center",
+                        reminder.status === 'sent' ? "text-green-600" :
+                        reminder.status === 'cancelled' ? "text-gray-500" :
+                        new Date(reminder.scheduledDate) < new Date() ? "text-red-600" :
+                        "text-blue-600"
+                      )}>
+                        {reminder.status === 'sent' ? (
+                          <><Check className="mr-1 h-3 w-3" /> Sent</>
+                        ) : reminder.status === 'cancelled' ? (
+                          <><X className="mr-1 h-3 w-3" /> Cancelled</>
+                        ) : new Date(reminder.scheduledDate) < new Date() ? (
+                          <><AlertTriangle className="mr-1 h-3 w-3" /> Overdue</>
+                        ) : (
+                          <><Bell className="mr-1 h-3 w-3" /> Scheduled</>
                         )}
-                      </div>
-                    ))}
+                      </span>
+                    </div>
                   </div>
-                </ScrollArea>
+                  
+                  <div className="shrink-0 space-x-2">
+                    {reminder.status === 'scheduled' && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onSendReminder(reminder.id)}
+                        >
+                          <Send className="mr-2 h-3 w-3" /> Send Now
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onCancelReminder(reminder.id)}
+                        >
+                          <X className="mr-2 h-3 w-3" /> Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-4 border-t pt-4">
+                  <p className="text-sm mb-3">{reminder.message}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+                    <span className="font-medium">Recipients:</span>
+                    <span className="text-muted-foreground">
+                      {reminder.recipients && Array.isArray(reminder.recipients) ? getRecipientNames(reminder.recipients) : 'No recipients'}
+                    </span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Create Reminder</DialogTitle>
+            <DialogTitle>Add Reminder</DialogTitle>
             <DialogDescription>
-              Schedule reminders for programme participants.
+              Create a new reminder to notify programme participants.
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="max-h-[60vh] overflow-y-auto pr-4">
-            <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="programme">Programme</Label>
                 <Select 
@@ -286,139 +282,111 @@ export const ReminderManager = ({
               </div>
               
               <div>
-                <Label className="mb-2 block">Reminder Type</Label>
-                <RadioGroup 
-                  value={form.type} 
-                  onValueChange={(value) => setForm(prev => ({ ...prev, type: value as ProgrammeReminder['type'] }))}
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="email" id="type-email" />
-                    <Label htmlFor="type-email">Email</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="notification" id="type-notification" />
-                    <Label htmlFor="type-notification">In-app Notification</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <Label className="mb-2 block">Schedule</Label>
-                <RadioGroup 
-                  value={form.schedule} 
-                  onValueChange={(value) => setForm(prev => ({ ...prev, schedule: value as ProgrammeReminder['schedule'] }))}
-                  className="space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="day_before" id="schedule-day" />
-                    <Label htmlFor="schedule-day">One day before</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="hour_before" id="schedule-hour" />
-                    <Label htmlFor="schedule-hour">One hour before</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="week_before" id="schedule-week" />
-                    <Label htmlFor="schedule-week">One week before</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="custom" id="schedule-custom" />
-                    <Label htmlFor="schedule-custom">Custom time</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              {form.schedule === 'custom' && (
-                <div>
-                  <Label htmlFor="customTime">Custom Time</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !form.customTime && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.customTime ? (
-                          format(form.customTime, "PPp")
-                        ) : (
-                          <span>Pick a date and time</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={form.customTime}
-                        onSelect={(date) => date && setForm(prev => ({ ...prev, customTime: date }))}
-                        initialFocus
+                <Label htmlFor="date">Schedule Date & Time</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.scheduledDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.scheduledDate ? (
+                        format(form.scheduledDate, "PPP p")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.scheduledDate}
+                      onSelect={(date) => date && setForm(prev => ({ ...prev, scheduledDate: date }))}
+                      initialFocus
+                    />
+                    <div className="p-3 border-t">
+                      <Label htmlFor="time" className="text-xs">Time</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={format(form.scheduledDate, "HH:mm")}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newDate = new Date(form.scheduledDate);
+                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                          setForm(prev => ({ ...prev, scheduledDate: newDate }));
+                        }}
+                        className="mt-1"
                       />
-                      <div className="p-3 border-t">
-                        <Label htmlFor="time" className="text-xs font-medium">Time</Label>
-                        <Input
-                          id="time"
-                          type="time"
-                          className="mt-1"
-                          value={format(form.customTime, "HH:mm")}
-                          onChange={(e) => {
-                            const [hours, minutes] = e.target.value.split(':');
-                            const newDate = new Date(form.customTime);
-                            newDate.setHours(parseInt(hours), parseInt(minutes));
-                            setForm(prev => ({ ...prev, customTime: newDate }));
-                          }}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="message">Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  value={form.message}
-                  onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
-                  placeholder="Enter custom message for the reminder"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label className="mb-2 block">Recipients</Label>
-                <div className="border rounded-md max-h-[200px] overflow-y-auto">
-                  <div className="p-3 space-y-2">
-                    {members.map(member => (
-                      <div key={member.id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`member-${member.id}`}
-                          checked={selectedMembers[member.id] || false}
-                          onChange={(e) => handleMemberSelectionChange(member.id, e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        />
-                        <label
-                          htmlFor={`member-${member.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {member.firstName} {member.lastName}
-                        </label>
-                      </div>
-                    ))}
-                    
-                    {members.length === 0 && (
-                      <div className="text-center py-2 text-muted-foreground">
-                        No members available.
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
-          </ScrollArea>
+            
+            <div>
+              <Label htmlFor="title">Reminder Title</Label>
+              <Input 
+                id="title"
+                value={form.title}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter reminder title"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                value={form.message}
+                onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
+                placeholder="Enter reminder message"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Recipients</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="selectAll" 
+                    checked={selectAll}
+                    onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                  />
+                  <label 
+                    htmlFor="selectAll" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Select All
+                  </label>
+                </div>
+              </div>
+              
+              <ScrollArea className="h-[150px] border rounded-md p-2">
+                <div className="space-y-2">
+                  {members.map(member => (
+                    <div key={member.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`member-${member.id}`}
+                        checked={selectedRecipients[member.id] === true}
+                        onCheckedChange={(checked) => handleSelectMember(member.id, checked === true)}
+                      />
+                      <label 
+                        htmlFor={`member-${member.id}`} 
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {member.firstName} {member.lastName}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => {
@@ -429,12 +397,9 @@ export const ReminderManager = ({
             </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={
-                !form.programmeId || 
-                Object.values(selectedMembers).filter(Boolean).length === 0
-              }
+              disabled={!form.programmeId || !form.title || !form.message || Object.values(selectedRecipients).filter(Boolean).length === 0}
             >
-              Create Reminder
+              Schedule Reminder
             </Button>
           </DialogFooter>
         </DialogContent>

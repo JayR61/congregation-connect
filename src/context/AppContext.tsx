@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment } from '../types';
+import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment, Programme, ProgrammeAttendance } from '../types';
 import { 
   transactions as initialTransactions,
   members as initialMembers,
@@ -16,8 +17,79 @@ import { useTransactionActions } from './actions/useTransactionActions';
 import { useMemberActions } from './actions/useMemberActions';
 import { useDocumentActions } from './actions/useDocumentActions';
 import { useNotificationActions } from './actions/useNotificationActions';
+import { useProgrammeActions } from './actions/useProgrammeActions';
 
 const initialTasks: Task[] = [];
+const initialProgrammes: Programme[] = [
+  {
+    id: 'prog-1',
+    name: 'School of Ministry',
+    description: 'Training program for future church leaders and ministers',
+    type: 'ministry',
+    startDate: new Date(2023, 1, 1),
+    endDate: new Date(2023, 11, 31),
+    recurring: true,
+    frequency: 'weekly',
+    location: 'Main Campus',
+    coordinator: 'Pastor John',
+    capacity: 50,
+    currentAttendees: 35,
+    attendees: ['member-1', 'member-2', 'member-3']
+  },
+  {
+    id: 'prog-2',
+    name: 'Marriage Counseling',
+    description: 'Support and guidance for married couples',
+    type: 'counseling',
+    startDate: new Date(2023, 0, 1),
+    recurring: true,
+    frequency: 'weekly',
+    location: 'Counseling Room B',
+    coordinator: 'Alice Smith',
+    capacity: 10,
+    currentAttendees: 8,
+    attendees: ['member-1', 'member-2']
+  },
+  {
+    id: 'prog-3',
+    name: 'Sunday Worship Service',
+    description: 'Weekly worship service for the congregation',
+    type: 'service',
+    startDate: new Date(2020, 0, 5),
+    recurring: true,
+    frequency: 'weekly',
+    location: 'Main Sanctuary',
+    coordinator: 'Worship Team',
+    capacity: 500,
+    currentAttendees: 350,
+    attendees: ['member-1', 'member-2', 'member-3', 'member-4', 'member-5']
+  }
+];
+
+const initialAttendance: ProgrammeAttendance[] = [
+  {
+    id: 'att-1',
+    programmeId: 'prog-1',
+    memberId: 'member-1',
+    date: new Date(2023, 6, 15),
+    isPresent: true
+  },
+  {
+    id: 'att-2',
+    programmeId: 'prog-1',
+    memberId: 'member-2',
+    date: new Date(2023, 6, 15),
+    isPresent: false,
+    notes: 'Called in sick'
+  },
+  {
+    id: 'att-3',
+    programmeId: 'prog-2',
+    memberId: 'member-1',
+    date: new Date(2023, 6, 10),
+    isPresent: true
+  }
+];
 
 interface AppContextType {
   currentUser: User;
@@ -55,6 +127,15 @@ interface AppContextType {
   shareDocument: (id: string, shared: boolean) => void;
   moveDocument: (id: string, folderId: string | null) => void;
   addDocumentVersion: (documentId: string, url: string, notes: string) => void;
+  
+  programmes: Programme[];
+  attendance: ProgrammeAttendance[];
+  addProgramme: (programme: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => void;
+  updateProgramme: (id: string, programme: Partial<Programme>) => void;
+  deleteProgramme: (id: string) => void;
+  recordAttendance: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => void;
+  exportProgrammesToCSV: () => boolean;
+  exportAttendanceToCSV: (programmeId: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -69,6 +150,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
+  const [programmes, setProgrammes] = useState<Programme[]>(initialProgrammes);
+  const [attendance, setAttendance] = useState<ProgrammeAttendance[]>(initialAttendance);
 
   const notificationActions = useNotificationActions({
     notifications,
@@ -101,6 +184,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDocuments,
     folders,
     setFolders,
+    currentUser
+  });
+  
+  const programmeActions = useProgrammeActions({
+    programmes,
+    setProgrammes,
+    attendance,
+    setAttendance,
     currentUser
   });
 
@@ -149,7 +240,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteFolder: documentActions.deleteFolder,
     shareDocument: documentActions.shareDocument,
     moveDocument: documentActions.moveDocument,
-    addDocumentVersion: documentActions.addDocumentVersion
+    addDocumentVersion: documentActions.addDocumentVersion,
+    programmes,
+    attendance,
+    addProgramme: programmeActions.addProgramme,
+    updateProgramme: programmeActions.updateProgramme,
+    deleteProgramme: programmeActions.deleteProgramme,
+    recordAttendance: programmeActions.recordAttendance,
+    exportProgrammesToCSV: programmeActions.exportProgrammesToCSV,
+    exportAttendanceToCSV: programmeActions.exportAttendanceToCSV
   };
 
   return (

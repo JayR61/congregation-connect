@@ -396,3 +396,43 @@ export interface SocialMediaAccount {
   username?: string;
   active: boolean;
 }
+
+// Programme statistics type
+export interface ProgrammeStatistics {
+  totalProgrammes: number;
+  activeProgrammes: number;
+  completedProgrammes: number;
+  totalParticipants: number;
+  attendanceRate: number;
+  programmesByType: Record<string, number>;
+  participantsTrend: {
+    month: string;
+    count: number;
+  }[];
+}
+
+// Programme related types moved from the component
+export interface Programme {
+  id: string;
+  name: string;
+  description: string;
+  type: 'ministry' | 'counseling' | 'service' | 'training' | 'outreach';
+  startDate: Date;
+  endDate?: Date;
+  recurring?: boolean;
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  location: string;
+  coordinator: string;
+  capacity: number;
+  currentAttendees: number;
+  attendees: string[];
+}
+
+export interface ProgrammeAttendance {
+  id: string;
+  programmeId: string;
+  memberId: string;
+  date: Date;
+  isPresent: boolean;
+  notes?: string;
+}

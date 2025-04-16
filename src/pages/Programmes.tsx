@@ -1,96 +1,52 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { CalendarIcon, Users, GraduationCap, Heart, Church, Trash2 } from "lucide-react";
+import { CalendarIcon, ChevronDown, Download, FileText, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
+import { Programme, ProgrammeAttendance } from "@/types";
+import { ProgrammeCard } from '@/components/programmes/ProgrammeCard';
+import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics';
+import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
+import { CalendarView } from '@/components/programmes/CalendarView';
+import { ProgrammeForm } from '@/components/programmes/ProgrammeForm';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-interface Programme {
-  id: string;
-  name: string;
-  description: string;
-  type: 'ministry' | 'counseling' | 'service' | 'training' | 'outreach';
-  startDate: Date;
-  endDate?: Date;
-  recurring?: boolean;
-  frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  location: string;
-  coordinator: string;
-  capacity: number;
-  currentAttendees: number;
-  attendees: string[];
-}
-
-interface ProgrammeAttendance {
-  id: string;
-  programmeId: string;
-  memberId: string;
-  date: Date;
-  isPresent: boolean;
-  notes?: string;
-}
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Programmes = () => {
   const { members } = useAppContext();
   const [activeTab, setActiveTab] = useState("all");
+  const [activeView, setActiveView] = useState<'grid' | 'analytics' | 'calendar'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isProgrammeDialogOpen, setIsProgrammeDialogOpen] = useState(false);
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null);
-  const [programmeToDelete, setProgrammeToDelete] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [programmesOnSelectedDate, setProgrammesOnSelectedDate] = useState<Programme[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [programmeToEdit, setProgrammeToEdit] = useState<Programme | null>(null);
   
   const [programmes, setProgrammes] = useState<Programme[]>([
     {
@@ -192,19 +148,6 @@ const Programmes = () => {
     }
   ]);
 
-  const [programmeForm, setProgrammeForm] = useState({
-    name: '',
-    description: '',
-    type: 'ministry',
-    startDate: new Date(),
-    endDate: undefined as Date | undefined,
-    recurring: false,
-    frequency: undefined as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | undefined,
-    location: '',
-    coordinator: '',
-    capacity: 0
-  });
-
   const [attendanceForm, setAttendanceForm] = useState({
     memberId: '',
     date: new Date(),
@@ -228,27 +171,32 @@ const Programmes = () => {
     return matchesSearch && matchesType && matchesTab;
   });
 
-  const handleCreateProgramme = () => {
+  const handleCreateProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
     const newProgramme: Programme = {
       id: `prog-${programmes.length + 1}`,
-      name: programmeForm.name,
-      description: programmeForm.description,
-      type: programmeForm.type as 'ministry' | 'counseling' | 'service' | 'training' | 'outreach',
-      startDate: programmeForm.startDate,
-      endDate: programmeForm.endDate,
-      recurring: programmeForm.recurring,
-      frequency: programmeForm.recurring ? programmeForm.frequency : undefined,
-      location: programmeForm.location,
-      coordinator: programmeForm.coordinator,
-      capacity: programmeForm.capacity,
+      ...programmeData,
       currentAttendees: 0,
       attendees: []
     };
 
     setProgrammes(prev => [...prev, newProgramme]);
     setIsProgrammeDialogOpen(false);
-    resetProgrammeForm();
     toast.success('Programme created successfully');
+  };
+
+  const handleUpdateProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
+    if (!programmeToEdit) return;
+    
+    const updatedProgramme: Programme = {
+      ...programmeToEdit,
+      ...programmeData,
+    };
+
+    setProgrammes(prev => prev.map(p => p.id === programmeToEdit.id ? updatedProgramme : p));
+    setIsProgrammeDialogOpen(false);
+    setIsEditMode(false);
+    setProgrammeToEdit(null);
+    toast.success('Programme updated successfully');
   };
 
   const handleAddAttendance = () => {
@@ -283,27 +231,9 @@ const Programmes = () => {
     toast.success('Attendance recorded successfully');
   };
 
-  const handleDeleteProgramme = () => {
-    if (programmeToDelete) {
-      setProgrammes(prev => prev.filter(prog => prog.id !== programmeToDelete));
-      setProgrammeToDelete(null);
-      toast.success('Programme deleted successfully');
-    }
-  };
-
-  const resetProgrammeForm = () => {
-    setProgrammeForm({
-      name: '',
-      description: '',
-      type: 'ministry',
-      startDate: new Date(),
-      endDate: undefined,
-      recurring: false,
-      frequency: undefined,
-      location: '',
-      coordinator: '',
-      capacity: 0
-    });
+  const handleDeleteProgramme = (programmeId: string) => {
+    setProgrammes(prev => prev.filter(prog => prog.id !== programmeId));
+    toast.success('Programme deleted successfully');
   };
 
   const resetAttendanceForm = () => {
@@ -313,23 +243,6 @@ const Programmes = () => {
       isPresent: true,
       notes: ''
     });
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch(type) {
-      case 'ministry':
-        return <Church className="h-4 w-4" />;
-      case 'counseling':
-        return <Heart className="h-4 w-4" />;
-      case 'service':
-        return <Church className="h-4 w-4" />;
-      case 'training':
-        return <GraduationCap className="h-4 w-4" />;
-      case 'outreach':
-        return <Users className="h-4 w-4" />;
-      default:
-        return <Church className="h-4 w-4" />;
-    }
   };
 
   const getTypeBadgeColor = (type: string) => {
@@ -354,16 +267,74 @@ const Programmes = () => {
     setIsAttendanceDialogOpen(true);
   };
 
-  const confirmDeleteProgramme = (programmeId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setProgrammeToDelete(programmeId);
+  const handleCalendarDateSelect = (date: Date, programmesOnDate: Programme[]) => {
+    setSelectedDate(date);
+    setProgrammesOnSelectedDate(programmesOnDate);
+  };
+
+  const handleEditProgramme = (programme: Programme) => {
+    setProgrammeToEdit(programme);
+    setIsEditMode(true);
+    setIsProgrammeDialogOpen(true);
+  };
+
+  const exportProgrammesToCSV = () => {
+    let csvContent = "Name,Type,Start Date,End Date,Location,Coordinator,Capacity,Attendees,Description\n";
+    
+    programmes.forEach(programme => {
+      const startDate = format(programme.startDate, 'yyyy-MM-dd');
+      const endDate = programme.endDate ? format(programme.endDate, 'yyyy-MM-dd') : '';
+      
+      csvContent += [
+        `"${programme.name}"`,
+        `"${programme.type}"`,
+        `"${startDate}"`,
+        `"${endDate}"`,
+        `"${programme.location}"`,
+        `"${programme.coordinator}"`,
+        programme.capacity,
+        programme.currentAttendees,
+        `"${programme.description}"`
+      ].join(',') + "\n";
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'church_programmes.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Church Programmes</h1>
-        <Button onClick={() => setIsProgrammeDialogOpen(true)}>Add New Programme</Button>
+        
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                Actions <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsProgrammeDialogOpen(true)}>
+                Add New Programme
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+                View Attendance Reports
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportProgrammesToCSV}>
+                Export Programmes (CSV)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button onClick={() => setIsProgrammeDialogOpen(true)}>Add New Programme</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -398,496 +369,206 @@ const Programmes = () => {
       </div>
 
       <div className="flex flex-col space-y-4">
-        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-          <div className="flex justify-between items-center mb-4">
-            <TabsList>
-              <TabsTrigger value="all">All Programmes</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
-            <div className="flex space-x-2">
-              <div className="w-64">
-                <Input
-                  placeholder="Search programmes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+            <div className="flex justify-between items-center mb-4">
+              <TabsList>
+                <TabsTrigger value="all">All Programmes</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={activeView === 'grid' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setActiveView('grid')}
+                  className="h-8"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={activeView === 'analytics' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setActiveView('analytics')}
+                  className="h-8"
+                >
+                  <LineChart className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={activeView === 'calendar' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setActiveView('calendar')}
+                  className="h-8"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </Tabs>
+          
+          <div className="flex w-full md:w-auto items-center gap-2">
+            <Input
+              placeholder="Search programmes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-64"
+            />
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="ministry">Ministry</SelectItem>
+                <SelectItem value="counseling">Counseling</SelectItem>
+                <SelectItem value="service">Service</SelectItem>
+                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="outreach">Outreach</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button variant="outline" onClick={() => setIsReportDialogOpen(true)} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Reports
+            </Button>
+          </div>
+        </div>
+
+        {activeView === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {filteredProgrammes.map((programme) => (
+              <div key={programme.id} onClick={() => handleEditProgramme(programme)}>
+                <ProgrammeCard
+                  programme={programme}
+                  onDeleteConfirm={handleDeleteProgramme}
+                  onAttendanceClick={(id) => {
+                    // Stop the event from bubbling up to the parent which would open the edit modal
+                    event?.stopPropagation();
+                    openAttendanceDialog(id);
+                  }}
+                  getTypeBadgeColor={getTypeBadgeColor}
                 />
               </div>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="ministry">Ministry</SelectItem>
-                  <SelectItem value="counseling">Counseling</SelectItem>
-                  <SelectItem value="service">Service</SelectItem>
-                  <SelectItem value="training">Training</SelectItem>
-                  <SelectItem value="outreach">Outreach</SelectItem>
-                </SelectContent>
-              </Select>
+            ))}
+          </div>
+        )}
+
+        {activeView === 'analytics' && (
+          <div className="mt-4">
+            <ProgrammesAnalytics programmes={programmes} />
+          </div>
+        )}
+
+        {activeView === 'calendar' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+            <div className="lg:col-span-1">
+              <CalendarView 
+                programmes={programmes}
+                onDateSelect={handleCalendarDateSelect}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {selectedDate ? (
+                      <>Programmes on {format(selectedDate, 'PPPP')}</>
+                    ) : (
+                      <>Select a Date</>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedDate ? (
+                    programmesOnSelectedDate.length > 0 ? (
+                      <div className="grid gap-4">
+                        {programmesOnSelectedDate.map(programme => (
+                          <div key={programme.id} className="border rounded-md p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{programme.name}</h3>
+                                <p className="text-sm text-muted-foreground">{programme.description}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className={cn("px-2 py-1 rounded-full text-xs", getTypeBadgeColor(programme.type))}>
+                                  {programme.type}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="font-medium">Location:</span> {programme.location}
+                              </div>
+                              <div>
+                                <span className="font-medium">Coordinator:</span> {programme.coordinator}
+                              </div>
+                              <div>
+                                <span className="font-medium">Time:</span> {programme.recurring ? `Recurring (${programme.frequency})` : 'One-time'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Attendance:</span> {programme.currentAttendees}/{programme.capacity}
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openAttendanceDialog(programme.id);
+                                }}
+                              >
+                                Record Attendance
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No programmes scheduled for this date.
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Select a date from the calendar to view programmes.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
-
-          <TabsContent value="all" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProgrammes.map((programme) => (
-                <Card key={programme.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>{programme.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                          <span className="flex items-center">
-                            {getTypeIcon(programme.type)}
-                            <span className="ml-1 capitalize">{programme.type}</span>
-                          </span>
-                        </Badge>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={handleDeleteProgramme}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                    <CardDescription>{programme.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Start Date:</span>
-                        <span className="text-sm">{format(programme.startDate, 'PPP')}</span>
-                      </div>
-                      {programme.endDate && (
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">End Date:</span>
-                          <span className="text-sm">{format(programme.endDate, 'PPP')}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Location:</span>
-                        <span className="text-sm">{programme.location}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Coordinator:</span>
-                        <span className="text-sm">{programme.coordinator}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Attendance:</span>
-                        <span className="text-sm">{programme.currentAttendees} / {programme.capacity}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => openAttendanceDialog(programme.id)}
-                    >
-                      Record Attendance
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="active" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProgrammes.map((programme) => (
-                <Card key={programme.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>{programme.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                          <span className="flex items-center">
-                            {getTypeIcon(programme.type)}
-                            <span className="ml-1 capitalize">{programme.type}</span>
-                          </span>
-                        </Badge>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={handleDeleteProgramme}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                    <CardDescription>{programme.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Start Date:</span>
-                        <span className="text-sm">{format(programme.startDate, 'PPP')}</span>
-                      </div>
-                      {programme.endDate && (
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">End Date:</span>
-                          <span className="text-sm">{format(programme.endDate, 'PPP')}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Location:</span>
-                        <span className="text-sm">{programme.location}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Coordinator:</span>
-                        <span className="text-sm">{programme.coordinator}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Attendance:</span>
-                        <span className="text-sm">{programme.currentAttendees} / {programme.capacity}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => openAttendanceDialog(programme.id)}
-                    >
-                      Record Attendance
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="completed" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProgrammes.map((programme) => (
-                <Card key={programme.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>{programme.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
-                          <span className="flex items-center">
-                            {getTypeIcon(programme.type)}
-                            <span className="ml-1 capitalize">{programme.type}</span>
-                          </span>
-                        </Badge>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={(e) => confirmDeleteProgramme(programme.id, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the "{programme.name}" programme and all associated attendance records. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setProgrammeToDelete(null)}>
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={handleDeleteProgramme}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                    <CardDescription>{programme.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Start Date:</span>
-                        <span className="text-sm">{format(programme.startDate, 'PPP')}</span>
-                      </div>
-                      {programme.endDate && (
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">End Date:</span>
-                          <span className="text-sm">{format(programme.endDate, 'PPP')}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Location:</span>
-                        <span className="text-sm">{programme.location}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Coordinator:</span>
-                        <span className="text-sm">{programme.coordinator}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Attendance:</span>
-                        <span className="text-sm">{programme.currentAttendees} / {programme.capacity}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => openAttendanceDialog(programme.id)}
-                    >
-                      View Attendance
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+        )}
       </div>
 
+      {/* Dialogs and Sheets */}
       <Dialog open={isProgrammeDialogOpen} onOpenChange={setIsProgrammeDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add New Programme</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new church programme.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <FormLabel htmlFor="name">Programme Name</FormLabel>
-                <Input
-                  id="name"
-                  value={programmeForm.name}
-                  onChange={(e) => setProgrammeForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter programme name"
-                />
-              </div>
-              <div className="col-span-2">
-                <FormLabel htmlFor="description">Description</FormLabel>
-                <Textarea
-                  id="description"
-                  value={programmeForm.description}
-                  onChange={(e) => setProgrammeForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter programme description"
-                />
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="type">Type</FormLabel>
-                <Select 
-                  value={programmeForm.type} 
-                  onValueChange={(value) => setProgrammeForm(prev => ({ ...prev, type: value as any }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ministry">Ministry</SelectItem>
-                    <SelectItem value="counseling">Counseling</SelectItem>
-                    <SelectItem value="service">Service</SelectItem>
-                    <SelectItem value="training">Training</SelectItem>
-                    <SelectItem value="outreach">Outreach</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="location">Location</FormLabel>
-                <Input
-                  id="location"
-                  value={programmeForm.location}
-                  onChange={(e) => setProgrammeForm(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Enter location"
-                />
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="startDate">Start Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !programmeForm.startDate && "text-muted-foreground"
-                        )}
-                      >
-                        {programmeForm.startDate ? (
-                          format(programmeForm.startDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={programmeForm.startDate}
-                      onSelect={(date) => date && setProgrammeForm(prev => ({ ...prev, startDate: date }))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="endDate">End Date (Optional)</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !programmeForm.endDate && "text-muted-foreground"
-                        )}
-                      >
-                        {programmeForm.endDate ? (
-                          format(programmeForm.endDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={programmeForm.endDate}
-                      onSelect={(date) => setProgrammeForm(prev => ({ ...prev, endDate: date || undefined }))}
-                      initialFocus
-                      disabled={(date) => date < programmeForm.startDate}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="coordinator">Coordinator</FormLabel>
-                <Input
-                  id="coordinator"
-                  value={programmeForm.coordinator}
-                  onChange={(e) => setProgrammeForm(prev => ({ ...prev, coordinator: e.target.value }))}
-                  placeholder="Enter coordinator name"
-                />
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="capacity">Capacity</FormLabel>
-                <Input
-                  id="capacity"
-                  type="number"
-                  value={programmeForm.capacity}
-                  onChange={(e) => setProgrammeForm(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                  placeholder="Enter capacity"
-                />
-              </div>
-              <div className="col-span-2 flex items-center space-x-2">
-                <Checkbox
-                  id="recurring"
-                  checked={programmeForm.recurring}
-                  onCheckedChange={(checked) => setProgrammeForm(prev => ({ ...prev, recurring: checked === true }))}
-                />
-                <label
-                  htmlFor="recurring"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Is this a recurring programme?
-                </label>
-              </div>
-              {programmeForm.recurring && (
-                <div className="col-span-2">
-                  <FormLabel htmlFor="frequency">Frequency</FormLabel>
-                  <Select 
-                    value={programmeForm.frequency} 
-                    onValueChange={(value) => setProgrammeForm(prev => ({ ...prev, frequency: value as any }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProgrammeDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateProgramme}>Create Programme</Button>
-          </DialogFooter>
+          <ProgrammeForm
+            onSave={isEditMode ? handleUpdateProgramme : handleCreateProgramme}
+            onCancel={() => {
+              setIsProgrammeDialogOpen(false);
+              setIsEditMode(false);
+              setProgrammeToEdit(null);
+            }}
+            initialData={programmeToEdit || {}}
+            isEditing={isEditMode}
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isAttendanceDialogOpen} onOpenChange={setIsAttendanceDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Record Attendance</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isAttendanceDialogOpen} onOpenChange={setIsAttendanceDialogOpen}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Record Attendance</SheetTitle>
+            <SheetDescription>
               Record attendance for the selected programme.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <FormLabel htmlFor="member">Member</FormLabel>
+              <label className="block text-sm font-medium mb-1">Member</label>
               <Select 
                 value={attendanceForm.memberId} 
                 onValueChange={(value) => setAttendanceForm(prev => ({ ...prev, memberId: value }))}
@@ -905,25 +586,23 @@ const Programmes = () => {
               </Select>
             </div>
             <div>
-              <FormLabel htmlFor="attendanceDate">Date</FormLabel>
+              <label className="block text-sm font-medium mb-1">Date</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !attendanceForm.date && "text-muted-foreground"
-                      )}
-                    >
-                      {attendanceForm.date ? (
-                        format(attendanceForm.date, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !attendanceForm.date && "text-muted-foreground"
+                    )}
+                  >
+                    {attendanceForm.date ? (
+                      format(attendanceForm.date, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
@@ -936,34 +615,44 @@ const Programmes = () => {
               </Popover>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="isPresent"
                 checked={attendanceForm.isPresent}
-                onCheckedChange={(checked) => setAttendanceForm(prev => ({ ...prev, isPresent: checked === true }))}
+                onChange={(e) => setAttendanceForm(prev => ({ ...prev, isPresent: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <label
                 htmlFor="isPresent"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none"
               >
                 Present
               </label>
             </div>
             <div>
-              <FormLabel htmlFor="notes">Notes (Optional)</FormLabel>
-              <Textarea
-                id="notes"
+              <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+              <textarea
                 value={attendanceForm.notes}
                 onChange={(e) => setAttendanceForm(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Add notes about attendance"
+                className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
-          <DialogFooter>
+          <div className="mt-6 space-x-2 flex justify-end">
             <Button variant="outline" onClick={() => setIsAttendanceDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddAttendance}>Record Attendance</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button onClick={handleAddAttendance} disabled={!attendanceForm.memberId}>Record Attendance</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AttendanceReportDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        programmes={programmes}
+        attendance={attendance}
+        members={members}
+      />
     </div>
   );
 };

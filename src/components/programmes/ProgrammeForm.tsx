@@ -27,6 +27,24 @@ import { cn } from "@/lib/utils";
 import { Programme } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+// Define the allowed programme types and frequencies as string literals for TypeScript
+type ProgrammeType = "ministry" | "counseling" | "service" | "training" | "outreach" | string;
+type ProgrammeFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | undefined;
+
+interface FormState {
+  name: string;
+  description: string;
+  type: ProgrammeType;
+  customType: string;
+  startDate: Date;
+  endDate?: Date;
+  recurring: boolean;
+  frequency?: ProgrammeFrequency;
+  location: string;
+  coordinator: string;
+  capacity: number;
+}
+
 interface ProgrammeFormProps {
   onSave: (programme: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => void;
   onCancel: () => void;
@@ -40,15 +58,15 @@ export const ProgrammeForm = ({
   initialData = {},
   isEditing = false,
 }: ProgrammeFormProps) => {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     name: initialData.name || '',
     description: initialData.description || '',
-    type: initialData.type || 'ministry',
+    type: (initialData.type as ProgrammeType) || 'ministry',
     customType: '',
     startDate: initialData.startDate || new Date(),
     endDate: initialData.endDate,
     recurring: initialData.recurring || false,
-    frequency: initialData.frequency,
+    frequency: initialData.frequency as ProgrammeFrequency,
     location: initialData.location || '',
     coordinator: initialData.coordinator || '',
     capacity: initialData.capacity || 0
@@ -70,7 +88,7 @@ export const ProgrammeForm = ({
     onSave({
       name: form.name,
       description: form.description,
-      type: finalType as string,
+      type: finalType,
       startDate: form.startDate,
       endDate: form.endDate,
       recurring: form.recurring,
@@ -134,7 +152,7 @@ export const ProgrammeForm = ({
                     if (value === "custom") {
                       setShowCustomType(true);
                     } else {
-                      setForm(prev => ({ ...prev, type: value }));
+                      setForm(prev => ({ ...prev, type: value as ProgrammeType }));
                     }
                   }}
                 >
@@ -281,7 +299,7 @@ export const ProgrammeForm = ({
                 <Label htmlFor="frequency">Frequency</Label>
                 <Select 
                   value={form.frequency} 
-                  onValueChange={(value) => setForm(prev => ({ ...prev, frequency: value }))}
+                  onValueChange={(value) => setForm(prev => ({ ...prev, frequency: value as ProgrammeFrequency }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select frequency" />

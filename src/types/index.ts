@@ -416,7 +416,7 @@ export interface Programme {
   id: string;
   name: string;
   description: string;
-  type: 'ministry' | 'counseling' | 'service' | 'training' | 'outreach';
+  type: string; // Changed from enum to string to allow custom types
   startDate: Date;
   endDate?: Date;
   recurring?: boolean;

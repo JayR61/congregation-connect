@@ -141,7 +141,7 @@ export const FeedbackManager = ({
             <SelectValue placeholder="Filter by programme" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Programmes</SelectItem>
+            <SelectItem value="all">All Programmes</SelectItem>
             {programmes.map(programme => (
               <SelectItem key={programme.id} value={programme.id}>
                 {programme.name}

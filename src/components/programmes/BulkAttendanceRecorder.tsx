@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,6 @@ export const BulkAttendanceRecorder = ({
       [memberId]: checked
     }));
     
-    // Update selectAll state based on whether all members are selected
     const updatedSelectedMembers = {
       ...selectedMembers,
       [memberId]: checked

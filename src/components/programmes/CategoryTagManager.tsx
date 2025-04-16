@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,21 +64,18 @@ export const CategoryTagManager = ({
     tagId: ''
   });
   
-  // Handlers for creating new categories
   const handleAddCategory = () => {
     onAddCategory(categoryForm);
     setIsCategoryDialogOpen(false);
     setCategoryForm({ name: '', description: '', color: '#3B82F6' });
   };
   
-  // Handlers for creating new tags
   const handleAddTag = () => {
     onAddTag(tagForm);
     setIsTagDialogOpen(false);
     setTagForm({ name: '', color: '#10B981' });
   };
   
-  // Handlers for assigning tags to programmes
   const handleAssignTag = () => {
     if (assignForm.programmeId && assignForm.tagId) {
       onAssignTag(assignForm.programmeId, assignForm.tagId);
@@ -88,7 +84,6 @@ export const CategoryTagManager = ({
     }
   };
   
-  // Get tags for a specific programme
   const getProgrammeTags = (programmeId: string) => {
     const tagIds = programmeTags
       .filter(pt => pt.programmeId === programmeId)
@@ -238,7 +233,6 @@ export const CategoryTagManager = ({
         </CardContent>
       </Card>
       
-      {/* Category Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -301,7 +295,6 @@ export const CategoryTagManager = ({
         </DialogContent>
       </Dialog>
       
-      {/* Tag Dialog */}
       <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -354,7 +347,6 @@ export const CategoryTagManager = ({
         </DialogContent>
       </Dialog>
       
-      {/* Assign Tag Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>

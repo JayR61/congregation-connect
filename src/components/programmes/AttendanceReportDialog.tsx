@@ -111,6 +111,7 @@ export const AttendanceReportDialog = ({
               <SelectValue placeholder="Select a programme" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Programmes</SelectItem>
               {programmes.map(programme => (
                 <SelectItem key={programme.id} value={programme.id}>
                   {programme.name}

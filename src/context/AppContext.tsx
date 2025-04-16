@@ -9,7 +9,7 @@ import { useMemberActions } from './actions/useMemberActions';
 import { useNotificationActions } from './actions/useNotificationActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
 import { useTaskActions } from './actions/useTaskActions';
-import { getUserFromLocalStorage } from '@/lib/auth';
+import { getUserFromLocalStorage, saveUserToLocalStorage } from '@/lib/auth';
 
 interface AppContextProps {
   // Tasks related
@@ -115,7 +115,6 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  // State declarations
   const [tasks, setTasks] = useState<Task[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -127,7 +126,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [financeCategories, setFinanceCategories] = useState<FinanceCategory[]>([]);
   const [taskComments, setTaskComments] = useState<TaskComment[]>([]);
 
-  // Task related actions
   const {
     addTask,
     updateTask,
@@ -147,7 +145,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setTaskComments
   });
 
-  // Finance related actions
   const {
     addTransaction,
     updateTransaction,
@@ -162,7 +159,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setFinanceCategories
   });
 
-  // Member related actions
   const {
     addMember,
     updateMember,
@@ -172,7 +168,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setMembers
   });
 
-  // Document related actions
   const {
     addDocument,
     updateDocument,
@@ -187,7 +182,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setFolders
   });
 
-  // Notification related actions
   const {
     addNotification,
     updateNotification,
@@ -197,7 +191,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setNotifications
   });
 
-  // Programme related state and actions
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [attendance, setAttendance] = useState<ProgrammeAttendance[]>([]);
   
@@ -240,64 +233,53 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     currentUser
   });
 
-  // Mock data - Load initial data from localStorage or use default values
   useEffect(() => {
-    // Load tasks from localStorage or use default
     const storedTasks = localStorage.getItem('tasks');
     if (storedTasks) {
       setTasks(JSON.parse(storedTasks));
     }
 
-    // Load transactions from localStorage or use default
     const storedTransactions = localStorage.getItem('transactions');
     if (storedTransactions) {
       setTransactions(JSON.parse(storedTransactions));
     }
 
-   // Load members from localStorage or use default
     const storedMembers = localStorage.getItem('members');
     if (storedMembers) {
       setMembers(JSON.parse(storedMembers));
     }
 
-    // Load documents from localStorage or use default
     const storedDocuments = localStorage.getItem('documents');
     if (storedDocuments) {
       setDocuments(JSON.parse(storedDocuments));
     }
 
-    // Load folders from localStorage or use default
     const storedFolders = localStorage.getItem('folders');
     if (storedFolders) {
       setFolders(JSON.parse(storedFolders));
     }
 
-    // Load notifications from localStorage or use default
     const storedNotifications = localStorage.getItem('notifications');
     if (storedNotifications) {
       setNotifications(JSON.parse(storedNotifications));
     }
 
-    // Load task categories from localStorage or use default
     const storedTaskCategories = localStorage.getItem('taskCategories');
     if (storedTaskCategories) {
       setTaskCategories(JSON.parse(storedTaskCategories));
     }
 
-    // Load finance categories from localStorage or use default
     const storedFinanceCategories = localStorage.getItem('financeCategories');
     if (storedFinanceCategories) {
       setFinanceCategories(JSON.parse(storedFinanceCategories));
     }
 
-    // Load task comments from localStorage or use default
     const storedTaskComments = localStorage.getItem('taskComments');
     if (storedTaskComments) {
       setTaskComments(JSON.parse(storedTaskComments));
     }
   }, []);
 
-  // Mock data - Save state to localStorage on change
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
@@ -334,10 +316,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('taskComments', JSON.stringify(taskComments));
   }, [taskComments]);
 
+  useEffect(() => {
+    if (currentUser) {
+      saveUserToLocalStorage(currentUser);
+    }
+  }, [currentUser]);
+
   return (
     <AppContext.Provider
       value={{
-        // Task related
         tasks,
         setTasks,
         addTask,
@@ -354,7 +341,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         updateTaskComment,
         deleteTaskComment,
         
-        // Finance related
         transactions,
         setTransactions,
         addTransaction,
@@ -366,14 +352,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         updateFinanceCategory,
         deleteFinanceCategory,
         
-        // Member related
         members,
         setMembers,
         addMember,
         updateMember,
         deleteMember,
         
-        // Document related
         documents,
         setDocuments,
         addDocument,
@@ -385,7 +369,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         updateFolder,
         deleteFolder,
         
-        // User and notification related
         currentUser,
         setCurrentUser,
         notifications,
@@ -394,7 +377,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         updateNotification,
         deleteNotification,
         
-        // Programme related
         programmes,
         setProgrammes,
         attendance,

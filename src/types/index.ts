@@ -436,3 +436,88 @@ export interface ProgrammeAttendance {
   isPresent: boolean;
   notes?: string;
 }
+
+// New types for additional features
+export interface ProgrammeResource {
+  id: string;
+  programmeId: string;
+  name: string;
+  type: 'room' | 'equipment' | 'personnel' | 'budget' | 'other';
+  quantity: number;
+  unit?: string;
+  cost?: number;
+  notes?: string;
+  status: 'allocated' | 'pending' | 'denied';
+}
+
+export interface ProgrammeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  duration: number; // In minutes or hours
+  capacity: number;
+  resources: Omit<ProgrammeResource, 'id' | 'programmeId'>[];
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface ProgrammeFeedback {
+  id: string;
+  programmeId: string;
+  memberId: string;
+  rating: number; // 1-5 star rating
+  comments: string;
+  submittedAt: Date;
+}
+
+export interface ProgrammeReminder {
+  id: string;
+  programmeId: string;
+  type: 'email' | 'notification';
+  schedule: 'day_before' | 'hour_before' | 'week_before' | 'custom';
+  customTime?: Date;
+  sentAt?: Date;
+  recipientIds: string[];
+  message?: string;
+  status: 'scheduled' | 'sent' | 'failed';
+}
+
+export interface ProgrammeKPI {
+  id: string;
+  programmeId: string;
+  name: string;
+  target: number;
+  current: number;
+  unit: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProgrammeCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+}
+
+export interface ProgrammeTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface ProgrammeToTag {
+  programmeId: string;
+  tagId: string;
+}
+
+export interface BulkAttendanceRecord {
+  programmeId: string;
+  date: Date;
+  memberIds: {
+    memberId: string;
+    isPresent: boolean;
+    notes?: string;
+  }[];
+}

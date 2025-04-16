@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, ChevronDown, Download, FileText, LineChart } from "lucide-react";
+import { CalendarIcon, ChevronDown, Download, FileText, LineChart, BarChart3, Calendar, Users, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
 import { Programme, ProgrammeAttendance } from "@/types";
@@ -18,11 +18,21 @@ import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics
 import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
 import { CalendarView } from '@/components/programmes/CalendarView';
 import { ProgrammeForm } from '@/components/programmes/ProgrammeForm';
-import { Calendar } from "@/components/ui/calendar";
-import { 
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { AttendanceDashboard } from '@/components/programmes/AttendanceDashboard';
+import { ResourceManagement } from '@/components/programmes/ResourceManagement';
+import { CategoryTagManager } from '@/components/programmes/CategoryTagManager';
+import { TemplateManager } from '@/components/programmes/TemplateManager';
+import { FeedbackManager } from '@/components/programmes/FeedbackManager';
+import { KPIManager } from '@/components/programmes/KPIManager';
+import { ReminderManager } from '@/components/programmes/ReminderManager';
+import { BulkAttendanceRecorder } from '@/components/programmes/BulkAttendanceRecorder';
+
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -36,9 +46,23 @@ import {
 } from "@/components/ui/sheet";
 
 const Programmes = () => {
-  const { programmes, attendance, addProgramme, updateProgramme, deleteProgramme, recordAttendance, exportProgrammesToCSV, exportAttendanceToCSV, members } = useAppContext();
+  const { 
+    programmes, attendance, members, addProgramme, updateProgramme, deleteProgramme, 
+    recordAttendance, exportProgrammesToCSV, exportAttendanceToCSV, 
+    programmeResources, programmeCategories, programmeTags, programmeProgrammeTags,
+    programmeFeedback, programmeKpis, programmeReminders, programmeTemplates,
+    addProgrammeCategory, addProgrammeTag, assignTagToProgramme, removeTagFromProgramme,
+    allocateResource, updateResourceStatus, exportProgrammeToPDF, createProgrammeTemplate,
+    createProgrammeFromTemplate, exportProgrammeToCalendar, addProgrammeFeedback,
+    addProgrammeKPI, updateKPIProgress, createProgrammeReminder, checkAndSendReminders,
+    recordBulkAttendance
+  } = useAppContext();
+  
   const [activeTab, setActiveTab] = useState("all");
-  const [activeView, setActiveView] = useState<'grid' | 'analytics' | 'calendar'>('grid');
+  const [activeView, setActiveView] = useState<
+    'grid' | 'analytics' | 'calendar' | 'dashboard' | 'resources' | 
+    'categories' | 'templates' | 'feedback' | 'kpis' | 'reminders'
+  >('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isProgrammeDialogOpen, setIsProgrammeDialogOpen] = useState(false);
@@ -148,6 +172,82 @@ const Programmes = () => {
     setIsProgrammeDialogOpen(true);
   };
 
+  const handleExportPDF = (programmeId: string) => {
+    exportProgrammeToPDF(programmeId, members);
+  };
+
+  const handleExportCalendar = (programmeId: string) => {
+    exportProgrammeToCalendar(programmeId);
+  };
+
+  // Function to get features with sections
+  const renderFeatureSection = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <AttendanceDashboard programmes={programmes} attendance={attendance} members={members} />;
+      case 'resources':
+        return (
+          <ResourceManagement 
+            programmes={programmes} 
+            resources={programmeResources}
+            onAllocateResource={allocateResource}
+            onUpdateStatus={updateResourceStatus}
+          />
+        );
+      case 'categories':
+        return (
+          <CategoryTagManager 
+            programmes={programmes}
+            categories={programmeCategories}
+            tags={programmeTags}
+            programmeTags={programmeProgrammeTags}
+            onAddCategory={addProgrammeCategory}
+            onAddTag={addProgrammeTag}
+            onAssignTag={assignTagToProgramme}
+            onRemoveTag={removeTagFromProgramme}
+          />
+        );
+      case 'templates':
+        return (
+          <TemplateManager 
+            templates={programmeTemplates}
+            onCreateTemplate={createProgrammeTemplate}
+            onCreateFromTemplate={createProgrammeFromTemplate}
+          />
+        );
+      case 'feedback':
+        return (
+          <FeedbackManager 
+            programmes={programmes}
+            feedback={programmeFeedback}
+            members={members}
+            onAddFeedback={addProgrammeFeedback}
+          />
+        );
+      case 'kpis':
+        return (
+          <KPIManager 
+            programmes={programmes}
+            kpis={programmeKpis}
+            onAddKPI={addProgrammeKPI}
+            onUpdateKPI={updateKPIProgress}
+          />
+        );
+      case 'reminders':
+        return (
+          <ReminderManager 
+            programmes={programmes}
+            reminders={programmeReminders}
+            members={members}
+            onCreateReminder={createProgrammeReminder}
+            onCheckReminders={checkAndSendReminders}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -173,6 +273,28 @@ const Programmes = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportProgrammesToCSV}>
                 Export Programmes (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setActiveView('dashboard')}>
+                Attendance Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('resources')}>
+                Manage Resources
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('categories')}>
+                Categories & Tags
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('templates')}>
+                Programme Templates
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('feedback')}>
+                Feedback Collection
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('kpis')}>
+                KPIs & Metrics
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('reminders')}>
+                Reminders & Notifications
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -234,6 +356,7 @@ const Programmes = () => {
                   size="sm"
                   onClick={() => setActiveView('grid')}
                   className="h-8"
+                  title="Card View"
                 >
                   <FileText className="h-4 w-4" />
                 </Button>
@@ -242,6 +365,7 @@ const Programmes = () => {
                   size="sm"
                   onClick={() => setActiveView('analytics')}
                   className="h-8"
+                  title="Analytics"
                 >
                   <LineChart className="h-4 w-4" />
                 </Button>
@@ -250,8 +374,27 @@ const Programmes = () => {
                   size="sm"
                   onClick={() => setActiveView('calendar')}
                   className="h-8"
+                  title="Calendar"
                 >
                   <CalendarIcon className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={activeView === 'dashboard' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setActiveView('dashboard')}
+                  className="h-8"
+                  title="Dashboard"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={activeView === 'kpis' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setActiveView('kpis')}
+                  className="h-8"
+                  title="KPIs"
+                >
+                  <Gauge className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -289,14 +432,39 @@ const Programmes = () => {
               </SelectContent>
             </Select>
             
-            <Button variant="outline" onClick={() => setIsReportDialogOpen(true)} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Reports
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Reports
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+                  Attendance Reports
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportProgrammesToCSV}>
+                  Export All Programmes (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setActiveView('dashboard')}>
+                  View Dashboard
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <BulkAttendanceRecorder 
+              programmes={programmes}
+              members={members}
+              onRecordBulkAttendance={recordBulkAttendance}
+            />
           </div>
         </div>
 
-        {activeView === 'grid' && (
+        {/* Conditional rendering based on view */}
+        {['dashboard', 'resources', 'categories', 'templates', 'feedback', 'kpis', 'reminders'].includes(activeView) ? (
+          renderFeatureSection()
+        ) : activeView === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             {filteredProgrammes.length > 0 ? (
               filteredProgrammes.map((programme) => (
@@ -307,6 +475,8 @@ const Programmes = () => {
                   onAttendanceClick={openAttendanceDialog}
                   getTypeBadgeColor={getTypeBadgeColor}
                   onCardClick={handleEditProgramme}
+                  onExportPDF={handleExportPDF}
+                  onExportCalendar={handleExportCalendar}
                 />
               ))
             ) : (
@@ -322,15 +492,11 @@ const Programmes = () => {
               </div>
             )}
           </div>
-        )}
-
-        {activeView === 'analytics' && (
+        ) : activeView === 'analytics' ? (
           <div className="mt-4">
             <ProgrammesAnalytics programmes={programmes} />
           </div>
-        )}
-
-        {activeView === 'calendar' && (
+        ) : activeView === 'calendar' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
             <div className="lg:col-span-1">
               <CalendarView 
@@ -477,7 +643,7 @@ const Programmes = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <CalendarComponent
                     mode="single"
                     selected={attendanceForm.date}
                     onSelect={(date) => date && setAttendanceForm(prev => ({ ...prev, date }))}

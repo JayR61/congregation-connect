@@ -1,5 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment, Programme, ProgrammeAttendance } from '../types';
+import { 
+  Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, 
+  FinanceCategory, TaskComment, Programme, ProgrammeAttendance, ProgrammeResource,
+  ProgrammeFeedback, ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory,
+  ProgrammeTag, BulkAttendanceRecord
+} from '../types';
 import { 
   transactions as initialTransactions,
   members as initialMembers,
@@ -17,7 +23,7 @@ import { useMemberActions } from './actions/useMemberActions';
 import { useDocumentActions } from './actions/useDocumentActions';
 import { useNotificationActions } from './actions/useNotificationActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
-import { getProgrammes, getAttendance } from '@/services/localStorage';
+import { getProgrammes, getAttendance } from '@/services/programmeService';
 
 const initialTasks: Task[] = [];
 const initialProgrammes: Programme[] = [];
@@ -60,6 +66,7 @@ interface AppContextType {
   moveDocument: (id: string, folderId: string | null) => void;
   addDocumentVersion: (documentId: string, url: string, notes: string) => void;
   
+  // Programme management
   programmes: Programme[];
   attendance: ProgrammeAttendance[];
   addProgramme: (programme: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => void;
@@ -68,6 +75,50 @@ interface AppContextType {
   recordAttendance: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => void;
   exportProgrammesToCSV: () => boolean;
   exportAttendanceToCSV: (programmeId: string) => boolean;
+  
+  // Feature 1: Programme dashboard with charts
+  programmeResources: ProgrammeResource[];
+  programmeFeedback: ProgrammeFeedback[];
+  programmeReminders: ProgrammeReminder[];
+  programmeKpis: ProgrammeKPI[];
+  programmeTemplates: ProgrammeTemplate[];
+  programmeCategories: ProgrammeCategory[];
+  programmeTags: ProgrammeTag[];
+  programmeProgrammeTags: {programmeId: string, tagId: string}[];
+  
+  // Feature 2: Email notifications/reminders
+  createProgrammeReminder: (reminder: Omit<ProgrammeReminder, 'id' | 'sentAt' | 'status'>) => ProgrammeReminder | null;
+  checkAndSendReminders: () => ProgrammeReminder[];
+  
+  // Feature 3: Programme categories and tags
+  addProgrammeCategory: (category: Omit<ProgrammeCategory, 'id'>) => ProgrammeCategory | null;
+  addProgrammeTag: (tag: Omit<ProgrammeTag, 'id'>) => ProgrammeTag | null;
+  assignTagToProgramme: (programmeId: string, tagId: string) => boolean;
+  removeTagFromProgramme: (programmeId: string, tagId: string) => boolean;
+  
+  // Feature 4: Resource allocation tracking
+  allocateResource: (resource: Omit<ProgrammeResource, 'id'>) => ProgrammeResource | null;
+  updateResourceStatus: (resourceId: string, status: ProgrammeResource['status']) => boolean;
+  
+  // Feature 5: PDF export
+  exportProgrammeToPDF: (programmeId: string, members: any[]) => string | null;
+  
+  // Feature 6: Programme templates
+  createProgrammeTemplate: (templateData: Omit<ProgrammeTemplate, 'id' | 'createdById' | 'createdAt'>) => ProgrammeTemplate | null;
+  createProgrammeFromTemplate: (templateId: string, overrideData?: Partial<Programme>) => Programme | null;
+  
+  // Feature 7: Calendar integration
+  exportProgrammeToCalendar: (programmeId: string) => string | null;
+  
+  // Feature 8: Participant feedback collection
+  addProgrammeFeedback: (feedback: Omit<ProgrammeFeedback, 'id' | 'submittedAt'>) => ProgrammeFeedback | null;
+  
+  // Feature 9: Programme success metrics and KPIs
+  addProgrammeKPI: (kpi: Omit<ProgrammeKPI, 'id' | 'createdAt' | 'updatedAt'>) => ProgrammeKPI | null;
+  updateKPIProgress: (kpiId: string, current: number) => boolean;
+  
+  // Feature 10: Bulk attendance recording
+  recordBulkAttendance: (bulkRecord: BulkAttendanceRecord) => ProgrammeAttendance[] | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -185,6 +236,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     shareDocument: documentActions.shareDocument,
     moveDocument: documentActions.moveDocument,
     addDocumentVersion: documentActions.addDocumentVersion,
+    
+    // Programme management
     programmes,
     attendance,
     addProgramme: programmeActions.addProgramme,
@@ -192,7 +245,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteProgramme: programmeActions.deleteProgramme,
     recordAttendance: programmeActions.recordAttendance,
     exportProgrammesToCSV: programmeActions.exportProgrammesToCSV,
-    exportAttendanceToCSV: programmeActions.exportAttendanceToCSV
+    exportAttendanceToCSV: programmeActions.exportAttendanceToCSV,
+    
+    // Feature 1: Programme dashboard with charts
+    programmeResources: programmeActions.resources,
+    programmeFeedback: programmeActions.feedback,
+    programmeReminders: programmeActions.reminders,
+    programmeKpis: programmeActions.kpis,
+    programmeTemplates: programmeActions.templates,
+    programmeCategories: programmeActions.categories,
+    programmeTags: programmeActions.tags,
+    programmeProgrammeTags: programmeActions.programmeTags,
+    
+    // Feature 2: Email notifications/reminders
+    createProgrammeReminder: programmeActions.createProgrammeReminder,
+    checkAndSendReminders: programmeActions.checkAndSendReminders,
+    
+    // Feature 3: Programme categories and tags
+    addProgrammeCategory: programmeActions.addProgrammeCategory,
+    addProgrammeTag: programmeActions.addProgrammeTag,
+    assignTagToProgramme: programmeActions.assignTagToProgramme,
+    removeTagFromProgramme: programmeActions.removeTagFromProgramme,
+    
+    // Feature 4: Resource allocation tracking
+    allocateResource: programmeActions.allocateResource,
+    updateResourceStatus: programmeActions.updateResourceStatus,
+    
+    // Feature 5: PDF export
+    exportProgrammeToPDF: programmeActions.exportProgrammeToPDF,
+    
+    // Feature 6: Programme templates
+    createProgrammeTemplate: programmeActions.createProgrammeTemplate,
+    createProgrammeFromTemplate: programmeActions.createProgrammeFromTemplate,
+    
+    // Feature 7: Calendar integration
+    exportProgrammeToCalendar: programmeActions.exportProgrammeToCalendar,
+    
+    // Feature 8: Participant feedback collection
+    addProgrammeFeedback: programmeActions.addProgrammeFeedback,
+    
+    // Feature 9: Programme success metrics and KPIs
+    addProgrammeKPI: programmeActions.addProgrammeKPI,
+    updateKPIProgress: programmeActions.updateKPIProgress,
+    
+    // Feature 10: Bulk attendance recording
+    recordBulkAttendance: programmeActions.recordBulkAttendance
   };
 
   return (

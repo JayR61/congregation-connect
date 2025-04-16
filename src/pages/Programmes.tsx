@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { CalendarIcon, ChevronDown, Download, FileText, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics
 import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
 import { CalendarView } from '@/components/programmes/CalendarView';
 import { ProgrammeForm } from '@/components/programmes/ProgrammeForm';
+import { Calendar } from "@/components/ui/calendar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -443,7 +444,6 @@ const Programmes = () => {
                   programme={programme}
                   onDeleteConfirm={handleDeleteProgramme}
                   onAttendanceClick={(id) => {
-                    // Stop the event from bubbling up to the parent which would open the edit modal
                     event?.stopPropagation();
                     openAttendanceDialog(id);
                   }}
@@ -542,7 +542,6 @@ const Programmes = () => {
         )}
       </div>
 
-      {/* Dialogs and Sheets */}
       <Dialog open={isProgrammeDialogOpen} onOpenChange={setIsProgrammeDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <ProgrammeForm

@@ -241,7 +241,9 @@ export const ReminderManager = ({
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
                     <span className="font-medium">Recipients:</span>
                     <span className="text-muted-foreground">
-                      {reminder.recipients && Array.isArray(reminder.recipients) ? getRecipientNames(reminder.recipients) : 'No recipients'}
+                      {reminder.recipients && Array.isArray(reminder.recipients) 
+                        ? getRecipientNames(reminder.recipients) 
+                        : 'No recipients'}
                     </span>
                   </div>
                 </div>

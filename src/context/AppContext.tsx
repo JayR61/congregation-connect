@@ -1,188 +1,238 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, 
+import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory,
   FinanceCategory, TaskComment, Programme, ProgrammeAttendance, ProgrammeResource,
   ProgrammeFeedback, ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory,
-  ProgrammeTag, BulkAttendanceRecord
-} from '../types';
-import { 
-  transactions as initialTransactions,
-  members as initialMembers,
-  documents as initialDocuments,
-  folders as initialFolders,
-  currentUser as initialCurrentUser,
-  notifications as initialNotifications,
-  taskCategories as initialTaskCategories,
-  financeCategories as initialFinanceCategories
-} from '../data/mockData';
-import { toast } from '@/lib/toast';
-import { useTaskActions } from './actions/useTaskActions';
-import { useTransactionActions } from './actions/useTransactionActions';
-import { useMemberActions } from './actions/useMemberActions';
+  ProgrammeTag, BulkAttendanceRecord } from '../types';
 import { useDocumentActions } from './actions/useDocumentActions';
+import { useFinanceActions } from './actions/useFinanceActions';
+import { useMemberActions } from './actions/useMemberActions';
 import { useNotificationActions } from './actions/useNotificationActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
-import { getProgrammes, getAttendance } from '@/services/programmeService';
+import { useTaskActions } from './actions/useTaskActions';
+import { getUserFromLocalStorage } from '@/lib/auth';
 
-const initialTasks: Task[] = [];
-const initialProgrammes: Programme[] = [];
-const initialAttendance: ProgrammeAttendance[] = [];
-
-interface AppContextType {
-  currentUser: User;
-  notifications: Notification[];
-  markNotificationAsRead: (id: string) => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
-  
+interface AppContextProps {
+  // Tasks related
   tasks: Task[];
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Task | null;
+  updateTask: (id: string, task: Partial<Task>) => boolean;
+  deleteTask: (id: string) => boolean;
   taskCategories: TaskCategory[];
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'comments'>) => void;
-  updateTask: (id: string, task: Partial<Task>, editorId?: string) => void;
-  deleteTask: (id: string, deleterId?: string) => void;
-  addTaskComment: (taskId: string, content: string) => void;
-  
+  setTaskCategories: React.Dispatch<React.SetStateAction<TaskCategory[]>>;
+  addTaskCategory: (category: Omit<TaskCategory, 'id'>) => TaskCategory | null;
+  updateTaskCategory: (id: string, category: Partial<TaskCategory>) => boolean;
+  deleteTaskCategory: (id: string) => boolean;
+  taskComments: TaskComment[];
+  setTaskComments: React.Dispatch<React.SetStateAction<TaskComment[]>>;
+  addTaskComment: (comment: Omit<TaskComment, 'id' | 'createdAt'>) => TaskComment | null;
+  updateTaskComment: (id: string, comment: Partial<TaskComment>) => boolean;
+  deleteTaskComment: (id: string) => boolean;
+
+  // Finance related
   transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => Transaction | null;
+  updateTransaction: (id: string, transaction: Partial<Transaction>) => boolean;
+  deleteTransaction: (id: string) => boolean;
   financeCategories: FinanceCategory[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
-  
+  setFinanceCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
+  addFinanceCategory: (category: Omit<FinanceCategory, 'id'>) => FinanceCategory | null;
+  updateFinanceCategory: (id: string, category: Partial<FinanceCategory>) => boolean;
+  deleteFinanceCategory: (id: string) => boolean;
+
+  // Member related
   members: Member[];
-  addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateMember: (id: string, member: Partial<Member>) => void;
-  deleteMember: (id: string) => void;
-  checkMemberStatusUpdates: () => boolean;
-  
+  setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
+  addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => Member | null;
+  updateMember: (id: string, member: Partial<Member>) => boolean;
+  deleteMember: (id: string) => boolean;
+
+  // Document related
   documents: Document[];
+  setDocuments: React.Dispatch<React.SetStateAction<Document[]>>;
+  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'versions'>) => Document | null;
+  updateDocument: (id: string, document: Partial<Document>) => boolean;
+  deleteDocument: (id: string) => boolean;
   folders: Folder[];
-  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'versions'>, file?: File) => void;
-  updateDocument: (id: string, document: Partial<Document>, file?: File) => void;
-  deleteDocument: (id: string) => void;
-  addFolder: (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => void;
-  updateFolder: (id: string, folder: Partial<Folder>) => void;
-  deleteFolder: (id: string) => void;
-  shareDocument: (id: string, shared: boolean) => void;
-  moveDocument: (id: string, folderId: string | null) => void;
-  addDocumentVersion: (documentId: string, url: string, notes: string) => void;
-  
-  // Programme management
+  setFolders: React.Dispatch<React.SetStateAction<Folder[]>>;
+  addFolder: (folder: Omit<Folder, 'id'>) => Folder | null;
+  updateFolder: (id: string, folder: Partial<Folder>) => boolean;
+  deleteFolder: (id: string) => boolean;
+
+  // User and notification related
+  currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  notifications: Notification[];
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => Notification | null;
+  updateNotification: (id: string, notification: Partial<Notification>) => boolean;
+  deleteNotification: (id: string) => boolean;
+
+  // Programme related
   programmes: Programme[];
-  attendance: ProgrammeAttendance[];
-  addProgramme: (programme: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => void;
-  updateProgramme: (id: string, programme: Partial<Programme>) => void;
-  deleteProgramme: (id: string) => void;
-  recordAttendance: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => void;
+  setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
+  addProgramme: (programme: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => Programme | null;
+  updateProgramme: (id: string, programme: Partial<Programme>) => boolean;
+  deleteProgramme: (id: string) => boolean;
+  recordAttendance: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => ProgrammeAttendance | null;
   exportProgrammesToCSV: () => boolean;
   exportAttendanceToCSV: (programmeId: string) => boolean;
-  
-  // Feature 1: Programme dashboard with charts
-  programmeResources: ProgrammeResource[];
-  programmeFeedback: ProgrammeFeedback[];
-  programmeReminders: ProgrammeReminder[];
-  programmeKpis: ProgrammeKPI[];
-  programmeTemplates: ProgrammeTemplate[];
-  programmeCategories: ProgrammeCategory[];
-  programmeTags: ProgrammeTag[];
-  programmeProgrammeTags: {programmeId: string, tagId: string}[];
-  
-  // Feature 2: Email notifications/reminders
+  resources: ProgrammeResource[];
+  feedback: ProgrammeFeedback[];
+  reminders: ProgrammeReminder[];
+  kpis: ProgrammeKPI[];
+  templates: ProgrammeTemplate[];
+  categories: ProgrammeCategory[];
+  tags: ProgrammeTag[];
+  programmeTags: { programmeId: string; tagId: string; }[];
   createProgrammeReminder: (reminder: Omit<ProgrammeReminder, 'id' | 'sentAt' | 'status'>) => ProgrammeReminder | null;
   checkAndSendReminders: () => ProgrammeReminder[];
-  
-  // Feature 3: Programme categories and tags
   addProgrammeCategory: (category: Omit<ProgrammeCategory, 'id'>) => ProgrammeCategory | null;
   addProgrammeTag: (tag: Omit<ProgrammeTag, 'id'>) => ProgrammeTag | null;
   assignTagToProgramme: (programmeId: string, tagId: string) => boolean;
   removeTagFromProgramme: (programmeId: string, tagId: string) => boolean;
-  
-  // Feature 4: Resource allocation tracking
   allocateResource: (resource: Omit<ProgrammeResource, 'id'>) => ProgrammeResource | null;
   updateResourceStatus: (resourceId: string, status: ProgrammeResource['status']) => boolean;
-  
-  // Feature 5: PDF export
   exportProgrammeToPDF: (programmeId: string, members: any[]) => string | null;
-  
-  // Feature 6: Programme templates
   createProgrammeTemplate: (templateData: Omit<ProgrammeTemplate, 'id' | 'createdById' | 'createdAt'>) => ProgrammeTemplate | null;
   createProgrammeFromTemplate: (templateId: string, overrideData?: Partial<Programme>) => Programme | null;
-  
-  // Feature 7: Calendar integration
   exportProgrammeToCalendar: (programmeId: string) => string | null;
-  
-  // Feature 8: Participant feedback collection
   addProgrammeFeedback: (feedback: Omit<ProgrammeFeedback, 'id' | 'submittedAt'>) => ProgrammeFeedback | null;
-  
-  // Feature 9: Programme success metrics and KPIs
   addProgrammeKPI: (kpi: Omit<ProgrammeKPI, 'id' | 'createdAt' | 'updatedAt'>) => ProgrammeKPI | null;
   updateKPIProgress: (kpiId: string, current: number) => boolean;
-  
-  // Feature 10: Bulk attendance recording
   recordBulkAttendance: (bulkRecord: BulkAttendanceRecord) => ProgrammeAttendance[] | null;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+export const AppContext = createContext<AppContextProps | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(initialCurrentUser);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [taskCategories, setTaskCategories] = useState<TaskCategory[]>(initialTaskCategories);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [financeCategories, setFinanceCategories] = useState<FinanceCategory[]>(initialFinanceCategories);
-  const [members, setMembers] = useState<Member[]>(initialMembers);
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
-  const [folders, setFolders] = useState<Folder[]>(initialFolders);
-  const [programmes, setProgrammes] = useState<Programme[]>(initialProgrammes);
-  const [attendance, setAttendance] = useState<ProgrammeAttendance[]>(initialAttendance);
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error("useAppContext must be used within an AppProvider");
+  }
+  return context;
+};
 
-  useEffect(() => {
-    const savedProgrammes = getProgrammes();
-    if (savedProgrammes && savedProgrammes.length > 0) {
-      setProgrammes(savedProgrammes);
-    }
-    
-    const savedAttendance = getAttendance();
-    if (savedAttendance && savedAttendance.length > 0) {
-      setAttendance(savedAttendance);
-    }
-  }, []);
+export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+  // State declarations
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(getUserFromLocalStorage());
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [taskCategories, setTaskCategories] = useState<TaskCategory[]>([]);
+  const [financeCategories, setFinanceCategories] = useState<FinanceCategory[]>([]);
+  const [taskComments, setTaskComments] = useState<TaskComment[]>([]);
 
-  const notificationActions = useNotificationActions({
-    notifications,
-    setNotifications
-  });
-
-  const addNotification = notificationActions.addNotification;
-
-  const taskActions = useTaskActions({
+  // Task related actions
+  const {
+    addTask,
+    updateTask,
+    deleteTask,
+    addTaskCategory,
+    updateTaskCategory,
+    deleteTaskCategory,
+    addTaskComment,
+    updateTaskComment,
+    deleteTaskComment
+  } = useTaskActions({
     tasks,
     setTasks,
-    currentUser,
-    members,
-    addNotification
+    taskCategories,
+    setTaskCategories,
+    taskComments,
+    setTaskComments
   });
 
-  const transactionActions = useTransactionActions({
+  // Finance related actions
+  const {
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addFinanceCategory,
+    updateFinanceCategory,
+    deleteFinanceCategory
+  } = useFinanceActions({
     transactions,
     setTransactions,
-    currentUser
+    financeCategories,
+    setFinanceCategories
   });
 
-  const memberActions = useMemberActions({
+  // Member related actions
+  const {
+    addMember,
+    updateMember,
+    deleteMember
+  } = useMemberActions({
     members,
     setMembers
   });
 
-  const documentActions = useDocumentActions({
+  // Document related actions
+  const {
+    addDocument,
+    updateDocument,
+    deleteDocument,
+    addFolder,
+    updateFolder,
+    deleteFolder
+  } = useDocumentActions({
     documents,
     setDocuments,
     folders,
-    setFolders,
-    currentUser
+    setFolders
   });
+
+  // Notification related actions
+  const {
+    addNotification,
+    updateNotification,
+    deleteNotification
+  } = useNotificationActions({
+    notifications,
+    setNotifications
+  });
+
+  // Programme related state and actions
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [attendance, setAttendance] = useState<ProgrammeAttendance[]>([]);
   
-  const programmeActions = useProgrammeActions({
+  const {
+    resources,
+    feedback,
+    reminders,
+    kpis,
+    templates,
+    categories,
+    tags,
+    programmeTags,
+    addProgramme,
+    updateProgramme,
+    deleteProgramme,
+    recordAttendance,
+    exportProgrammesToCSV,
+    exportAttendanceToCSV,
+    createProgrammeReminder,
+    checkAndSendReminders,
+    addProgrammeCategory,
+    addProgrammeTag,
+    assignTagToProgramme,
+    removeTagFromProgramme,
+    allocateResource,
+    updateResourceStatus,
+    exportProgrammeToPDF,
+    createProgrammeTemplate,
+    createProgrammeFromTemplate,
+    exportProgrammeToCalendar,
+    addProgrammeFeedback,
+    addProgrammeKPI,
+    updateKPIProgress,
+    recordBulkAttendance
+  } = useProgrammeActions({
     programmes,
     setProgrammes,
     attendance,
@@ -190,119 +240,200 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentUser
   });
 
+  // Mock data - Load initial data from localStorage or use default values
   useEffect(() => {
-    try {
-      memberActions.checkMemberStatusUpdates();
-      
-      const interval = setInterval(() => {
-        memberActions.checkMemberStatusUpdates();
-      }, 24 * 60 * 60 * 1000);
-      
-      return () => clearInterval(interval);
-    } catch (e) {
-      console.error("Error checking member status:", e);
+    // Load tasks from localStorage or use default
+    const storedTasks = localStorage.getItem('tasks');
+    if (storedTasks) {
+      setTasks(JSON.parse(storedTasks));
+    }
+
+    // Load transactions from localStorage or use default
+    const storedTransactions = localStorage.getItem('transactions');
+    if (storedTransactions) {
+      setTransactions(JSON.parse(storedTransactions));
+    }
+
+   // Load members from localStorage or use default
+    const storedMembers = localStorage.getItem('members');
+    if (storedMembers) {
+      setMembers(JSON.parse(storedMembers));
+    }
+
+    // Load documents from localStorage or use default
+    const storedDocuments = localStorage.getItem('documents');
+    if (storedDocuments) {
+      setDocuments(JSON.parse(storedDocuments));
+    }
+
+    // Load folders from localStorage or use default
+    const storedFolders = localStorage.getItem('folders');
+    if (storedFolders) {
+      setFolders(JSON.parse(storedFolders));
+    }
+
+    // Load notifications from localStorage or use default
+    const storedNotifications = localStorage.getItem('notifications');
+    if (storedNotifications) {
+      setNotifications(JSON.parse(storedNotifications));
+    }
+
+    // Load task categories from localStorage or use default
+    const storedTaskCategories = localStorage.getItem('taskCategories');
+    if (storedTaskCategories) {
+      setTaskCategories(JSON.parse(storedTaskCategories));
+    }
+
+    // Load finance categories from localStorage or use default
+    const storedFinanceCategories = localStorage.getItem('financeCategories');
+    if (storedFinanceCategories) {
+      setFinanceCategories(JSON.parse(storedFinanceCategories));
+    }
+
+    // Load task comments from localStorage or use default
+    const storedTaskComments = localStorage.getItem('taskComments');
+    if (storedTaskComments) {
+      setTaskComments(JSON.parse(storedTaskComments));
     }
   }, []);
 
-  const contextValue = {
-    currentUser,
-    notifications,
-    markNotificationAsRead: notificationActions.markNotificationAsRead,
-    addNotification,
-    tasks,
-    taskCategories,
-    addTask: taskActions.addTask,
-    updateTask: taskActions.updateTask,
-    deleteTask: taskActions.deleteTask,
-    addTaskComment: taskActions.addTaskComment,
-    transactions,
-    financeCategories,
-    addTransaction: transactionActions.addTransaction,
-    updateTransaction: transactionActions.updateTransaction,
-    deleteTransaction: transactionActions.deleteTransaction,
-    members,
-    addMember: memberActions.addMember,
-    updateMember: memberActions.updateMember,
-    deleteMember: memberActions.deleteMember,
-    checkMemberStatusUpdates: memberActions.checkMemberStatusUpdates,
-    documents,
-    folders,
-    addDocument: documentActions.addDocument,
-    updateDocument: documentActions.updateDocument,
-    deleteDocument: documentActions.deleteDocument,
-    addFolder: documentActions.addFolder,
-    updateFolder: documentActions.updateFolder,
-    deleteFolder: documentActions.deleteFolder,
-    shareDocument: documentActions.shareDocument,
-    moveDocument: documentActions.moveDocument,
-    addDocumentVersion: documentActions.addDocumentVersion,
-    
-    // Programme management
-    programmes,
-    attendance,
-    addProgramme: programmeActions.addProgramme,
-    updateProgramme: programmeActions.updateProgramme,
-    deleteProgramme: programmeActions.deleteProgramme,
-    recordAttendance: programmeActions.recordAttendance,
-    exportProgrammesToCSV: programmeActions.exportProgrammesToCSV,
-    exportAttendanceToCSV: programmeActions.exportAttendanceToCSV,
-    
-    // Feature 1: Programme dashboard with charts
-    programmeResources: programmeActions.resources,
-    programmeFeedback: programmeActions.feedback,
-    programmeReminders: programmeActions.reminders,
-    programmeKpis: programmeActions.kpis,
-    programmeTemplates: programmeActions.templates,
-    programmeCategories: programmeActions.categories,
-    programmeTags: programmeActions.tags,
-    programmeProgrammeTags: programmeActions.programmeTags,
-    
-    // Feature 2: Email notifications/reminders
-    createProgrammeReminder: programmeActions.createProgrammeReminder,
-    checkAndSendReminders: programmeActions.checkAndSendReminders,
-    
-    // Feature 3: Programme categories and tags
-    addProgrammeCategory: programmeActions.addProgrammeCategory,
-    addProgrammeTag: programmeActions.addProgrammeTag,
-    assignTagToProgramme: programmeActions.assignTagToProgramme,
-    removeTagFromProgramme: programmeActions.removeTagFromProgramme,
-    
-    // Feature 4: Resource allocation tracking
-    allocateResource: programmeActions.allocateResource,
-    updateResourceStatus: programmeActions.updateResourceStatus,
-    
-    // Feature 5: PDF export
-    exportProgrammeToPDF: programmeActions.exportProgrammeToPDF,
-    
-    // Feature 6: Programme templates
-    createProgrammeTemplate: programmeActions.createProgrammeTemplate,
-    createProgrammeFromTemplate: programmeActions.createProgrammeFromTemplate,
-    
-    // Feature 7: Calendar integration
-    exportProgrammeToCalendar: programmeActions.exportProgrammeToCalendar,
-    
-    // Feature 8: Participant feedback collection
-    addProgrammeFeedback: programmeActions.addProgrammeFeedback,
-    
-    // Feature 9: Programme success metrics and KPIs
-    addProgrammeKPI: programmeActions.addProgrammeKPI,
-    updateKPIProgress: programmeActions.updateKPIProgress,
-    
-    // Feature 10: Bulk attendance recording
-    recordBulkAttendance: programmeActions.recordBulkAttendance
-  };
+  // Mock data - Save state to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+  }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('members', JSON.stringify(members));
+  }, [members]);
+
+  useEffect(() => {
+    localStorage.setItem('documents', JSON.stringify(documents));
+  }, [documents]);
+
+  useEffect(() => {
+    localStorage.setItem('folders', JSON.stringify(folders));
+  }, [folders]);
+
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('taskCategories', JSON.stringify(taskCategories));
+  }, [taskCategories]);
+
+  useEffect(() => {
+    localStorage.setItem('financeCategories', JSON.stringify(financeCategories));
+  }, [financeCategories]);
+
+  useEffect(() => {
+    localStorage.setItem('taskComments', JSON.stringify(taskComments));
+  }, [taskComments]);
 
   return (
-    <AppContext.Provider value={contextValue}>
+    <AppContext.Provider
+      value={{
+        // Task related
+        tasks,
+        setTasks,
+        addTask,
+        updateTask,
+        deleteTask,
+        taskCategories,
+        setTaskCategories,
+        addTaskCategory,
+        updateTaskCategory,
+        deleteTaskCategory,
+        taskComments,
+        setTaskComments,
+        addTaskComment,
+        updateTaskComment,
+        deleteTaskComment,
+        
+        // Finance related
+        transactions,
+        setTransactions,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction,
+        financeCategories,
+        setFinanceCategories,
+        addFinanceCategory,
+        updateFinanceCategory,
+        deleteFinanceCategory,
+        
+        // Member related
+        members,
+        setMembers,
+        addMember,
+        updateMember,
+        deleteMember,
+        
+        // Document related
+        documents,
+        setDocuments,
+        addDocument,
+        updateDocument,
+        deleteDocument,
+        folders,
+        setFolders,
+        addFolder,
+        updateFolder,
+        deleteFolder,
+        
+        // User and notification related
+        currentUser,
+        setCurrentUser,
+        notifications,
+        setNotifications,
+        addNotification,
+        updateNotification,
+        deleteNotification,
+        
+        // Programme related
+        programmes,
+        setProgrammes,
+        attendance,
+        setAttendance,
+        addProgramme,
+        updateProgramme,
+        deleteProgramme,
+        recordAttendance,
+        exportProgrammesToCSV,
+        exportAttendanceToCSV,
+        resources,
+        feedback,
+        reminders,
+        kpis,
+        templates,
+        categories,
+        tags,
+        programmeTags,
+        createProgrammeReminder,
+        checkAndSendReminders,
+        addProgrammeCategory,
+        addProgrammeTag,
+        assignTagToProgramme,
+        removeTagFromProgramme,
+        allocateResource,
+        updateResourceStatus,
+        exportProgrammeToPDF,
+        createProgrammeTemplate,
+        createProgrammeFromTemplate,
+        exportProgrammeToCalendar,
+        addProgrammeFeedback,
+        addProgrammeKPI,
+        updateKPIProgress,
+        recordBulkAttendance
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-  return context;
-};
+export default AppProvider;

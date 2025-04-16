@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Programme, ProgrammeAttendance, ProgrammeResource, ProgrammeFeedback,
@@ -39,7 +38,6 @@ export const useProgrammeActions = ({
   const [tags, setTags] = useState<ProgrammeTag[]>([]);
   const [programmeTags, setProgrammeTags] = useState<{programmeId: string, tagId: string}[]>([]);
 
-  // Load data from localStorage
   useEffect(() => {
     setResources(getResources());
     setFeedback(getFeedback());
@@ -51,7 +49,6 @@ export const useProgrammeActions = ({
     setProgrammeTags(getProgrammeTags());
   }, []);
   
-  // Save to localStorage whenever they change
   useEffect(() => {
     saveProgrammes(programmes);
   }, [programmes]);
@@ -92,7 +89,6 @@ export const useProgrammeActions = ({
     saveProgrammeTags(programmeTags);
   }, [programmeTags]);
 
-  // Original code from useProgrammeActions
   const addProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
     try {
       const newProgramme: Programme = {
@@ -133,10 +129,7 @@ export const useProgrammeActions = ({
   const deleteProgramme = (id: string) => {
     try {
       setProgrammes(prev => prev.filter(programme => programme.id !== id));
-      // Also remove related attendance records
       setAttendance(prev => prev.filter(record => record.programmeId !== id));
-      
-      // Clean up related resources
       setResources(prev => prev.filter(resource => resource.programmeId !== id));
       setFeedback(prev => prev.filter(f => f.programmeId !== id));
       setReminders(prev => prev.filter(r => r.programmeId !== id));
@@ -171,7 +164,6 @@ export const useProgrammeActions = ({
 
       setAttendance(prev => [...prev, newAttendance]);
       
-      // If present, update the programme's attendees list if not already there
       if (isPresent) {
         setProgrammes(prev => prev.map(prog => {
           if (prog.id === programmeId && !prog.attendees.includes(memberId)) {
@@ -194,12 +186,10 @@ export const useProgrammeActions = ({
     }
   };
 
-  // New functions for feature 10: Bulk attendance recording
   const recordBulkAttendance = (bulkRecord: BulkAttendanceRecord) => {
     try {
       const { programmeId, date, memberIds } = bulkRecord;
       
-      // Create attendance records for each member
       const newAttendanceRecords = memberIds.map(member => ({
         id: `att-${Date.now()}-${member.memberId}`,
         programmeId,
@@ -211,7 +201,6 @@ export const useProgrammeActions = ({
       
       setAttendance(prev => [...prev, ...newAttendanceRecords]);
       
-      // Update programme attendees list
       const presentMemberIds = memberIds
         .filter(m => m.isPresent)
         .map(m => m.memberId);
@@ -219,7 +208,6 @@ export const useProgrammeActions = ({
       if (presentMemberIds.length > 0) {
         setProgrammes(prev => prev.map(prog => {
           if (prog.id === programmeId) {
-            // Only add members who aren't already in the attendees list
             const newAttendees = presentMemberIds.filter(id => !prog.attendees.includes(id));
             
             if (newAttendees.length > 0) {
@@ -243,7 +231,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 1: Programme attendance dashboard - exports
   const exportProgrammesToCSV = () => {
     try {
       let csvContent = "Name,Type,Start Date,End Date,Location,Coordinator,Capacity,Attendees,Description\n";
@@ -324,8 +311,7 @@ export const useProgrammeActions = ({
       return false;
     }
   };
-  
-  // Feature 5: PDF export
+
   const exportProgrammeToPDF = (programmeId: string, members: any[]) => {
     try {
       const programme = programmes.find(p => p.id === programmeId);
@@ -337,7 +323,6 @@ export const useProgrammeActions = ({
       const programmeAttendance = attendance.filter(a => a.programmeId === programmeId);
       const dataUrl = generateProgrammePDF(programme, members, programmeAttendance);
       
-      // Create and click a download link
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `${programme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.pdf`;
@@ -354,7 +339,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 2: Email notification/reminders
   const createProgrammeReminder = (reminder: Omit<ProgrammeReminder, 'id' | 'sentAt' | 'status'>) => {
     try {
       const newReminder = scheduleReminder(reminder);
@@ -373,7 +357,7 @@ export const useProgrammeActions = ({
       const sentReminders = processReminders();
       
       if (sentReminders.length > 0) {
-        setReminders(getReminders()); // Refresh from localStorage
+        setReminders(getReminders());
         toast.success(`Sent ${sentReminders.length} reminders`);
       }
       
@@ -385,7 +369,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 3: Programme categories and tags
   const addProgrammeCategory = (category: Omit<ProgrammeCategory, 'id'>) => {
     try {
       const newCategory: ProgrammeCategory = {
@@ -422,7 +405,6 @@ export const useProgrammeActions = ({
 
   const assignTagToProgramme = (programmeId: string, tagId: string) => {
     try {
-      // Check if already exists
       const exists = programmeTags.some(pt => 
         pt.programmeId === programmeId && pt.tagId === tagId
       );
@@ -457,7 +439,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 4: Resource allocation tracking
   const allocateResource = (resource: Omit<ProgrammeResource, 'id'>) => {
     try {
       const newResource: ProgrammeResource = {
@@ -493,7 +474,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 6: Programme templates
   const createProgrammeTemplate = (templateData: Omit<ProgrammeTemplate, 'id' | 'createdById' | 'createdAt'>) => {
     try {
       const newTemplate: ProgrammeTemplate = {
@@ -521,7 +501,6 @@ export const useProgrammeActions = ({
         return null;
       }
       
-      // Create a new programme based on the template
       const programmeData = {
         name: template.name,
         description: template.description,
@@ -535,7 +514,6 @@ export const useProgrammeActions = ({
       
       const newProgramme = addProgramme(programmeData);
       
-      // Also allocate template resources to the new programme
       if (newProgramme) {
         template.resources.forEach(resource => {
           allocateResource({
@@ -559,7 +537,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 7: Calendar integration
   const exportProgrammeToCalendar = (programmeId: string) => {
     try {
       const programme = programmes.find(p => p.id === programmeId);
@@ -570,7 +547,6 @@ export const useProgrammeActions = ({
       
       const icsFileUrl = exportToICS(programme);
       
-      // Create and click a download link
       const link = document.createElement('a');
       link.href = icsFileUrl;
       link.download = `${programme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
@@ -587,7 +563,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 8: Participant feedback collection
   const addProgrammeFeedback = (feedback: Omit<ProgrammeFeedback, 'id' | 'submittedAt'>) => {
     try {
       const newFeedback: ProgrammeFeedback = {
@@ -606,7 +581,6 @@ export const useProgrammeActions = ({
     }
   };
 
-  // Feature 9: Programme KPIs and metrics
   const addProgrammeKPI = (kpi: Omit<ProgrammeKPI, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const now = new Date();
@@ -646,15 +620,12 @@ export const useProgrammeActions = ({
   };
 
   return {
-    // Original functions
     addProgramme,
     updateProgramme,
     deleteProgramme,
     recordAttendance,
     exportProgrammesToCSV,
     exportAttendanceToCSV,
-    
-    // Feature 1: Dashboard enhancements
     resources,
     feedback,
     reminders,
@@ -663,39 +634,21 @@ export const useProgrammeActions = ({
     categories,
     tags,
     programmeTags,
-    
-    // Feature 2: Email notifications/reminders
     createProgrammeReminder,
     checkAndSendReminders,
-    
-    // Feature 3: Programme categories and tags
     addProgrammeCategory,
     addProgrammeTag,
     assignTagToProgramme,
     removeTagFromProgramme,
-    
-    // Feature 4: Resource allocation tracking
     allocateResource,
     updateResourceStatus,
-    
-    // Feature 5: PDF export
     exportProgrammeToPDF,
-    
-    // Feature 6: Programme templates
     createProgrammeTemplate,
     createProgrammeFromTemplate,
-    
-    // Feature 7: Calendar integration
     exportProgrammeToCalendar,
-    
-    // Feature 8: Participant feedback collection
     addProgrammeFeedback,
-    
-    // Feature 9: Programme KPIs and metrics
     addProgrammeKPI,
     updateKPIProgress,
-    
-    // Feature 10: Bulk attendance recording
     recordBulkAttendance
   };
 };

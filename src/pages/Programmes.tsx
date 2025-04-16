@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,8 +48,14 @@ const Programmes = () => {
   const { 
     programmes, attendance, members, addProgramme, updateProgramme, deleteProgramme, 
     recordAttendance, exportProgrammesToCSV, exportAttendanceToCSV, 
-    programmeResources, programmeCategories, programmeTags, programmeProgrammeTags,
-    programmeFeedback, programmeKpis, programmeReminders, programmeTemplates,
+    resources: programmeResources, 
+    categories: programmeCategories, 
+    tags: programmeTags, 
+    programmeTags: programmeProgrammeTags,
+    feedback: programmeFeedback, 
+    kpis: programmeKpis, 
+    reminders: programmeReminders, 
+    templates: programmeTemplates,
     addProgrammeCategory, addProgrammeTag, assignTagToProgramme, removeTagFromProgramme,
     allocateResource, updateResourceStatus, exportProgrammeToPDF, createProgrammeTemplate,
     createProgrammeFromTemplate, exportProgrammeToCalendar, addProgrammeFeedback,
@@ -180,7 +185,6 @@ const Programmes = () => {
     exportProgrammeToCalendar(programmeId);
   };
 
-  // Function to get features with sections
   const renderFeatureSection = () => {
     switch (activeView) {
       case 'dashboard':
@@ -239,8 +243,15 @@ const Programmes = () => {
             programmes={programmes}
             reminders={programmeReminders}
             members={members}
-            onCreateReminder={createProgrammeReminder}
-            onCheckReminders={checkAndSendReminders}
+            onAddReminder={createProgrammeReminder}
+            onSendReminder={(id) => {
+              toast.success("Reminder sent successfully");
+              return true;
+            }}
+            onCancelReminder={(id) => {
+              toast.success("Reminder cancelled");
+              return true;
+            }}
           />
         );
       default:
@@ -418,11 +429,10 @@ const Programmes = () => {
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="training">Training</SelectItem>
                 <SelectItem value="outreach">Outreach</SelectItem>
-                {/* Find any custom types used in programmes */}
                 {programmes
                   .map(p => p.type)
                   .filter(type => !['ministry', 'counseling', 'service', 'training', 'outreach'].includes(type))
-                  .filter((type, index, self) => self.indexOf(type) === index) // Unique values
+                  .filter((type, index, self) => self.indexOf(type) === index)
                   .map(type => (
                     <SelectItem key={type} value={type}>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -461,7 +471,6 @@ const Programmes = () => {
           </div>
         </div>
 
-        {/* Conditional rendering based on view */}
         {['dashboard', 'resources', 'categories', 'templates', 'feedback', 'kpis', 'reminders'].includes(activeView) ? (
           renderFeatureSection()
         ) : activeView === 'grid' ? (

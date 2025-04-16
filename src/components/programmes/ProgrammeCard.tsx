@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Church, GraduationCap, Heart, Trash2, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Church, GraduationCap, Heart, Trash2, Users, ChevronDown, ChevronUp, Download, CalendarRange } from "lucide-react";
 import { Programme } from "@/types";
 import { useState } from "react";
 
@@ -15,6 +15,8 @@ interface ProgrammeCardProps {
   onAttendanceClick: (id: string) => void;
   getTypeBadgeColor: (type: string) => string;
   onCardClick?: (programme: Programme) => void;
+  onExportPDF?: (programmeId: string) => void;
+  onExportCalendar?: (programmeId: string) => void;
 }
 
 export const ProgrammeCard = ({ 
@@ -22,7 +24,9 @@ export const ProgrammeCard = ({
   onDeleteConfirm, 
   onAttendanceClick,
   getTypeBadgeColor,
-  onCardClick
+  onCardClick,
+  onExportPDF,
+  onExportCalendar
 }: ProgrammeCardProps) => {
   const [expanded, setExpanded] = useState(false);
   
@@ -135,6 +139,36 @@ export const ProgrammeCard = ({
                 <span className="text-sm font-medium block mb-1">Description:</span>
                 <p className="text-sm text-muted-foreground">{programme.description}</p>
               </div>
+              {(onExportPDF || onExportCalendar) && (
+                <div className="flex gap-2 mt-2">
+                  {onExportPDF && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExportPDF(programme.id);
+                      }}
+                      className="text-xs flex items-center"
+                    >
+                      <Download className="h-3 w-3 mr-1" /> PDF
+                    </Button>
+                  )}
+                  {onExportCalendar && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExportCalendar(programme.id);
+                      }}
+                      className="text-xs flex items-center"
+                    >
+                      <CalendarRange className="h-3 w-3 mr-1" /> Calendar
+                    </Button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

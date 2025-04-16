@@ -1,4 +1,3 @@
-
 import { Programme, ProgrammeAttendance, ProgrammeResource, ProgrammeFeedback, 
   ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory, 
   ProgrammeTag, Member } from "@/types";
@@ -144,7 +143,7 @@ export const processReminders = () => {
     if (reminder.status !== 'scheduled') return reminder;
     
     const programme = programmes.find(p => p.id === reminder.programmeId);
-    if (!programme) return { ...reminder, status: 'failed' };
+    if (!programme) return { ...reminder, status: 'failed' as const };
     
     let shouldSendNow = false;
     
@@ -169,7 +168,7 @@ export const processReminders = () => {
     if (shouldSendNow) {
       // In a real app, this would send an actual email or notification
       console.log(`Sending reminder for programme: ${programme.name}`);
-      return { ...reminder, sentAt: now, status: 'sent' };
+      return { ...reminder, sentAt: now, status: 'sent' as const };
     }
     
     return reminder;

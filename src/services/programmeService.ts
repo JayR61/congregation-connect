@@ -1,22 +1,7 @@
-
 import { Programme, ProgrammeAttendance, ProgrammeResource, ProgrammeFeedback, 
   ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory, 
   ProgrammeTag, Member } from "@/types";
 import { format, addDays, addHours, addWeeks } from "date-fns";
-
-// Define the ProgrammeStatistics interface
-interface ProgrammeStatistics {
-  totalProgrammes: number;
-  activeProgrammes: number;
-  completedProgrammes: number;
-  totalParticipants: number;
-  attendanceRate: number;
-  programmesByType: Record<string, number>;
-  participantsTrend: {
-    month: string;
-    count: number;
-  }[];
-}
 
 // Local storage keys
 const STORAGE_KEYS = {

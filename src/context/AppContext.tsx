@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, TaskComment, Programme, ProgrammeAttendance } from '../types';
 import { 
@@ -18,78 +17,11 @@ import { useMemberActions } from './actions/useMemberActions';
 import { useDocumentActions } from './actions/useDocumentActions';
 import { useNotificationActions } from './actions/useNotificationActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
+import { getProgrammes, getAttendance } from '@/services/localStorage';
 
 const initialTasks: Task[] = [];
-const initialProgrammes: Programme[] = [
-  {
-    id: 'prog-1',
-    name: 'School of Ministry',
-    description: 'Training program for future church leaders and ministers',
-    type: 'ministry',
-    startDate: new Date(2023, 1, 1),
-    endDate: new Date(2023, 11, 31),
-    recurring: true,
-    frequency: 'weekly',
-    location: 'Main Campus',
-    coordinator: 'Pastor John',
-    capacity: 50,
-    currentAttendees: 35,
-    attendees: ['member-1', 'member-2', 'member-3']
-  },
-  {
-    id: 'prog-2',
-    name: 'Marriage Counseling',
-    description: 'Support and guidance for married couples',
-    type: 'counseling',
-    startDate: new Date(2023, 0, 1),
-    recurring: true,
-    frequency: 'weekly',
-    location: 'Counseling Room B',
-    coordinator: 'Alice Smith',
-    capacity: 10,
-    currentAttendees: 8,
-    attendees: ['member-1', 'member-2']
-  },
-  {
-    id: 'prog-3',
-    name: 'Sunday Worship Service',
-    description: 'Weekly worship service for the congregation',
-    type: 'service',
-    startDate: new Date(2020, 0, 5),
-    recurring: true,
-    frequency: 'weekly',
-    location: 'Main Sanctuary',
-    coordinator: 'Worship Team',
-    capacity: 500,
-    currentAttendees: 350,
-    attendees: ['member-1', 'member-2', 'member-3', 'member-4', 'member-5']
-  }
-];
-
-const initialAttendance: ProgrammeAttendance[] = [
-  {
-    id: 'att-1',
-    programmeId: 'prog-1',
-    memberId: 'member-1',
-    date: new Date(2023, 6, 15),
-    isPresent: true
-  },
-  {
-    id: 'att-2',
-    programmeId: 'prog-1',
-    memberId: 'member-2',
-    date: new Date(2023, 6, 15),
-    isPresent: false,
-    notes: 'Called in sick'
-  },
-  {
-    id: 'att-3',
-    programmeId: 'prog-2',
-    memberId: 'member-1',
-    date: new Date(2023, 6, 10),
-    isPresent: true
-  }
-];
+const initialProgrammes: Programme[] = [];
+const initialAttendance: ProgrammeAttendance[] = [];
 
 interface AppContextType {
   currentUser: User;
@@ -152,6 +84,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
   const [programmes, setProgrammes] = useState<Programme[]>(initialProgrammes);
   const [attendance, setAttendance] = useState<ProgrammeAttendance[]>(initialAttendance);
+
+  useEffect(() => {
+    const savedProgrammes = getProgrammes();
+    if (savedProgrammes && savedProgrammes.length > 0) {
+      setProgrammes(savedProgrammes);
+    }
+    
+    const savedAttendance = getAttendance();
+    if (savedAttendance && savedAttendance.length > 0) {
+      setAttendance(savedAttendance);
+    }
+  }, []);
 
   const notificationActions = useNotificationActions({
     notifications,

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 
 const Programmes = () => {
-  const { members } = useAppContext();
+  const { programmes, attendance, addProgramme, updateProgramme, deleteProgramme, recordAttendance, exportProgrammesToCSV, exportAttendanceToCSV, members } = useAppContext();
   const [activeTab, setActiveTab] = useState("all");
   const [activeView, setActiveView] = useState<'grid' | 'analytics' | 'calendar'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,106 +49,6 @@ const Programmes = () => {
   const [programmesOnSelectedDate, setProgrammesOnSelectedDate] = useState<Programme[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [programmeToEdit, setProgrammeToEdit] = useState<Programme | null>(null);
-  
-  const [programmes, setProgrammes] = useState<Programme[]>([
-    {
-      id: 'prog-1',
-      name: 'School of Ministry',
-      description: 'Training program for future church leaders and ministers',
-      type: 'ministry',
-      startDate: new Date(2023, 1, 1),
-      endDate: new Date(2023, 11, 31),
-      recurring: true,
-      frequency: 'weekly',
-      location: 'Main Campus',
-      coordinator: 'Pastor John',
-      capacity: 50,
-      currentAttendees: 35,
-      attendees: ['member-1', 'member-2', 'member-3']
-    },
-    {
-      id: 'prog-2',
-      name: 'Marriage Counseling',
-      description: 'Support and guidance for married couples',
-      type: 'counseling',
-      startDate: new Date(2023, 0, 1),
-      recurring: true,
-      frequency: 'weekly',
-      location: 'Counseling Room B',
-      coordinator: 'Alice Smith',
-      capacity: 10,
-      currentAttendees: 8,
-      attendees: ['member-1', 'member-2']
-    },
-    {
-      id: 'prog-3',
-      name: 'Sunday Worship Service',
-      description: 'Weekly worship service for the congregation',
-      type: 'service',
-      startDate: new Date(2020, 0, 5),
-      recurring: true,
-      frequency: 'weekly',
-      location: 'Main Sanctuary',
-      coordinator: 'Worship Team',
-      capacity: 500,
-      currentAttendees: 350,
-      attendees: ['member-1', 'member-2', 'member-3', 'member-4', 'member-5']
-    },
-    {
-      id: 'prog-4',
-      name: 'Youth Leadership Training',
-      description: 'Training program for youth leaders',
-      type: 'training',
-      startDate: new Date(2023, 5, 15),
-      endDate: new Date(2023, 8, 15),
-      recurring: false,
-      location: 'Youth Center',
-      coordinator: 'Youth Pastor',
-      capacity: 25,
-      currentAttendees: 20,
-      attendees: ['member-3', 'member-4']
-    },
-    {
-      id: 'prog-5',
-      name: 'Community Outreach',
-      description: 'Serving the local community with practical support',
-      type: 'outreach',
-      startDate: new Date(2023, 3, 1),
-      endDate: new Date(2023, 10, 30),
-      recurring: true,
-      frequency: 'monthly',
-      location: 'Community Center',
-      coordinator: 'Outreach Team',
-      capacity: 100,
-      currentAttendees: 45,
-      attendees: ['member-1', 'member-5']
-    }
-  ]);
-
-  const [attendance, setAttendance] = useState<ProgrammeAttendance[]>([
-    {
-      id: 'att-1',
-      programmeId: 'prog-1',
-      memberId: 'member-1',
-      date: new Date(2023, 6, 15),
-      isPresent: true
-    },
-    {
-      id: 'att-2',
-      programmeId: 'prog-1',
-      memberId: 'member-2',
-      date: new Date(2023, 6, 15),
-      isPresent: false,
-      notes: 'Called in sick'
-    },
-    {
-      id: 'att-3',
-      programmeId: 'prog-2',
-      memberId: 'member-1',
-      date: new Date(2023, 6, 10),
-      isPresent: true
-    }
-  ]);
 
   const [attendanceForm, setAttendanceForm] = useState({
     memberId: '',
@@ -166,75 +67,43 @@ const Programmes = () => {
     
     const matchesTab = 
       activeTab === 'all' || 
-      (activeTab === 'active' && (!programme.endDate || programme.endDate > new Date())) ||
-      (activeTab === 'completed' && programme.endDate && programme.endDate < new Date());
+      (activeTab === 'active' && (!programme.endDate || new Date(programme.endDate) > new Date())) ||
+      (activeTab === 'completed' && programme.endDate && new Date(programme.endDate) < new Date());
     
     return matchesSearch && matchesType && matchesTab;
   });
 
   const handleCreateProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
-    const newProgramme: Programme = {
-      id: `prog-${programmes.length + 1}`,
-      ...programmeData,
-      currentAttendees: 0,
-      attendees: []
-    };
-
-    setProgrammes(prev => [...prev, newProgramme]);
+    addProgramme(programmeData);
     setIsProgrammeDialogOpen(false);
-    toast.success('Programme created successfully');
   };
 
   const handleUpdateProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
     if (!programmeToEdit) return;
     
-    const updatedProgramme: Programme = {
-      ...programmeToEdit,
-      ...programmeData,
-    };
-
-    setProgrammes(prev => prev.map(p => p.id === programmeToEdit.id ? updatedProgramme : p));
+    updateProgramme(programmeToEdit.id, programmeData);
     setIsProgrammeDialogOpen(false);
     setIsEditMode(false);
     setProgrammeToEdit(null);
-    toast.success('Programme updated successfully');
   };
 
   const handleAddAttendance = () => {
     if (!selectedProgrammeId) return;
 
-    const newAttendance: ProgrammeAttendance = {
-      id: `att-${attendance.length + 1}`,
-      programmeId: selectedProgrammeId,
-      memberId: attendanceForm.memberId,
-      date: attendanceForm.date,
-      isPresent: attendanceForm.isPresent,
-      notes: attendanceForm.notes || undefined
-    };
-
-    setAttendance(prev => [...prev, newAttendance]);
+    recordAttendance(
+      selectedProgrammeId,
+      attendanceForm.memberId,
+      attendanceForm.date,
+      attendanceForm.isPresent,
+      attendanceForm.notes || undefined
+    );
     
-    if (attendanceForm.isPresent) {
-      setProgrammes(prev => prev.map(prog => {
-        if (prog.id === selectedProgrammeId && !prog.attendees.includes(attendanceForm.memberId)) {
-          return {
-            ...prog,
-            currentAttendees: prog.currentAttendees + 1,
-            attendees: [...prog.attendees, attendanceForm.memberId]
-          };
-        }
-        return prog;
-      }));
-    }
-
     setIsAttendanceDialogOpen(false);
     resetAttendanceForm();
-    toast.success('Attendance recorded successfully');
   };
 
   const handleDeleteProgramme = (programmeId: string) => {
-    setProgrammes(prev => prev.filter(prog => prog.id !== programmeId));
-    toast.success('Programme deleted successfully');
+    deleteProgramme(programmeId);
   };
 
   const resetAttendanceForm = () => {
@@ -279,36 +148,6 @@ const Programmes = () => {
     setIsProgrammeDialogOpen(true);
   };
 
-  const exportProgrammesToCSV = () => {
-    let csvContent = "Name,Type,Start Date,End Date,Location,Coordinator,Capacity,Attendees,Description\n";
-    
-    programmes.forEach(programme => {
-      const startDate = format(programme.startDate, 'yyyy-MM-dd');
-      const endDate = programme.endDate ? format(programme.endDate, 'yyyy-MM-dd') : '';
-      
-      csvContent += [
-        `"${programme.name}"`,
-        `"${programme.type}"`,
-        `"${startDate}"`,
-        `"${endDate}"`,
-        `"${programme.location}"`,
-        `"${programme.coordinator}"`,
-        programme.capacity,
-        programme.currentAttendees,
-        `"${programme.description}"`
-      ].join(',') + "\n";
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'church_programmes.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -322,7 +161,11 @@ const Programmes = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsProgrammeDialogOpen(true)}>
+              <DropdownMenuItem onClick={() => {
+                setIsEditMode(false);
+                setProgrammeToEdit(null);
+                setIsProgrammeDialogOpen(true);
+              }}>
                 Add New Programme
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
@@ -334,7 +177,13 @@ const Programmes = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button onClick={() => setIsProgrammeDialogOpen(true)}>Add New Programme</Button>
+          <Button onClick={() => {
+            setIsEditMode(false);
+            setProgrammeToEdit(null);
+            setIsProgrammeDialogOpen(true);
+          }}>
+            Add New Programme
+          </Button>
         </div>
       </div>
 
@@ -353,7 +202,7 @@ const Programmes = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {programmes.filter(p => !p.endDate || p.endDate > new Date()).length}
+              {programmes.filter(p => !p.endDate || new Date(p.endDate) > new Date()).length}
             </div>
           </CardContent>
         </Card>
@@ -426,6 +275,17 @@ const Programmes = () => {
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="training">Training</SelectItem>
                 <SelectItem value="outreach">Outreach</SelectItem>
+                {/* Find any custom types used in programmes */}
+                {programmes
+                  .map(p => p.type)
+                  .filter(type => !['ministry', 'counseling', 'service', 'training', 'outreach'].includes(type))
+                  .filter((type, index, self) => self.indexOf(type) === index) // Unique values
+                  .map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </SelectItem>
+                  ))
+                }
               </SelectContent>
             </Select>
             
@@ -438,19 +298,29 @@ const Programmes = () => {
 
         {activeView === 'grid' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {filteredProgrammes.map((programme) => (
-              <div key={programme.id} onClick={() => handleEditProgramme(programme)}>
+            {filteredProgrammes.length > 0 ? (
+              filteredProgrammes.map((programme) => (
                 <ProgrammeCard
+                  key={programme.id}
                   programme={programme}
                   onDeleteConfirm={handleDeleteProgramme}
-                  onAttendanceClick={(id) => {
-                    event?.stopPropagation();
-                    openAttendanceDialog(id);
-                  }}
+                  onAttendanceClick={openAttendanceDialog}
                   getTypeBadgeColor={getTypeBadgeColor}
+                  onCardClick={handleEditProgramme}
                 />
+              ))
+            ) : (
+              <div className="col-span-3 p-8 text-center">
+                <p className="text-muted-foreground mb-4">No programmes found.</p>
+                <Button onClick={() => {
+                  setIsEditMode(false);
+                  setProgrammeToEdit(null);
+                  setIsProgrammeDialogOpen(true);
+                }}>
+                  Add Your First Programme
+                </Button>
               </div>
-            ))}
+            )}
           </div>
         )}
 
@@ -514,10 +384,7 @@ const Programmes = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openAttendanceDialog(programme.id);
-                                }}
+                                onClick={() => openAttendanceDialog(programme.id)}
                               >
                                 Record Attendance
                               </Button>
@@ -542,7 +409,13 @@ const Programmes = () => {
         )}
       </div>
 
-      <Dialog open={isProgrammeDialogOpen} onOpenChange={setIsProgrammeDialogOpen}>
+      <Dialog open={isProgrammeDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsEditMode(false);
+          setProgrammeToEdit(null);
+        }
+        setIsProgrammeDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <ProgrammeForm
             onSave={isEditMode ? handleUpdateProgramme : handleCreateProgramme}

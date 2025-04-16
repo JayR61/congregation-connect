@@ -1,7 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Programme, ProgrammeAttendance } from '@/types';
 import { toast } from '@/lib/toast';
+import { saveProgrammes, saveAttendance } from '@/services/localStorage';
 
 interface ProgrammeActionsProps {
   programmes: Programme[];
@@ -18,6 +19,16 @@ export const useProgrammeActions = ({
   setAttendance,
   currentUser,
 }: ProgrammeActionsProps) => {
+  // Save programmes to localStorage whenever they change
+  useEffect(() => {
+    saveProgrammes(programmes);
+  }, [programmes]);
+
+  // Save attendance to localStorage whenever it changes
+  useEffect(() => {
+    saveAttendance(attendance);
+  }, [attendance]);
+
   const addProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
     try {
       const newProgramme: Programme = {

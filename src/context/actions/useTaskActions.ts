@@ -1,5 +1,5 @@
 
-import { Task, TaskComment, User, Member } from '@/types';
+import { Task, TaskComment, User, Member, Notification } from '@/types';
 import { toast } from '@/lib/toast';
 
 interface UseTaskActionsProps {
@@ -7,7 +7,7 @@ interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   currentUser: User;
   members: Member[];
-  addNotification: (notification: Omit<import('@/types').Notification, 'id' | 'createdAt' | 'read'>) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
 }
 
 export const useTaskActions = ({
@@ -37,7 +37,7 @@ export const useTaskActions = ({
       title: "New Task Created",
       message: `${creatorName} created a new task: "${task.title}"`,
       type: "info",
-      targetUrl: `/tasks/${newTask.id}`
+      userId: currentUser.id
     });
     
     toast.success("Task created successfully");
@@ -79,7 +79,7 @@ export const useTaskActions = ({
       title: "Task Updated",
       message,
       type: "info",
-      targetUrl: `/tasks/${id}`
+      userId: currentUser.id
     });
     
     toast.success("Task updated successfully");
@@ -102,7 +102,7 @@ export const useTaskActions = ({
       title: "Task Deleted",
       message: `${deleterName} deleted the task: "${taskToDelete.title}"`,
       type: "warning",
-      targetUrl: `/tasks`
+      userId: currentUser.id
     });
     
     toast.success("Task deleted successfully");
@@ -119,7 +119,8 @@ export const useTaskActions = ({
     const newComment: TaskComment = {
       id: `comment-${Date.now()}`,
       content,
-      authorId: currentUser.id,
+      userId: currentUser.id, // Using userId instead of authorId
+      taskId,
       createdAt: new Date()
     };
     
@@ -141,7 +142,7 @@ export const useTaskActions = ({
       title: "New Comment",
       message: `${commenterName} commented on task "${taskToUpdate.title}"`,
       type: "info",
-      targetUrl: `/tasks/${taskId}`
+      userId: currentUser.id
     });
     
     toast.success("Comment added successfully");

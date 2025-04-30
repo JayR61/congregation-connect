@@ -71,7 +71,14 @@ export const CategoryTagManager = ({
   };
   
   const handleAddTag = () => {
-    onAddTag(tagForm);
+    // Add description to the tag form data
+    const tagData = {
+      name: tagForm.name,
+      color: tagForm.color,
+      description: '' // Add default empty description
+    };
+    
+    onAddTag(tagData);
     setIsTagDialogOpen(false);
     setTagForm({ name: '', color: '#10B981' });
   };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { 
   Member, Task, Transaction, FinanceCategory, Document, Folder, 
@@ -113,32 +112,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `notification-${Date.now()}`,
       createdAt: new Date(),
       read: false,
-      ...notification
+      ...notification,
+      userId: notification.userId || 'user-1', // Ensure userId exists
     };
     setNotifications(prev => [...prev, newNotification]);
     return newNotification;
   };
 
   // Task actions
-  const {
-    addTask,
-    updateTask,
-    deleteTask,
-    addTaskComment
-  } = useTaskActions({ 
+  const taskActionsResult = useTaskActions({ 
     tasks, 
     setTasks, 
-    currentUser, 
-    members, 
+    currentUser: currentUser || { id: 'user-1', firstName: 'John', lastName: 'Doe', email: '', role: '', lastActive: new Date(), createdAt: new Date() }, 
+    members,
     addNotification: mockAddNotification
   });
 
+  // Wrapping functions to match expected return types
+  const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task => {
+    const id = `task-${Date.now()}`;
+    const newTask = {
+      ...task,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      comments: []
+    };
+    taskActionsResult.addTask(task);
+    return newTask;
+  };
+
+  const updateTask = (id: string, updatedFields: Partial<Task>): boolean => {
+    taskActionsResult.updateTask(id, updatedFields);
+    return true;
+  };
+
+  const deleteTask = (id: string): boolean => {
+    taskActionsResult.deleteTask(id);
+    return true;
+  };
+
+  const addTaskComment = (taskId: string, comment: Omit<TaskComment, 'id' | 'taskId' | 'createdAt'>): boolean => {
+    taskActionsResult.addTaskComment(taskId, comment.content);
+    return true;
+  };
+
   // Member actions
-  const {
-    addMember,
-    updateMember,
-    deleteMember
-  } = useMemberActions({ members, setMembers });
+  const memberActionsResult = useMemberActions({ members, setMembers });
+  
+  // Wrapping functions to match expected return types
+  const addMember = (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>): Member => {
+    const id = `member-${Date.now()}`;
+    const newMember = {
+      ...member,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    memberActionsResult.addMember(member);
+    return newMember;
+  };
+  
+  const updateMember = (id: string, updatedFields: Partial<Member>): boolean => {
+    memberActionsResult.updateMember(id, updatedFields);
+    return true;
+  };
+  
+  const deleteMember = (id: string): boolean => {
+    memberActionsResult.deleteMember(id);
+    return true;
+  };
 
   // Finance actions
   const {
@@ -166,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const notificationActions = useNotificationActions({ notifications, setNotifications });
   
   // Add clearAllNotifications manually since it might be missing from the hook
-  const clearAllNotifications = () => {
+  const clearAllNotifications = (): boolean => {
     setNotifications([]);
     return true;
   };

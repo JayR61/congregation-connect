@@ -7,9 +7,9 @@ export const createReminder = (data: {
   title: string; 
   message: string; 
   scheduledDate: Date; 
-  status: "scheduled"; 
+  status: "pending" | "sent" | "failed" | "scheduled" | "cancelled";
 }) => {
-  // Fix: convert scheduledDate to scheduledTime
+  // Fix: convert scheduledDate to scheduledTime and ensure correct status types
   return {
     ...data,
     scheduledTime: data.scheduledDate, // Using the correct property name
@@ -17,15 +17,18 @@ export const createReminder = (data: {
   };
 };
 
-// Fix the status comparisons
+// Fix the status comparisons with proper enum checking
 export const isReminderable = (status: string) => {
+  // Check if status is not one of the disallowed values
   return status !== 'sent' && status !== 'failed' && status !== 'cancelled';
 };
 
 export const isReschedulable = (status: string) => {
+  // Check if status is not one of the disallowed values
   return status !== 'sent' && status !== 'cancelled';
 };
 
 export const isCancellable = (status: string) => {
+  // Check if status is not one of the disallowed values
   return status !== 'sent' && status !== 'cancelled';
 };

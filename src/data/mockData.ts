@@ -1,459 +1,176 @@
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, ChurchStructure, MemberCategory, ChurchPosition, ChurchStructureData, MemberCategoryData, Programme } from '@/types';
 
-// Add functions to simulate API calls
-export const getTasks = async (): Promise<Task[]> => {
-  return tasks;
-};
+import { 
+  Member, Task, Transaction, FinanceCategory, Document, 
+  Folder, Notification, User, Programme, TaskCategory 
+} from '@/types';
 
-export const getTransactions = async (): Promise<Transaction[]> => {
-  return transactions;
-};
-
-export const getDocuments = async () => {
-  return documents;
-};
-
-export const getFolders = async () => {
-  return folders;
-};
-
-export const getFoldersWithItemCount = async () => {
-  return folders.map(folder => {
-    const itemCount = documents.filter(doc => doc.folderId === folder.id).length;
-    return { ...folder, itemCount };
-  });
-};
-
-export const getMembers = async (): Promise<Member[]> => {
-  return members;
-};
-
-// Fixed Member type objects with proper properties
-const members: Member[] = [
+// Sample data for testing
+const mockMembers: Member[] = [
   {
-    id: 'member-1',
-    firstName: 'Alice',
-    lastName: 'Smith',
-    email: 'alice.smith@example.com',
-    phone: '123-456-7890',
-    address: '123 Main St',
-    status: 'active',
-    birthDate: new Date('1990-01-01'),
-    joinDate: new Date('2020-01-01'),
-    churchStructureId: 'structure-1',
-    memberCategoryId: 'category-1',
-    churchPositionId: 'position-1',
-    isActive: true,
-    avatar: '/placeholder.svg',
-    notes: 'Active member since 2020',
-    occupation: 'Software Engineer',
-    skills: ['Programming', 'Web Development'],
-    familyInfo: 'Married with two children',
-    socialLinks: {
-      facebook: 'facebook.com/alice',
-      twitter: 'twitter.com/alice',
-      linkedin: 'linkedin.com/in/alice'
-    },
-    emergencyContact: {
-      name: 'Bob Smith',
-      phone: '098-765-4321',
-      relation: 'Husband'
-    },
-    qualifications: ['BSc Computer Science'],
-    ministryInvolvement: ['Youth Ministry', 'Worship Team'],
-    attendanceHistory: [],
-    givingHistory: [],
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
-    roles: ['member', 'worship_team'],
-    familyId: null,
-    familyIds: [],
-    category: 'regular',
-    structures: ['senior_leadership', 'youth_leadership'],
-    positions: [{
-      structure: 'senior_leadership',
-      title: 'Worship Leader',
-      startDate: new Date('2020-01-01')
-    }],
+    id: "member-1",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john@example.com",
+    phone: "555-1234",
+    address: "123 Main St",
+    status: "active",
+    birthDate: new Date(1980, 0, 1),
+    joinDate: new Date(2020, 0, 1),
+    occupation: "Developer",
+    skills: ["programming", "teaching"],
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    membershipDate: new Date(2020, 0, 1)
   },
   {
-    id: 'member-2',
-    firstName: 'Bob',
-    lastName: 'Johnson',
-    email: 'bob.johnson@example.com',
-    phone: '456-789-0123',
-    address: '456 Elm St',
-    status: 'inactive',
-    birthDate: new Date('1985-02-02'),
-    joinDate: new Date('2019-02-02'),
-    churchStructureId: 'structure-2',
-    memberCategoryId: 'category-2',
-    churchPositionId: 'position-2',
-    isActive: false,
-    avatar: '/placeholder.svg',
-    notes: 'Inactive member since 2022',
-    occupation: 'Teacher',
-    skills: ['Teaching', 'Mentoring'],
-    familyInfo: 'Single',
-    socialLinks: {
-      facebook: 'facebook.com/bob',
-      twitter: 'twitter.com/bob',
-      linkedin: 'linkedin.com/in/bob'
-    },
-    emergencyContact: {
-      name: 'Carol Johnson',
-      phone: '111-222-3333',
-      relation: 'Sister'
-    },
-    qualifications: ['BA Education'],
-    ministryInvolvement: ['Sunday School'],
-    attendanceHistory: [],
-    givingHistory: [],
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
-    roles: ['member', 'sunday_school'],
-    familyId: null,
-    familyIds: [],
-    category: 'regular',
-    structures: ['sunday_school'],
-    positions: [],
+    id: "member-2",
+    firstName: "Jane",
+    lastName: "Smith",
+    email: "jane@example.com",
+    phone: "555-5678",
+    address: "456 Oak St",
+    status: "active",
+    birthDate: new Date(1985, 5, 15),
+    joinDate: new Date(2019, 3, 10),
+    occupation: "Designer",
+    skills: ["design", "communication"],
+    isLeadership: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    membershipDate: new Date(2019, 3, 10)
+  }
+];
+
+const mockTasks: Task[] = [
+  {
+    id: "task-1",
+    title: "Plan Sunday Service",
+    description: "Coordinate with worship team",
+    status: "in progress",
+    priority: "high",
+    category: "service",
+    assigneeId: "member-1",
+    reporterId: "member-2",
+    dueDate: new Date(2023, 5, 15),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    comments: []
+  }
+];
+
+// Add task categories
+const mockTaskCategories: TaskCategory[] = [
+  {
+    id: "category-1",
+    name: "Service",
+    description: "Sunday service related tasks",
+    color: "#ff5722"
   },
   {
-    id: 'member-3',
-    firstName: 'Carol',
-    lastName: 'Williams',
-    email: 'carol.williams@example.com',
-    phone: '789-012-3456',
-    address: '789 Oak St',
-    status: 'active',
-    birthDate: new Date('1992-03-03'),
-    joinDate: new Date('2021-03-03'),
-    churchStructureId: 'structure-3',
-    memberCategoryId: 'category-3',
-    churchPositionId: 'position-3',
-    isActive: true,
-    avatar: '/placeholder.svg',
-    notes: 'Active member since 2021',
-    occupation: 'Nurse',
-    skills: ['Healthcare', 'First Aid'],
-    familyInfo: 'Married',
-    socialLinks: {
-      facebook: 'facebook.com/carol',
-      twitter: 'twitter.com/carol',
-      linkedin: 'linkedin.com/in/carol'
-    },
-    emergencyContact: {
-      name: 'David Williams',
-      phone: '444-555-6666',
-      relation: 'Husband'
-    },
-    qualifications: ['RN'],
-    ministryInvolvement: ['Healthcare Ministry'],
-    attendanceHistory: [],
-    givingHistory: [],
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
-    roles: ['member', 'healthcare_team'],
-    familyId: null,
-    familyIds: [],
-    category: 'regular',
-    structures: [],
-    positions: [{
-      structure: 'mens_forum',
-      title: 'Healthcare Coordinator',
-      startDate: new Date('2021-03-03')
-    }],
-    createdAt: new Date(),
-    updatedAt: new Date()
+    id: "category-2",
+    name: "Administration",
+    description: "Administrative tasks",
+    color: "#2196f3"
   },
   {
-    id: 'member-4',
-    firstName: 'David',
-    lastName: 'Brown',
-    email: 'david.brown@example.com',
-    phone: '012-345-6789',
-    address: '012 Pine St',
-    status: 'prospect',
-    birthDate: new Date('1988-04-04'),
-    joinDate: new Date('2023-04-04'),
-    churchStructureId: 'structure-4',
-    memberCategoryId: 'category-4',
-    churchPositionId: null,
-    isActive: false,
-    avatar: '/placeholder.svg',
-    notes: 'Potential new member',
-    occupation: 'Accountant',
-    skills: ['Accounting', 'Finance'],
-    familyInfo: 'Single',
-    socialLinks: {
-      facebook: 'facebook.com/david',
-      twitter: 'twitter.com/david',
-      linkedin: 'linkedin.com/in/david'
-    },
-    emergencyContact: {
-      name: 'Eve Brown',
-      phone: '777-888-9999',
-      relation: 'Mother'
-    },
-    qualifications: ['CPA'],
-    ministryInvolvement: [],
-    attendanceHistory: [],
-    givingHistory: [],
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
-    roles: [],
-    familyId: null,
-    familyIds: [],
-    category: 'visitor',
-    structures: [],
-    positions: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
+    id: "category-3",
+    name: "Outreach",
+    description: "Community outreach activities",
+    color: "#4caf50"
+  }
+];
+
+const mockTransactions: Transaction[] = [
   {
-    id: 'member-5',
-    firstName: 'Eve',
-    lastName: 'Davis',
-    email: 'eve.davis@example.com',
-    phone: '345-678-9012',
-    address: '345 Maple St',
-    status: 'visitor',
-    birthDate: new Date('1995-05-05'),
-    joinDate: new Date('2024-05-05'),
-    churchStructureId: null,
-    memberCategoryId: 'category-5',
-    churchPositionId: null,
-    isActive: false,
-    avatar: '/placeholder.svg',
-    notes: 'First-time visitor',
-    occupation: 'Student',
-    skills: ['Research', 'Writing'],
-    familyInfo: 'Single',
-    socialLinks: {
-      facebook: 'facebook.com/eve',
-      twitter: 'twitter.com/eve',
-      linkedin: 'linkedin.com/in/eve'
-    },
-    emergencyContact: {
-      name: 'Frank Davis',
-      phone: '222-333-4444',
-      relation: 'Father'
-    },
-    qualifications: ['High School Diploma'],
-    ministryInvolvement: [],
-    attendanceHistory: [],
-    givingHistory: [],
-    createdBy: 'user-1',
-    updatedBy: 'user-1',
-    roles: [],
-    familyId: null,
-    familyIds: [],
-    category: 'visitor',
-    structures: [],
-    positions: [],
+    id: "transaction-1",
+    description: "Sunday offering",
+    amount: 1250.00,
+    type: "income",
+    categoryId: "category-1",
+    date: new Date(2023, 4, 7),
+    attachments: [],
+    isRecurring: false,
+    createdById: "member-1",
     createdAt: new Date(),
     updatedAt: new Date()
   }
 ];
 
-// Export all required data
-export { members };
-
-// Sample transactions
-export const transactions: Transaction[] = [
+const mockFinanceCategories: FinanceCategory[] = [
   {
-    id: 'tx-1',
-    description: 'Monthly Tithe',
-    amount: 5000,
-    type: 'income',
-    categoryId: 'tithe',
-    date: new Date('2023-05-01'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-01'),
-    updatedAt: new Date('2023-05-01'),
-    attachments: [],
-    isRecurring: false
+    id: "category-1",
+    name: "Offerings",
+    type: "income",
+    color: "#4caf50",
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
-    id: 'tx-2',
-    description: 'Sunday Offering',
-    amount: 2500,
-    type: 'income',
-    categoryId: 'offering',
-    date: new Date('2023-05-05'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-05'),
-    updatedAt: new Date('2023-05-05'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-3',
-    description: 'Electricity Bill',
-    amount: 1200,
-    type: 'expense',
-    categoryId: 'utilities',
-    date: new Date('2023-05-10'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-10'),
-    updatedAt: new Date('2023-05-10'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-4',
-    description: 'Building Maintenance',
-    amount: 3500,
-    type: 'expense',
-    categoryId: 'maintenance',
-    date: new Date('2023-05-15'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-15'),
-    updatedAt: new Date('2023-05-15'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-5',
-    description: 'Special Donation',
-    amount: 10000,
-    type: 'income',
-    categoryId: 'other',
-    date: new Date('2023-05-20'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-20'),
-    updatedAt: new Date('2023-05-20'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-6',
-    description: 'Youth Camp Expenses',
-    amount: 8000,
-    type: 'expense',
-    categoryId: 'events',
-    date: new Date('2023-05-25'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-05-25'),
-    updatedAt: new Date('2023-05-25'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-7',
-    description: 'Pastor Salary',
-    amount: 15000,
-    type: 'expense',
-    categoryId: 'salary',
-    date: new Date('2023-06-01'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-06-01'),
-    updatedAt: new Date('2023-06-01'),
-    attachments: [],
-    isRecurring: false
-  },
-  {
-    id: 'tx-8',
-    description: 'Water Bill',
-    amount: 800,
-    type: 'expense',
-    categoryId: 'utilities',
-    date: new Date('2023-06-05'),
-    createdById: 'user-1',
-    createdAt: new Date('2023-06-05'),
-    updatedAt: new Date('2023-06-05'),
-    attachments: [],
-    isRecurring: false
+    id: "category-2",
+    name: "Utilities",
+    type: "expense",
+    color: "#f44336",
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 
-export const documents: Document[] = [];
-export const folders: Folder[] = [];
-export const currentUser: User = {
-  id: 'user-1',
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john.doe@example.com',
-  role: 'admin',
-  avatar: '/placeholder.svg',
+const mockDocuments: Document[] = [];
+const mockFolders: Folder[] = [];
+const mockNotifications: Notification[] = [];
+
+const mockCurrentUser: User = {
+  id: "user-1",
+  email: "admin@churchapp.com",
+  firstName: "Admin",
+  lastName: "User",
+  role: "admin",
   lastActive: new Date(),
   createdAt: new Date()
 };
-export const notifications: Notification[] = [];
-export const taskCategories: TaskCategory[] = [
-  { id: 'category-1', name: 'Development', color: '#3B82F6' },
-  { id: 'category-2', name: 'Design', color: '#10B981' },
-  { id: 'category-3', name: 'Marketing', color: '#F59E0B' },
-  { id: 'category-4', name: 'Finance', color: '#6366F1' },
-  { id: 'category-5', name: 'HR', color: '#EC4899' }
+
+const mockProgrammes: Programme[] = [
+  {
+    id: "programme-1",
+    title: "Sunday Service",
+    description: "Weekly worship service",
+    startDate: new Date(2023, 0, 1),
+    endDate: null,
+    location: "Main Sanctuary",
+    category: "worship",
+    tags: ["sunday", "service"],
+    targetAudience: "Everyone",
+    currentAttendees: 150,
+    attendees: [],
+    budget: 500,
+    status: "ongoing",
+    objectives: ["Worship", "Fellowship"],
+    kpis: ["attendance", "engagement"],
+    notes: "",
+    name: "Sunday Service",
+    type: "recurring",
+    coordinator: "John Doe",
+    capacity: 200,
+    recurring: true,
+    frequency: "weekly"
+  }
 ];
 
-// Finance categories
-export const financeCategories: FinanceCategory[] = [
-  { id: 'tithe', name: 'Tithe', type: 'income', color: '#4CAF50', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'offering', name: 'Offering', type: 'income', color: '#8BC34A', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'salary', name: 'Salary', type: 'expense', color: '#F44336', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'utilities', name: 'Utilities', type: 'expense', color: '#FF5722', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'supplies', name: 'Supplies', type: 'expense', color: '#FF9800', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'maintenance', name: 'Maintenance', type: 'expense', color: '#FFC107', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'events', name: 'Events', type: 'expense', color: '#9C27B0', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'outreach', name: 'Outreach', type: 'expense', color: '#673AB7', createdAt: new Date(), updatedAt: new Date() },
-  { id: 'other', name: 'Other', type: 'both', color: '#607D8B', createdAt: new Date(), updatedAt: new Date() }
-];
-
-export const tasks: Task[] = [];
-
-// Church structures
-export const churchStructures: ChurchStructureData[] = [
-  { id: 'structure-1', name: 'Senior Leadership', description: 'Senior church leadership including pastors and elders' },
-  { id: 'structure-2', name: 'Youth Leadership', description: 'Youth ministry leadership team' },
-  { id: 'structure-3', name: 'Men\'s Forum', description: 'Men\'s ministry and outreach' },
-  { id: 'structure-4', name: 'Sunday School', description: 'Sunday school and children\'s ministry' }
-];
-
-// Member categories
-export const memberCategories: MemberCategoryData[] = [
-  { id: 'category-1', name: 'Elders', description: 'Church elders' },
-  { id: 'category-2', name: 'Pastors', description: 'Church pastors' },
-  { id: 'category-3', name: 'Youth', description: 'Youth members' },
-  { id: 'category-4', name: 'Children', description: 'Sunday school children' },
-  { id: 'category-5', name: 'Visitors', description: 'First-time or occasional visitors' },
-  { id: 'category-6', name: 'New Members', description: 'Recently joined members' },
-  { id: 'category-7', name: 'Regular Members', description: 'Regular church members' }
-];
-
-// Church positions
-export const churchPositions: ChurchPosition[] = [
-  { id: 'position-1', name: 'Senior Pastor', structureId: 'structure-1' },
-  { id: 'position-2', name: 'Elder', structureId: 'structure-1' },
-  { id: 'position-3', name: 'Deacon', structureId: 'structure-1' },
-  { id: 'position-4', name: 'Youth Pastor', structureId: 'structure-2' },
-  { id: 'position-5', name: 'Youth Leader', structureId: 'structure-2' },
-  { id: 'position-6', name: 'Men\'s Forum Leader', structureId: 'structure-3' },
-  { id: 'position-7', name: 'Sunday School Teacher', structureId: 'structure-4' },
-  { id: 'position-8', name: 'Worship Leader', structureId: 'structure-1' },
-  { id: 'position-9', name: 'Admin Assistant', structureId: 'structure-1' }
-];
-
-// Add programmes data
-export const programmes: Programme[] = [];
-
-// Add this function to provide initial data for the application
 export const getInitialData = () => {
   return {
-    members,
-    tasks,
-    transactions,
-    financeCategories,
-    documents,
-    folders,
-    notifications,
-    currentUser,
-    programmes,
-    taskCategories
+    members: mockMembers,
+    tasks: mockTasks,
+    transactions: mockTransactions,
+    financeCategories: mockFinanceCategories,
+    documents: mockDocuments,
+    folders: mockFolders,
+    notifications: mockNotifications,
+    currentUser: mockCurrentUser,
+    programmes: mockProgrammes,
+    taskCategories: mockTaskCategories
   };
+};
+
+export const getMembers = () => {
+  return mockMembers;
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,9 @@ import { Task, TaskStatus, TaskPriority, TaskRecurrence, TaskCategory } from '@/
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Define proper TaskStatus type to match what's in types/index.ts
+type LocalTaskStatus = 'pending' | 'in-progress' | 'completed';
+
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,12 +33,12 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TaskStatus>('pending');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [status, setStatus] = useState<LocalTaskStatus>('pending');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<string[]>(['user-1']); // Default to current user
-  const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
+  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   
   // Custom category state
   const [showCustomCategory, setShowCustomCategory] = useState(false);
@@ -56,12 +58,30 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       if (task) {
         setTitle(task.title);
         setDescription(task.description);
-        setStatus(task.status);
+        // Map from the task's status to our local status
+        if (task.status === 'open' || task.status === 'pending') {
+          setStatus('pending');
+        } else if (task.status === 'in progress' || task.status === 'in-progress') {
+          setStatus('in-progress');
+        } else if (task.status === 'done' || task.status === 'completed') {
+          setStatus('completed');
+        }
+        
         setPriority(task.priority);
         setDueDate(task.dueDate);
-        setSelectedCategories(task.categories.map(c => c.id));
-        setAssignees(task.assigneeIds);
-        setRecurrence(task.recurrence);
+        // Handle categories - assuming the task uses the categories array property
+        if (task.categories) {
+          setSelectedCategories(task.categories.map(c => c.id));
+        }
+        if (task.assigneeIds) {
+          setAssignees(task.assigneeIds);
+        } else {
+          setAssignees([task.assigneeId]);
+        }
+        // Handle recurrence if it exists
+        if (task.recurrence) {
+          setRecurrence(task.recurrence);
+        }
         
         // Set creator info
         const creator = members.find(m => m.id === task.createdById);
@@ -133,18 +153,19 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       ...customCategories.filter(c => selectedCategories.includes(c.id))
     ];
     
+    // Create task data with required fields from the Task type
     const taskData = {
       title,
       description,
-      status,
+      status, // Using our local status type which matches TaskStatus
       priority,
       dueDate,
-      categories: allCategories,
-      reminderDate: null,
-      recurrence,
+      category: "default", // Required field for Task type
+      assigneeId: assignees[0] || "user-1", // Required field for Task type
       assigneeIds: assignees,
-      dependencyIds: [],
-      attachments: [],
+      reporterId: "user-1", // Required field for Task type
+      categories: allCategories,
+      recurrence,
     };
     
     if (taskId) {
@@ -225,7 +246,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={status} onValueChange={(value: TaskStatus) => setStatus(value)}>
+                  <Select value={status} onValueChange={(value: LocalTaskStatus) => setStatus(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Status" />
                     </SelectTrigger>

@@ -19,11 +19,11 @@ export const useFinanceActions = ({
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Transaction | null => {
     try {
       const now = new Date();
-      const newTransaction = {
+      const newTransaction: Transaction = {
         ...transaction,
         id: uuidv4(),
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString()
+        createdAt: now,
+        updatedAt: now
       };
       
       setTransactions(prev => [...prev, newTransaction]);
@@ -44,7 +44,7 @@ export const useFinanceActions = ({
             return {
               ...transaction,
               ...updatedFields,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date()
             };
           }
           return transaction;

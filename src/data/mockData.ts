@@ -1,4 +1,3 @@
-
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory 
@@ -161,6 +160,16 @@ const mockProgrammes: Programme[] = [
   }
 ];
 
+// Export data directly to fix mockDataHelpers.ts issues
+export const members = mockMembers;
+export const tasks = mockTasks;
+export const documents = mockDocuments;
+export const folders = mockFolders;
+export const transactions = mockTransactions;
+export const getMembers = () => mockMembers;
+export const getTasks = () => mockTasks;
+export const getTransactions = () => mockTransactions;
+
 export const getInitialData = () => {
   return {
     members: mockMembers,
@@ -175,14 +184,3 @@ export const getInitialData = () => {
     taskCategories: mockTaskCategories
   };
 };
-
-// Export data directly to fix mockDataHelpers.ts issues
-export const members = mockMembers;
-export const tasks = mockTasks;
-export const documents = mockDocuments;
-export const folders = mockFolders;
-export const transactions = mockTransactions;
-export const getMembers = () => mockMembers;
-export const getTasks = () => mockTasks;
-export const getTransactions = () => mockTransactions;
-

@@ -29,7 +29,9 @@ const CreateFolderDialog = ({ open, onOpenChange, currentFolder }: CreateFolderD
     addFolder({
       name: name.trim(),
       parentId,
-      createdById: currentUser?.id || 'default-user-1' // Add createdById field using current user or default
+      createdById: currentUser?.id || 'default-user-1', 
+      createdAt: new Date(), // Add missing required field
+      updatedAt: new Date()  // Add missing required field
     });
     
     // Reset the form

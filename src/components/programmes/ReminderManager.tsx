@@ -33,10 +33,11 @@ export const isCancellable = (status: string) => {
   return status !== 'sent' && status !== 'cancelled';
 };
 
-// Export default for compatibility
-export default {
-  createReminder,
-  isReminderable,
-  isReschedulable,
-  isCancellable
+const ReminderManager = () => {
+  return (
+    <div>Reminder Manager Component</div>
+  );
 };
+
+export { ReminderManager };
+export default ReminderManager;

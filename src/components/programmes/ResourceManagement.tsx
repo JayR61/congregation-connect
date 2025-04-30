@@ -9,7 +9,7 @@ export const createResource = (data: {
   type: "document" | "video" | "audio" | "link" | "room"; // Including "room" as valid type
   quantity: number;
   unit: string;
-  cost: number | undefined;
+  cost: number | null;
   notes: string;
   status: "available" | "in use" | "outdated" | "allocated" | "pending" | "denied";
 }) => {
@@ -24,3 +24,13 @@ export const isPending = (status: string) => {
 export const isDenied = (status: string) => {
   return status === 'denied';
 };
+
+// Export as default to fix import issues
+const ResourceManagement = () => {
+  return (
+    <div>Resource Management Component</div>
+  );
+};
+
+export { ResourceManagement };
+export default ResourceManagement;

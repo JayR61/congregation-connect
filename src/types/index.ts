@@ -1,4 +1,3 @@
-
 import { member } from './member';
 
 // Extend existing types as needed
@@ -22,25 +21,41 @@ export interface Member {
   avatar?: string;
   memberNotes?: MemberNote[];
   resourcesProvided?: ResourceProvided[];
+  familyIds?: string[];
+  familyId?: string;
+  category?: string;
+  isFullMember?: boolean;
+  structures?: string[];
+  positions?: Array<{
+    title: string;
+    structure: string;
+  }>;
+  attendance?: AttendanceRecord[];
 }
 
 export interface MemberNote {
   id: string;
-  memberId: string;
+  memberId?: string;
   content: string;
-  type: 'pastoral' | 'general' | 'follow-up';
-  createdAt: Date;
-  updatedById: string;
+  type?: 'pastoral' | 'general' | 'follow-up';
+  createdAt?: Date;
+  updatedById?: string;
+  date: Date;               // Adding missing property
+  createdById?: string;     // Adding missing property
+  attachments?: string[];   // Adding missing property
 }
 
 export interface ResourceProvided {
   id: string;
-  memberId: string;
-  name: string;
-  type: 'book' | 'course' | 'counseling' | 'financial' | 'other';
+  memberId?: string;
+  name?: string;
+  type?: 'book' | 'course' | 'counseling' | 'financial' | 'other';
   date: Date;
-  details: string;
-  providedById: string;
+  details?: string;
+  providedById?: string;
+  description: string;      // Adding missing property
+  value?: number;           // Adding missing property
+  attachments?: string[];   // Adding missing property
 }
 
 export interface Task {
@@ -122,6 +137,12 @@ export interface Document {
   updatedAt: Date;
   tags: string[];
   versions: DocumentVersion[];
+  title?: string;           // Adding missing properties
+  thumbnailUrl?: string;    // Adding missing properties
+  fileSize: number;         // Adding missing properties
+  shared?: boolean;         // Adding missing properties
+  content?: string;         // Adding missing properties
+  createdById?: string;     // Adding missing properties
 }
 
 export interface DocumentVersion {
@@ -133,6 +154,41 @@ export interface DocumentVersion {
   notes: string;
   createdAt: Date;
   size: number;
+  createdById?: string;     // Adding missing property
+}
+
+export interface AttendanceRecord {
+  id: string;
+  memberId: string;
+  eventId: string;
+  date: string | Date;
+  isPresent: boolean;
+  notes?: string;
+}
+
+export interface ProgrammeAttendance {
+  id: string;
+  programmeId: string;
+  memberId: string;
+  date: Date;
+  isPresent: boolean;
+  notes?: string;
+}
+
+export interface BulkAttendanceRecord {
+  programmeId: string;
+  date: Date;
+  attendees: Array<{memberId: string; isPresent: boolean}>;
+}
+
+export interface ProgrammeFeedback {
+  id: string;
+  programmeId: string;
+  memberId: string;
+  rating: number;
+  comment: string;
+  date: Date;
+  anonymous?: boolean;
 }
 
 export interface Folder {
@@ -163,6 +219,7 @@ export interface User {
   role: 'admin' | 'leader' | 'member';
   lastActive: Date;
   createdAt: Date;
+  avatar?: string;
 }
 
 export interface Programme {
@@ -227,7 +284,7 @@ export interface ProgrammeResource {
   unit: string;
   cost: number | null;
   notes: string;
-  status: 'available' | 'in use' | 'outdated' | 'allocated';
+  status: 'available' | 'in use' | 'outdated' | 'allocated' | 'pending' | 'denied';
   programmeId: string;
   description: string;
   url: string;

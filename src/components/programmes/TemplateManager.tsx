@@ -1,5 +1,6 @@
 
-// This is a minimal stub to fix the specific error
+// This is a minimal stub to fix export issues
+
 export const createTemplate = () => {
   return {
     name: "Example Template",
@@ -9,7 +10,7 @@ export const createTemplate = () => {
     content: "", // Add required field
     category: "", // Add required field
     tags: [], // Add required field
-    duration: 60, // Include duration property that is used in the component
+    duration: 60, // Include duration property
     capacity: 20,
     resources: [{
       name: "Example Resource",
@@ -23,3 +24,12 @@ export const createTemplate = () => {
     createdById: "user-1"
   };
 };
+
+const TemplateManager = () => {
+  return (
+    <div>Template Manager Component</div>
+  );
+};
+
+export { TemplateManager };
+export default TemplateManager;

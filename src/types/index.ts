@@ -1,4 +1,6 @@
+
 import { Member as ImportedMember } from './member';
+export type { ChurchStructure, MemberCategory } from './member';
 
 // Extend existing types as needed
 export interface Member {
@@ -31,6 +33,14 @@ export interface Member {
     structure: string;
   }>;
   attendance?: AttendanceRecord[];
+  newMemberDate?: Date;
+  city?: string;
+  state?: string;
+  zip?: string;
+  mentorshipPrograms?: any[];
+  roles?: string[];
+  volunteerRoles?: string[];
+  notes?: string;
 }
 
 export interface MemberNote {
@@ -40,9 +50,9 @@ export interface MemberNote {
   type?: 'pastoral' | 'general' | 'follow-up';
   createdAt?: Date;
   updatedById?: string;
-  date: Date;               // Adding missing property
-  createdById?: string;     // Adding missing property
-  attachments?: string[];   // Adding missing property
+  date: Date;               
+  createdById?: string;     
+  attachments?: string[];   
 }
 
 export interface ResourceProvided {
@@ -53,9 +63,9 @@ export interface ResourceProvided {
   date: Date;
   details?: string;
   providedById?: string;
-  description: string;      // Adding missing property
-  value?: number;           // Adding missing property
-  attachments?: string[];   // Adding missing property
+  description: string;      
+  value?: number;           
+  attachments?: string[];   
 }
 
 export interface Task {
@@ -137,12 +147,12 @@ export interface Document {
   updatedAt: Date;
   tags: string[];
   versions: DocumentVersion[];
-  title?: string;           // Adding missing properties
-  thumbnailUrl?: string;    // Adding missing properties
-  fileSize: number;         // Adding missing properties
-  shared?: boolean;         // Adding missing properties
-  content?: string;         // Adding missing properties
-  createdById?: string;     // Adding missing properties
+  title?: string;           
+  thumbnailUrl?: string;    
+  fileSize: number;         
+  shared?: boolean;         
+  content?: string;         
+  createdById?: string;     
 }
 
 export interface DocumentVersion {
@@ -154,7 +164,7 @@ export interface DocumentVersion {
   notes: string;
   createdAt: Date;
   size: number;
-  createdById?: string;     // Adding missing property
+  createdById?: string;     
 }
 
 export interface AttendanceRecord {
@@ -321,7 +331,7 @@ export interface ProgrammeTemplate {
 export interface MentorshipProgram {
   id: string;
   title: string;
-  name: string; // Adding missing property for Mentorship component
+  name: string; // Both title and name needed
   menteeId: string;
   mentorId: string;
   status: 'active' | 'completed' | 'cancelled';
@@ -333,7 +343,7 @@ export interface MentorshipProgram {
   notes: string;
 }
 
-export type AppContextProps = {
+export interface AppContextProps {
   members: Member[];
   tasks: Task[];
   programmes: Programme[];
@@ -372,10 +382,12 @@ export type AppContextProps = {
   updateProgramme: (id: string, updatedFields: Partial<Programme>) => boolean;
   deleteProgramme: (id: string) => boolean;
   shareDocument: (documentId: string, memberIds: string[]) => boolean;
+  moveDocument: (documentId: string, folderId: string | null) => boolean;
+  addDocumentVersion: (documentId: string, fileUrl: string, notes: string) => boolean;
   attendance: any[];
-  recordAttendance: any;
-  exportProgrammesToCSV: any;
-  exportAttendanceToCSV: any;
+  recordAttendance: (attendance: any) => void;
+  exportProgrammesToCSV: () => void;
+  exportAttendanceToCSV: () => void;
   resources: any[];
   categories: any[];
   tags: any[];
@@ -384,10 +396,23 @@ export type AppContextProps = {
   kpis: any[];
   reminders: any[];
   templates: any[];
-  addProgrammeCategory: any;
-  addProgrammeTag: any;
-  assignTagToProgramme: any;
-  removeTagFromProgramme: any;
+  addProgrammeCategory: (category: any) => any;
+  addProgrammeTag: (tag: any) => any;
+  assignTagToProgramme: (programmeId: string, tagId: string) => boolean;
+  removeTagFromProgramme: (programmeId: string, tagId: string) => boolean;
+  allocateResource: (resource: any) => any;
+  updateResourceStatus: (id: string, status: string) => boolean;
+  exportProgrammeToPDF: (id: string) => void;
+  createProgrammeTemplate: (template: any) => any;
+  createProgrammeFromTemplate: (templateId: string) => any;
+  exportProgrammeToCalendar: (id: string) => void;
+  addProgrammeFeedback: (feedback: any) => any;
+  addProgrammeKPI: (kpi: any) => any;
+  updateKPIProgress: (id: string, progress: number) => boolean;
+  createProgrammeReminder: (reminder: any) => any;
+  checkAndSendReminders: () => void;
+  recordBulkAttendance: (data: any) => void;
+  addMentorshipProgram: (program: MentorshipProgram) => MentorshipProgram;
 };
 
 // Export member types from member.ts

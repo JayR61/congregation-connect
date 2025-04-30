@@ -1,10 +1,11 @@
+
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory 
 } from '@/types';
 
 // Sample data for testing
-const mockMembers: Member[] = [
+export const mockMembers: Member[] = [
   {
     id: "member-1",
     firstName: "John",
@@ -19,7 +20,12 @@ const mockMembers: Member[] = [
     skills: ["programming", "teaching"],
     createdAt: new Date(),
     updatedAt: new Date(),
-    membershipDate: new Date(2020, 0, 1)
+    membershipDate: new Date(2020, 0, 1),
+    notes: "",
+    city: "",
+    state: "",
+    zip: "",
+    newMemberDate: new Date(2020, 0, 1)
   },
   {
     id: "member-2",
@@ -36,11 +42,18 @@ const mockMembers: Member[] = [
     isLeadership: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    membershipDate: new Date(2019, 3, 10)
+    membershipDate: new Date(2019, 3, 10),
+    notes: "",
+    city: "",
+    state: "",
+    zip: "",
+    newMemberDate: new Date(2019, 3, 10),
+    roles: ["admin"],
+    volunteerRoles: ["greeter"]
   }
 ];
 
-const mockTasks: Task[] = [
+export const mockTasks: Task[] = [
   {
     id: "task-1",
     title: "Plan Sunday Service",
@@ -54,16 +67,16 @@ const mockTasks: Task[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     comments: [],
-    assigneeIds: ["member-1"], // Adding this field for compatibility
-    categories: [], // Adding this field for compatibility
-    createdById: "member-2", // Adding this field for compatibility
-    lastModifiedById: "member-2", // Adding this field for compatibility
-    lastModifiedAction: "created" // Adding this field for compatibility
+    assigneeIds: ["member-1"],
+    categories: [],
+    createdById: "member-2",
+    lastModifiedById: "member-2", 
+    lastModifiedAction: "created"
   }
 ];
 
 // Add task categories
-const mockTaskCategories: TaskCategory[] = [
+export const mockTaskCategories: TaskCategory[] = [
   {
     id: "category-1",
     name: "Service",
@@ -84,7 +97,7 @@ const mockTaskCategories: TaskCategory[] = [
   }
 ];
 
-const mockTransactions: Transaction[] = [
+export const mockTransactions: Transaction[] = [
   {
     id: "transaction-1",
     description: "Sunday offering",
@@ -100,7 +113,7 @@ const mockTransactions: Transaction[] = [
   }
 ];
 
-const mockFinanceCategories: FinanceCategory[] = [
+export const mockFinanceCategories: FinanceCategory[] = [
   {
     id: "category-1",
     name: "Offerings",
@@ -119,11 +132,11 @@ const mockFinanceCategories: FinanceCategory[] = [
   }
 ];
 
-const mockDocuments: Document[] = [];
-const mockFolders: Folder[] = [];
-const mockNotifications: Notification[] = [];
+export const mockDocuments: Document[] = [];
+export const mockFolders: Folder[] = [];
+export const mockNotifications: Notification[] = [];
 
-const mockCurrentUser: User = {
+export const mockCurrentUser: User = {
   id: "user-1",
   email: "admin@churchapp.com",
   firstName: "Admin",
@@ -133,7 +146,7 @@ const mockCurrentUser: User = {
   createdAt: new Date()
 };
 
-const mockProgrammes: Programme[] = [
+export const mockProgrammes: Programme[] = [
   {
     id: "programme-1",
     title: "Sunday Service",
@@ -159,6 +172,17 @@ const mockProgrammes: Programme[] = [
     frequency: "weekly"
   }
 ];
+
+// Additional mock data needed for AppProvider
+export const mockAttendance = [];
+export const mockResources = [];
+export const mockCategories = [];
+export const mockTags = [];
+export const mockProgrammeTags = [];
+export const mockFeedback = [];
+export const mockKpis = [];
+export const mockReminders = [];
+export const mockTemplates = [];
 
 // Export data directly to fix mockDataHelpers.ts issues
 export const members = mockMembers;

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ const Mentorship = () => {
   const [isAddProgramDialogOpen, setIsAddProgramDialogOpen] = useState(false);
   const [newProgram, setNewProgram] = useState<Partial<MentorshipProgram>>({
     title: '',
+    name: '', // Need both name and title
     description: '',
     startDate: new Date(),
     endDate: null,
@@ -34,7 +36,7 @@ const Mentorship = () => {
     const programData: MentorshipProgram = {
       id: `program-${Date.now()}`,
       title: newProgram.title || '',
-      name: newProgram.title || '',
+      name: newProgram.title || '', // Set name same as title
       menteeId: newProgram.menteeId || '',
       mentorId: newProgram.mentorId || '',
       status: newProgram.status || 'active',
@@ -49,6 +51,7 @@ const Mentorship = () => {
     addMentorshipProgram(programData);
     setNewProgram({
       title: '',
+      name: '',
       description: '',
       startDate: new Date(),
       endDate: null,
@@ -60,6 +63,16 @@ const Mentorship = () => {
       mentorId: ''
     });
     setIsAddProgramDialogOpen(false);
+    
+    toast.success('Mentorship program added successfully!');
+  };
+
+  const updateProgramTitle = (value: string) => {
+    setNewProgram({
+      ...newProgram,
+      title: value,
+      name: value
+    });
   };
 
   return (
@@ -114,7 +127,7 @@ const Mentorship = () => {
               <Input
                 placeholder="Program Title"
                 value={newProgram.title}
-                onChange={(e) => setNewProgram({ ...newProgram, title: e.target.value })}
+                onChange={(e) => updateProgramTitle(e.target.value)}
               />
             </div>
             <div>
@@ -141,7 +154,7 @@ const Mentorship = () => {
             <div>
               <Textarea
                 placeholder="Goals"
-                value={newProgram.goals.join(', ')}
+                value={newProgram.goals?.join(', ')}
                 onChange={(e) => setNewProgram({ ...newProgram, goals: e.target.value.split(',').map(goal => goal.trim()) })}
               />
             </div>

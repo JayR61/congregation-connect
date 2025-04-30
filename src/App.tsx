@@ -8,7 +8,13 @@ import { AppProvider } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import Layout from "./components/layout/Layout";
-import { mockMembers, mockTasks, mockProgrammes, mockTransactions, mockFinanceCategories, mockDocuments, mockFolders, mockNotifications, mockTaskCategories, mockAttendance, mockResources, mockCategories, mockTags, mockProgrammeTags, mockFeedback, mockKpis, mockReminders, mockTemplates } from './data/mockData';
+import { 
+  mockMembers, mockTasks, mockProgrammes, mockTransactions, 
+  mockFinanceCategories, mockDocuments, mockFolders, mockNotifications, 
+  mockTaskCategories, mockAttendance, mockResources, mockCategories, 
+  mockTags, mockProgrammeTags, mockFeedback, mockKpis, mockReminders, 
+  mockTemplates, mockCurrentUser 
+} from './data/mockData';
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -37,15 +43,7 @@ const queryClient = new QueryClient({
 });
 
 // Initialize with a default user
-const defaultUser = {
-  id: "default-user-1",
-  firstName: "Church",
-  lastName: "Admin",
-  email: "admin@church.org",
-  role: "admin",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
-};
+const defaultUser = mockCurrentUser;
 
 // Save the default user to localStorage if no user exists
 if (!localStorage.getItem('currentUser')) {

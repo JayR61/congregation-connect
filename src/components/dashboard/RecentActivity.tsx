@@ -25,7 +25,7 @@ const RecentActivity = () => {
       title: transaction.description,
       amount: transaction.amount,
       transactionType: transaction.type,
-      date: transaction.createdAt,
+      date: transaction.createdAt || new Date(),
       icon: <DollarSign className="h-4 w-4" />,
       description: `${transaction.type === 'income' ? 'Received' : 'Spent'} $${transaction.amount} for ${transaction.description}`
     }));
@@ -33,13 +33,15 @@ const RecentActivity = () => {
     const documentActivities = documents.map(document => ({
       id: document.id,
       type: 'document',
-      title: document.name,
+      title: document.title || document.name || "Untitled Document",
       date: document.createdAt,
       icon: <FileText className="h-4 w-4" />,
-      description: `Document "${document.name}" was uploaded`
+      description: `Document "${document.title || document.name || "Untitled Document"}" was uploaded`
     }));
 
+    // Handle task comments safely
     const commentActivities = tasks
+      .filter(task => task.comments && Array.isArray(task.comments))
       .flatMap(task => 
         task.comments.map(comment => ({
           id: comment.id,

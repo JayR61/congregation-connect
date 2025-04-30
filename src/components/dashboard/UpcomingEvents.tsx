@@ -11,7 +11,7 @@ const UpcomingEvents = () => {
   const upcomingTasks = tasks
     .filter(task => 
       task.dueDate && 
-      task.status !== 'completed' &&
+      (task.status !== 'completed' && task.status !== 'done') &&
       (new Date(task.dueDate) > today) &&
       ((new Date(task.dueDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24) <= 7)
     )
@@ -51,7 +51,13 @@ const UpcomingEvents = () => {
                   <Clock className="mr-1 h-3 w-3" />
                   {formatDueDate(new Date(task.dueDate!))}
                 </span>
-                {task.assigneeIds.length > 0 && (
+                {task.assigneeId && (
+                  <span className="flex items-center text-muted-foreground">
+                    <Users className="mr-1 h-3 w-3" />
+                    1 assignee
+                  </span>
+                )}
+                {task.assigneeIds && task.assigneeIds.length > 0 && (
                   <span className="flex items-center text-muted-foreground">
                     <Users className="mr-1 h-3 w-3" />
                     {task.assigneeIds.length} {task.assigneeIds.length === 1 ? 'assignee' : 'assignees'}

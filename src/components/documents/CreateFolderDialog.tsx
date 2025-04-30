@@ -16,7 +16,7 @@ interface CreateFolderDialogProps {
 }
 
 const CreateFolderDialog = ({ open, onOpenChange, currentFolder }: CreateFolderDialogProps) => {
-  const { addFolder, folders } = useAppContext();
+  const { addFolder, folders, currentUser } = useAppContext();
   const [name, setName] = useState('');
   const [parentId, setParentId] = useState<string | null>(currentFolder);
   
@@ -28,7 +28,8 @@ const CreateFolderDialog = ({ open, onOpenChange, currentFolder }: CreateFolderD
     
     addFolder({
       name: name.trim(),
-      parentId
+      parentId,
+      createdById: currentUser?.id || 'default-user-1' // Add createdById field using current user or default
     });
     
     // Reset the form

@@ -8,10 +8,23 @@ const TeamPerformance = () => {
 
   // Calculate performance data for each team member
   const memberPerformance = members.map(member => {
-    const memberTasks = tasks.filter(task => task.assigneeIds.includes(member.id));
-    const completedMemberTasks = memberTasks.filter(task => task.status === 'completed').length;
-    const inProgressMemberTasks = memberTasks.filter(task => task.status === 'in-progress').length;
-    const pendingMemberTasks = memberTasks.filter(task => task.status === 'pending').length;
+    // Support both single assignee and multiple assignees
+    const memberTasks = tasks.filter(task => {
+      if (Array.isArray(task.assigneeIds)) {
+        return task.assigneeIds.includes(member.id);
+      }
+      return task.assigneeId === member.id;
+    });
+    
+    const completedMemberTasks = memberTasks.filter(task => 
+      task.status === 'completed' || task.status === 'done').length;
+    
+    const inProgressMemberTasks = memberTasks.filter(task => 
+      task.status === 'in-progress' || task.status === 'in progress').length;
+    
+    const pendingMemberTasks = memberTasks.filter(task => 
+      task.status === 'pending' || task.status === 'open').length;
+    
     const totalMemberTasks = memberTasks.length;
     
     return {

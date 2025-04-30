@@ -1,15 +1,18 @@
+
 export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'open' | 'in progress' | 'done' | 'blocked';
+  status: 'open' | 'in progress' | 'done' | 'blocked' | 'completed' | 'pending' | 'in-progress';
   priority: 'low' | 'medium' | 'high';
   category: string;
   assigneeId: string;
+  assigneeIds: string[]; // Added field for multi-assignee support
   reporterId: string;
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  comments: TaskComment[]; // Added comments array
 }
 
 export interface TaskCategory {
@@ -54,16 +57,39 @@ export interface Member {
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   membershipDate: Date;
   birthDate: Date;
   occupation: string;
   skills: string[];
   interests: string[];
   familyId?: string;
+  familyIds?: string[]; // Added for backward compatibility
   notes?: string;
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
+  joinDate?: string; // Added field
+  status?: string; // Added field
+  isActive?: boolean; // Added field
+  category?: string; // Added field
+  newMemberDate?: string | Date; // Added field
+  isFullMember?: boolean; // Added field
+  isLeadership?: boolean; // Added field
+  structures?: string[]; // Added field
+  positions?: Array<{title: string, structure: string}>; // Added field
+  attendance?: Array<{date: string, isPresent: boolean, notes?: string}>; // Added field
+}
+
+export interface AttendanceRecord {
+  id: string;
+  memberId: string;
+  eventId: string;
+  date: Date;
+  isPresent: boolean;
+  notes?: string;
 }
 
 export interface Document {
@@ -77,6 +103,13 @@ export interface Document {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  name: string; // Added field
+  fileType: string; // Added field
+  fileSize: number; // Added field
+  thumbnailUrl?: string; // Added field
+  url?: string; // Added field
+  content?: string; // Added field
+  shared?: boolean; // Added field
 }
 
 export interface DocumentVersion {
@@ -84,6 +117,12 @@ export interface DocumentVersion {
   uploadDate: Date;
   fileUrl: string;
   uploadedById: string;
+  id: string; // Added field
+  version: number; // Added field for backward compatibility
+  createdAt: Date; // Added field
+  createdById: string; // Added field
+  url: string; // Added field
+  notes?: string; // Added field
 }
 
 export interface Folder {

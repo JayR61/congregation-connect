@@ -32,10 +32,13 @@ export interface Volunteer {
   ministry: string;
   role: string;
   joinDate: Date;
-  status: 'active' | 'inactive' | 'former';
+  status: 'active' | 'inactive' | 'former' | 'on leave';
   hoursPerWeek: number;
   availability?: string[];
   notes?: string;
+  area?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface Member {

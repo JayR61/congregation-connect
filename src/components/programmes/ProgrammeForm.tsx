@@ -47,7 +47,7 @@ const ProgrammeForm = ({ onSave, onCancel, initialData, isEditing }: ProgrammeFo
     }
     
     if (formData.endDate && typeof formData.endDate === 'string') {
-      setFormData(prev => ({ ...prev, endDate: new Date(prev.endDate as string) }));
+      setFormData(prev => ({ ...prev, endDate: prev.endDate ? new Date(prev.endDate as string) : null }));
     }
   }, []);
 

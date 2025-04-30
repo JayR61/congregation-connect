@@ -134,7 +134,9 @@ const Volunteers = () => {
       status: 'active',
       hoursPerWeek: 0,
       availability: volunteerData.availability || [],
-      notes: volunteerData.notes
+      notes: volunteerData.notes,
+      area: volunteerData.area || '',
+      startDate: new Date(volunteerData.joinDate || new Date())
     };
 
     // Update the member with the new volunteer role

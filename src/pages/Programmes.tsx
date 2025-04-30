@@ -118,13 +118,13 @@ const Programmes = () => {
   const handleAddAttendance = () => {
     if (!selectedProgrammeId) return;
 
-    recordAttendance({
-      programmeId: selectedProgrammeId,
-      memberId: attendanceForm.memberId,
-      date: attendanceForm.date,
-      isPresent: attendanceForm.isPresent,
-      notes: attendanceForm.notes || ''
-    });
+    recordAttendance(
+      selectedProgrammeId,
+      attendanceForm.memberId,
+      attendanceForm.date,
+      attendanceForm.isPresent,
+      attendanceForm.notes || ''
+    );
     
     setIsAttendanceDialogOpen(false);
     resetAttendanceForm();

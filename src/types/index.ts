@@ -38,7 +38,7 @@ export interface Member {
   zip?: string;
   mentorshipPrograms?: any[];
   roles?: string[];
-  volunteerRoles?: string[];
+  volunteerRoles?: Volunteer[];
   notes?: string;
 }
 

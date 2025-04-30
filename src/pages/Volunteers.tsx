@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -73,7 +72,7 @@ const Volunteers = () => {
   const allVolunteerRoles = members.reduce<{volunteer: Volunteer; member: Member}[]>((acc, member) => {
     if (member.volunteerRoles && Array.isArray(member.volunteerRoles)) {
       const memberRoles = member.volunteerRoles.map(role => ({
-        volunteer: role as Volunteer,
+        volunteer: role,
         member
       }));
       return [...acc, ...memberRoles];
@@ -142,13 +141,8 @@ const Volunteers = () => {
     // Update the member with the new volunteer role
     const existingRoles = selectedMember.volunteerRoles || [];
     
-    // Ensure volunteerRoles is properly handled as Volunteer[] rather than string[]
-    const updatedRoles: Volunteer[] = Array.isArray(existingRoles) 
-      ? [...existingRoles.map(role => typeof role === 'string' ? JSON.parse(role) as Volunteer : role), newVolunteer]
-      : [newVolunteer];
-      
     updateMember(selectedMember.id, {
-      volunteerRoles: updatedRoles
+      volunteerRoles: [...(existingRoles as Volunteer[]), newVolunteer]
     });
 
     toast.success("Volunteer role added successfully");

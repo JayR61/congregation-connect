@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -29,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, ChevronRight, Clock, Filter, Handshake, Plus, Search, User } from "lucide-react";
 import { toast } from '@/lib/toast';
 
+// Define allowed volunteer areas and availability options
 const VOLUNTEER_AREAS = [
   "Worship Team",
   "Sunday School",
@@ -64,18 +66,12 @@ const Volunteers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState('all');
-  const [volunteerData, setVolunteerData] = useState<Partial<Volunteer>>({
-    area: '',
-    role: '',
-    startDate: new Date(),
-    availability: [],
-    notes: ''
-  });
+  const [volunteerData, setVolunteerData] = useState<Partial<Volunteer>>({});
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   // Get all volunteer roles across all members
   const allVolunteerRoles = members.reduce<{volunteer: Volunteer; member: Member}[]>((acc, member) => {
-    if (member.volunteerRoles && Array.isArray(member.volunteerRoles) && member.volunteerRoles.length > 0) {
+    if (member.volunteerRoles && Array.isArray(member.volunteerRoles)) {
       const memberRoles = member.volunteerRoles.map(role => ({
         volunteer: role as Volunteer,
         member
@@ -87,17 +83,17 @@ const Volunteers = () => {
 
   const filteredRoles = allVolunteerRoles.filter(item => {
     const matchesSearch = 
-      item.volunteer.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.volunteer.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.volunteer.ministry?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.volunteer.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.member.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.member.lastName.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesArea = areaFilter === 'all' || item.volunteer.area === areaFilter;
+    const matchesArea = areaFilter === 'all' || item.volunteer.ministry === areaFilter;
     
     return matchesSearch && matchesArea;
   });
 
-  const uniqueAreas = [...new Set(allVolunteerRoles.map(item => item.volunteer.area))];
+  const uniqueAreas = [...new Set(allVolunteerRoles.map(item => item.volunteer.ministry))];
 
   const handleSelectMember = (memberId: string) => {
     const member = members.find(m => m.id === memberId);
@@ -124,7 +120,7 @@ const Volunteers = () => {
   };
 
   const handleSaveVolunteer = () => {
-    if (!selectedMember || !volunteerData.area || !volunteerData.role || !volunteerData.startDate) {
+    if (!selectedMember || !volunteerData.role) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -132,22 +128,23 @@ const Volunteers = () => {
     const newVolunteer: Volunteer = {
       id: `volunteer-${Date.now()}`,
       memberId: selectedMember.id,
-      area: volunteerData.area,
-      role: volunteerData.role,
-      startDate: new Date(volunteerData.startDate),
-      endDate: volunteerData.endDate,
-      availability: volunteerData.availability || [],
-      notes: volunteerData.notes,
-      ministry: volunteerData.area,
-      joinDate: new Date(volunteerData.startDate),
+      ministry: volunteerData.ministry || '',
+      role: volunteerData.role || '',
+      joinDate: new Date(volunteerData.joinDate || new Date()),
       status: 'active',
-      hoursPerWeek: 0
+      hoursPerWeek: 0,
+      availability: volunteerData.availability || [],
+      notes: volunteerData.notes
     };
 
     // Update the member with the new volunteer role
     const existingRoles = selectedMember.volunteerRoles || [];
+    const updatedRoles = Array.isArray(existingRoles) 
+      ? [...existingRoles, newVolunteer]
+      : [newVolunteer];
+      
     updateMember(selectedMember.id, {
-      volunteerRoles: [...existingRoles, newVolunteer]
+      volunteerRoles: updatedRoles
     });
 
     toast.success("Volunteer role added successfully");
@@ -156,13 +153,7 @@ const Volunteers = () => {
   };
 
   const resetForm = () => {
-    setVolunteerData({
-      area: '',
-      role: '',
-      startDate: new Date(),
-      availability: [],
-      notes: ''
-    });
+    setVolunteerData({});
     setSelectedMember(null);
   };
 
@@ -206,7 +197,7 @@ const Volunteers = () => {
                         <SelectValue placeholder="Select a member" />
                       </SelectTrigger>
                       <SelectContent>
-                        {members.map(member => (
+                        {members.map((member) => (
                           <SelectItem key={member.id} value={member.id}>
                             {member.firstName} {member.lastName}
                           </SelectItem>
@@ -216,16 +207,16 @@ const Volunteers = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="area" className="text-right">
-                    Area
+                  <Label htmlFor="ministry" className="text-right">
+                    Ministry Area
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={volunteerData.area} 
-                      onValueChange={(value) => setVolunteerData(prev => ({ ...prev, area: value }))}
+                      value={volunteerData.ministry} 
+                      onValueChange={(value) => setVolunteerData(prev => ({ ...prev, ministry: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select an area" />
+                        <SelectValue placeholder="Select a ministry area" />
                       </SelectTrigger>
                       <SelectContent>
                         {VOLUNTEER_AREAS.map(area => (
@@ -243,35 +234,22 @@ const Volunteers = () => {
                   </Label>
                   <Input
                     id="role"
-                    value={volunteerData.role}
+                    value={volunteerData.role || ''}
                     onChange={(e) => setVolunteerData(prev => ({ ...prev, role: e.target.value }))}
                     className="col-span-3"
                     placeholder="e.g., Team Leader, Helper, Coordinator"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">
+                  <Label htmlFor="joinDate" className="text-right">
                     Start Date
                   </Label>
                   <Input
-                    id="startDate"
+                    id="joinDate"
                     type="date"
-                    value={volunteerData.startDate ? new Date(volunteerData.startDate).toISOString().split('T')[0] : ''}
-                    onChange={(e) => setVolunteerData(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                    value={volunteerData.joinDate ? new Date(volunteerData.joinDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setVolunteerData(prev => ({ ...prev, joinDate: new Date(e.target.value) }))}
                     className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endDate" className="text-right">
-                    End Date
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={volunteerData.endDate ? new Date(volunteerData.endDate).toISOString().split('T')[0] : ''}
-                    onChange={(e) => setVolunteerData(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
-                    className="col-span-3"
-                    placeholder="Leave blank if ongoing"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-start gap-4">
@@ -336,7 +314,7 @@ const Volunteers = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Areas</SelectItem>
-              {uniqueAreas.map(area => (
+              {uniqueAreas.map(area => area && (
                 <SelectItem key={area} value={area}>{area}</SelectItem>
               ))}
             </SelectContent>
@@ -362,7 +340,7 @@ const Volunteers = () => {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg">{volunteer.role}</CardTitle>
-                      <Badge>{volunteer.area}</Badge>
+                      <Badge>{volunteer.ministry}</Badge>
                     </div>
                     <CardDescription>
                       <div className="flex items-center mt-1">
@@ -376,16 +354,8 @@ const Volunteers = () => {
                       <div className="flex items-center text-sm">
                         <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                         <span className="text-muted-foreground mr-1">Started:</span>
-                        <span>{formatDate(volunteer.startDate)}</span>
+                        <span>{formatDate(volunteer.joinDate)}</span>
                       </div>
-                      
-                      {volunteer.endDate && (
-                        <div className="flex items-center text-sm">
-                          <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                          <span className="text-muted-foreground mr-1">Ends:</span>
-                          <span>{formatDate(volunteer.endDate)}</span>
-                        </div>
-                      )}
                       
                       {volunteer.availability && volunteer.availability.length > 0 && (
                         <div>
@@ -438,16 +408,16 @@ const Volunteers = () => {
         </TabsContent>
         
         <TabsContent value="active" className="mt-4">
-          {filteredRoles.filter(({ volunteer }) => !volunteer.endDate || new Date(volunteer.endDate) >= new Date()).length > 0 ? (
+          {filteredRoles.filter(({ volunteer }) => volunteer.status === 'active').length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRoles
-                .filter(({ volunteer }) => !volunteer.endDate || new Date(volunteer.endDate) >= new Date())
+                .filter(({ volunteer }) => volunteer.status === 'active')
                 .map(({ volunteer, member }) => (
                   <Card key={volunteer.id} className="hover:bg-muted/50 transition-colors">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg">{volunteer.role}</CardTitle>
-                        <Badge>{volunteer.area}</Badge>
+                        <Badge>{volunteer.ministry}</Badge>
                       </div>
                       <CardDescription>
                         <div className="flex items-center mt-1">
@@ -461,7 +431,7 @@ const Volunteers = () => {
                         <div className="flex items-center text-sm">
                           <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                           <span className="text-muted-foreground mr-1">Started:</span>
-                          <span>{formatDate(volunteer.startDate)}</span>
+                          <span>{formatDate(volunteer.joinDate)}</span>
                         </div>
                         
                         {volunteer.availability && volunteer.availability.length > 0 && (
@@ -505,9 +475,9 @@ const Volunteers = () => {
         
         <TabsContent value="by-area" className="mt-4">
           <div className="space-y-6">
-            {uniqueAreas.length > 0 ? (
-              uniqueAreas.map(area => {
-                const areaVolunteers = filteredRoles.filter(({ volunteer }) => volunteer.area === area);
+            {uniqueAreas.filter(Boolean).length > 0 ? (
+              uniqueAreas.filter(Boolean).map(area => {
+                const areaVolunteers = filteredRoles.filter(({ volunteer }) => volunteer.ministry === area);
                 
                 if (areaVolunteers.length === 0) return null;
                 
@@ -529,7 +499,7 @@ const Volunteers = () => {
                           <CardContent className="pt-2">
                             <div className="text-sm">
                               <span className="text-muted-foreground">Since: </span>
-                              <span>{formatDate(volunteer.startDate)}</span>
+                              <span>{formatDate(volunteer.joinDate)}</span>
                             </div>
                           </CardContent>
                           <CardFooter>

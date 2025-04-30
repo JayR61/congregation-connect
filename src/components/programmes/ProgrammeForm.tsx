@@ -109,6 +109,13 @@ const ProgrammeForm = ({ onSave, onCancel, initialData, isEditing }: ProgrammeFo
     onSave(programmeData);
   };
 
+  // Function to safely format date for input field
+  const formatDateForInput = (date: Date | string | null): string => {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().split('T')[0];
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -173,7 +180,7 @@ const ProgrammeForm = ({ onSave, onCancel, initialData, isEditing }: ProgrammeFo
             id="startDate"
             name="startDate"
             type="date"
-            value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''} 
+            value={formatDateForInput(formData.startDate)} 
             onChange={handleDateChange}
             required
           />
@@ -184,7 +191,7 @@ const ProgrammeForm = ({ onSave, onCancel, initialData, isEditing }: ProgrammeFo
             id="endDate"
             name="endDate"
             type="date"
-            value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''} 
+            value={formatDateForInput(formData.endDate)} 
             onChange={handleDateChange}
           />
         </div>

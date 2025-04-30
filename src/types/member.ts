@@ -26,6 +26,18 @@ export interface ResourceProvided {
   attachments?: string[];
 }
 
+export interface Volunteer {
+  id: string;
+  memberId: string;
+  ministry: string;
+  role: string;
+  joinDate: Date;
+  status: 'active' | 'inactive' | 'former';
+  hoursPerWeek: number;
+  availability?: string[];
+  notes?: string;
+}
+
 export interface Member {
   id: string;
   firstName: string;
@@ -64,7 +76,7 @@ export interface Member {
   zip?: string;
   mentorshipPrograms?: any[];
   roles?: string[];
-  volunteerRoles?: string[];
+  volunteerRoles?: Volunteer[];
 }
 
 export interface FamilyRelationship {

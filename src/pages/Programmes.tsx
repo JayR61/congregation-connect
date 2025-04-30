@@ -123,7 +123,7 @@ const Programmes = () => {
       memberId: attendanceForm.memberId,
       date: attendanceForm.date,
       isPresent: attendanceForm.isPresent,
-      notes: attendanceForm.notes || undefined
+      notes: attendanceForm.notes || ''
     });
     
     setIsAttendanceDialogOpen(false);

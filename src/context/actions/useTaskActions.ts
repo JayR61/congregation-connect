@@ -1,4 +1,3 @@
-
 import { Task, TaskComment, User, Member, Notification } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -122,7 +121,7 @@ export const useTaskActions = ({
     return deleted;
   };
 
-  const addTaskComment = (taskId: string, content: string) => {
+  const addTaskComment = (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => {
     let added = false;
     const taskToUpdate = tasks.find(t => t.id === taskId);
     
@@ -133,8 +132,8 @@ export const useTaskActions = ({
     
     const newComment: TaskComment = {
       id: `comment-${Date.now()}`,
-      content,
-      userId: currentUser.id,
+      content: comment.content,
+      userId: comment.userId || currentUser.id,
       taskId,
       createdAt: new Date()
     };

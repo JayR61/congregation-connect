@@ -128,6 +128,7 @@ export const useMemberActions = ({
             return {
               ...member,
               category: 'regular' as const,
+              newMemberDate: undefined,
               updatedAt: new Date()
             };
           }

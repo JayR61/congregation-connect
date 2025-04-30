@@ -9,13 +9,35 @@ export interface Member {
   phone: string;
   address?: string;
   status: 'active' | 'inactive' | 'prospect' | 'visitor';
-  joinDate?: string;
+  birthDate?: Date;
+  joinDate?: string | Date;
+  membershipDate?: Date;
   notes?: string;
   familyIds?: string[];
+  familyId?: string;
   roleIds?: string[];
   teamIds?: string[];
   createdAt: Date;
   updatedAt: Date;
+  isActive?: boolean;
+  avatar?: string;
+  memberNotes?: MemberNote[];
+  resourcesProvided?: ResourceProvided[];
+  category?: string;
+  isFullMember?: boolean;
+  isLeadership?: boolean;
+  structures?: string[];
+  positions?: Array<{
+    title: string;
+    structure: string;
+  }>;
+  occupation?: string;
+  skills?: string[];
+  newMemberDate?: Date;
+  city?: string;
+  state?: string;
+  zip?: string;
+  mentorshipPrograms?: any[]; // Added for Mentorship component
 }
 
 export interface FamilyRelationship {
@@ -46,3 +68,7 @@ export interface MemberTeam {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Additional types needed by various components
+export type ChurchStructure = string;
+export type MemberCategory = string;

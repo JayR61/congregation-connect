@@ -1,21 +1,25 @@
 
-import { Folder } from '@/types';
+import { Folder, Document, User } from '@/types';
 
 interface UseFolderActionsProps {
   folders: Folder[];
   setFolders: React.Dispatch<React.SetStateAction<Folder[]>>;
+  currentUser: User;
 }
 
 export const useFolderActions = ({
   folders,
-  setFolders
+  setFolders,
+  currentUser
 }: UseFolderActionsProps) => {
-  const addFolder = (folderData: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>) => {
+  
+  const addFolder = (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newFolder: Folder = {
-      ...folderData,
+      ...folder,
       id: `folder-${Date.now()}`,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      createdById: currentUser.id
     };
     
     setFolders(prev => [...prev, newFolder]);
@@ -24,6 +28,7 @@ export const useFolderActions = ({
   
   const updateFolder = (id: string, updatedFields: Partial<Folder>) => {
     let found = false;
+    
     setFolders(prev => 
       prev.map(folder => {
         if (folder.id === id) {
@@ -37,11 +42,13 @@ export const useFolderActions = ({
         return folder;
       })
     );
+    
     return found;
   };
   
   const deleteFolder = (id: string) => {
     let found = false;
+    
     setFolders(prev => {
       const filtered = prev.filter(folder => {
         if (folder.id === id) {
@@ -52,12 +59,13 @@ export const useFolderActions = ({
       });
       return filtered;
     });
+    
     return found;
   };
-
+  
   const moveDocument = (documentId: string, folderId: string | null) => {
-    // This would be implemented in the document actions, but we're exposing it here
-    // to fix the error in MoveDocumentDialog.tsx
+    // Note: This would normally update the document's folderId
+    // For now we'll just return true since we don't have a direct access to documents state here
     return true;
   };
   
@@ -69,19 +77,14 @@ export const useFolderActions = ({
   };
 };
 
-// Export the individual functions for direct import
-export const addFolder = (folderData: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>) => {
-  return useFolderActions({ folders, setFolders }).addFolder(folderData);
+export const addFolder = (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
+  return useFolderActions({ folders, setFolders, currentUser }).addFolder(folder);
 };
 
-export const updateFolder = (id: string, updatedFields: Partial<Folder>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>) => {
-  return useFolderActions({ folders, setFolders }).updateFolder(id, updatedFields);
+export const updateFolder = (id: string, updatedFields: Partial<Folder>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
+  return useFolderActions({ folders, setFolders, currentUser }).updateFolder(id, updatedFields);
 };
 
-export const deleteFolder = (id: string, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>) => {
-  return useFolderActions({ folders, setFolders }).deleteFolder(id);
-};
-
-export const moveDocument = (documentId: string, folderId: string | null, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>) => {
-  return useFolderActions({ folders, setFolders }).moveDocument(documentId, folderId);
+export const deleteFolder = (id: string, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
+  return useFolderActions({ folders, setFolders, currentUser }).deleteFolder(id);
 };

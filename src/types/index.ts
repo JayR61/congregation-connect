@@ -321,6 +321,7 @@ export interface ProgrammeTemplate {
 export interface MentorshipProgram {
   id: string;
   title: string;
+  name: string; // Adding missing property for Mentorship component
   menteeId: string;
   mentorId: string;
   status: 'active' | 'completed' | 'cancelled';

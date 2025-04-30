@@ -1,44 +1,69 @@
-import { Programme } from '@/types';
 
-// Define proper type for required properties in a new programme
-interface ProgrammeActionsProps {
+import { Programme, User } from '@/types';
+
+interface UseProgrammeActionsProps {
   programmes: Programme[];
   setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
-  attendance?: any[];
-  setAttendance?: React.Dispatch<React.SetStateAction<any[]>>;
-  currentUser?: any;
+  currentUser: User;
 }
 
 export const useProgrammeActions = ({
   programmes,
   setProgrammes,
   currentUser
-}: ProgrammeActionsProps) => {
+}: UseProgrammeActionsProps) => {
+  
   const addProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
-    // Ensure all required properties are present, including status
-    const programme: Programme = {
+    const newProgramme: Programme = {
       ...programmeData,
       id: `programme-${Date.now()}`,
       currentAttendees: 0,
       attendees: [],
-      status: programmeData.status || 'planning',
     };
     
-    setProgrammes(prev => [...prev, programme]);
-    return programme;
+    setProgrammes(prev => [...prev, newProgramme]);
+    return newProgramme;
   };
-
-  // Keep other methods
-
+  
+  const updateProgramme = (id: string, updatedFields: Partial<Programme>) => {
+    let found = false;
+    
+    setProgrammes(prev => 
+      prev.map(programme => {
+        if (programme.id === id) {
+          found = true;
+          return { 
+            ...programme, 
+            ...updatedFields
+          };
+        }
+        return programme;
+      })
+    );
+    
+    return found;
+  };
+  
+  const deleteProgramme = (id: string) => {
+    let found = false;
+    
+    setProgrammes(prev => {
+      const filtered = prev.filter(programme => {
+        if (programme.id === id) {
+          found = true;
+          return false;
+        }
+        return true;
+      });
+      return filtered;
+    });
+    
+    return found;
+  };
+  
   return {
     addProgramme,
-    updateProgramme: (id: string, data: Partial<Programme>) => {
-      setProgrammes(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-      return true;
-    },
-    deleteProgramme: (id: string) => {
-      setProgrammes(prev => prev.filter(p => p.id !== id));
-      return true;
-    }
+    updateProgramme,
+    deleteProgramme
   };
 };

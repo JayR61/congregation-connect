@@ -106,14 +106,16 @@ export const BulkAttendanceRecorder = ({
     
     if (selectedMemberIds.length === 0) return;
     
+    const attendees = selectedMemberIds.map(id => ({
+      memberId: id,
+      isPresent: true,
+      notes: memberNotes[id] || undefined
+    }));
+    
     const bulkRecord: BulkAttendanceRecord = {
       programmeId: selectedProgramme,
       date: selectedDate,
-      memberIds: selectedMemberIds.map(id => ({
-        memberId: id,
-        isPresent: true,
-        notes: memberNotes[id] || undefined
-      }))
+      attendees: attendees
     };
     
     onRecordBulkAttendance(bulkRecord);

@@ -1,5 +1,5 @@
 
-import { Document, User } from '@/types';
+import { Document, User, DocumentVersion } from '@/types';
 
 interface UseDocumentActionsProps {
   documents: Document[];
@@ -77,7 +77,7 @@ export const useDocumentActions = ({
       prev.map(document => {
         if (document.id === documentId) {
           found = true;
-          const newVersion = {
+          const newVersion: DocumentVersion = {
             id: `version-${document.versions.length + 1}-${Date.now()}`,
             documentId,
             version: document.versions.length + 1,

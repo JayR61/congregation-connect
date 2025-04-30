@@ -30,7 +30,7 @@ interface FeedbackManagerProps {
   programmes: Programme[];
   feedback: ProgrammeFeedback[];
   members: Member[];
-  onAddFeedback: (feedback: Omit<ProgrammeFeedback, 'id' | 'submittedAt'>) => ProgrammeFeedback | null;
+  onAddFeedback: (feedback: Omit<ProgrammeFeedback, 'id'>) => ProgrammeFeedback | null;
 }
 
 export const FeedbackManager = ({ 
@@ -46,7 +46,9 @@ export const FeedbackManager = ({
     programmeId: '',
     memberId: '',
     rating: 5,
-    comments: ''
+    comment: '', // Changed from comments to comment to match the interface
+    date: new Date(), // Added date which was missing
+    anonymous: false // Added with default false
   });
   
   const resetForm = () => {
@@ -54,7 +56,9 @@ export const FeedbackManager = ({
       programmeId: '',
       memberId: '',
       rating: 5,
-      comments: ''
+      comment: '',
+      date: new Date(),
+      anonymous: false
     });
   };
   
@@ -217,22 +221,22 @@ export const FeedbackManager = ({
               <ScrollArea className="h-[350px] pr-4">
                 <div className="space-y-4">
                   {filteredFeedback
-                    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .map(item => (
                       <div key={item.id} className="border rounded-lg p-3">
                         <div className="flex justify-between items-center mb-2">
                           <div className="font-medium">{getProgrammeName(item.programmeId)}</div>
                           <div className="text-xs text-muted-foreground">
-                            {format(new Date(item.submittedAt), 'MMM d, yyyy')}
+                            {format(new Date(item.date), 'MMM d, yyyy')}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-2">
                           {renderStars(item.rating)}
                           <div className="text-sm">{getMemberName(item.memberId)}</div>
                         </div>
-                        {item.comments && (
+                        {item.comment && (
                           <div className="text-sm mt-2 border-t pt-2">
-                            "{item.comments}"
+                            "{item.comment}"
                           </div>
                         )}
                       </div>
@@ -318,8 +322,8 @@ export const FeedbackManager = ({
               <Label htmlFor="comments">Comments (Optional)</Label>
               <Textarea
                 id="comments"
-                value={form.comments}
-                onChange={(e) => setForm(prev => ({ ...prev, comments: e.target.value }))}
+                value={form.comment}
+                onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
                 placeholder="Enter feedback comments"
                 rows={4}
               />

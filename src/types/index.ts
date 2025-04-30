@@ -7,12 +7,12 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   category: string;
   assigneeId: string;
-  assigneeIds: string[]; // Added field for multi-assignee support
+  assigneeIds?: string[]; // Make this optional for backward compatibility
   reporterId: string;
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  comments: TaskComment[]; // Added comments array
+  comments?: TaskComment[]; // Make comments optional
 }
 
 export interface TaskCategory {
@@ -66,12 +66,12 @@ export interface Member {
   skills: string[];
   interests: string[];
   familyId?: string;
-  familyIds?: string[]; // Added for backward compatibility
+  familyIds?: string[]; // Keep for backward compatibility
   notes?: string;
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
-  joinDate?: string; // Added field
+  joinDate?: string; // Keep as string to match existing code
   status?: string; // Added field
   isActive?: boolean; // Added field
   category?: string; // Added field
@@ -80,7 +80,54 @@ export interface Member {
   isLeadership?: boolean; // Added field
   structures?: string[]; // Added field
   positions?: Array<{title: string, structure: string}>; // Added field
-  attendance?: Array<{date: string, isPresent: boolean, notes?: string}>; // Added field
+  attendance?: Array<{date: string, isPresent: boolean, notes?: string, eventId?: string, id?: string}>; // Added fields for compatibility
+  // Additional fields needed by MemberDialog
+  attachments?: any[];
+  mentorshipPrograms?: any[];
+  volunteerRoles?: any[];
+  socialMediaAccounts?: any[];
+  resourceBookings?: any[];
+}
+
+// Add missing types for MemberDialog
+export interface MemberCategory {
+  id: string;
+  name: string;
+}
+
+export interface ChurchStructure {
+  id: string;
+  name: string;
+}
+
+export interface Position {
+  id: string;
+  title: string;
+}
+
+export interface MemberStatus {
+  id: string;
+  name: string;
+}
+
+export interface MentorshipProgram {
+  id: string;
+  name: string;
+}
+
+export interface Volunteer {
+  id: string;
+  role: string;
+}
+
+export interface SocialMediaAccount {
+  id: string;
+  platform: string;
+}
+
+export interface ResourceBooking {
+  id: string;
+  resource: string;
 }
 
 export interface AttendanceRecord {

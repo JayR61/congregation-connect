@@ -10,7 +10,7 @@ const TeamPerformance = () => {
   const memberPerformance = members.map(member => {
     // Support both single assignee and multiple assignees
     const memberTasks = tasks.filter(task => {
-      if (Array.isArray(task.assigneeIds)) {
+      if (task.assigneeIds && Array.isArray(task.assigneeIds)) {
         return task.assigneeIds.includes(member.id);
       }
       return task.assigneeId === member.id;

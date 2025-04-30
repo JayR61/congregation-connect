@@ -32,12 +32,13 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
       return;
     }
 
-    const newRecord: AttendanceRecord = {
+    const newRecord = {
       id: `attendance-${Date.now()}`,
       eventId: newEvent.eventId,
-      date: new Date(newEvent.date),
+      memberId: member.id, // Add required memberId field
+      date: newEvent.date,
       isPresent: newEvent.isPresent,
-      notes: newEvent.notes,
+      notes: newEvent.notes || `Event: ${newEvent.description}`,
     };
 
     const updatedAttendance = [...(member.attendance || []), newRecord];
@@ -61,15 +62,22 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
   const getEventDescription = (eventId: string) => {
     // This would typically come from a database of events
     // For now, we'll extract it from the member's attendance records
-    const record = member.attendance?.find(a => a.eventId === eventId);
-    if (record && record.notes?.includes('Event:')) {
+    const record = member.attendance?.find(a => {
+      if ('eventId' in a) {
+        return a.eventId === eventId;
+      }
+      return false;
+    });
+    
+    if (record && record.notes && record.notes.includes('Event:')) {
       return record.notes.split('Event:')[1].trim();
     }
     return 'Unnamed Event';
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+  const formatDate = (dateStr: string | Date) => {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
@@ -145,9 +153,13 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
             <ScrollArea className="h-[200px]">
               <div className="space-y-2">
                 {[...member.attendance]
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .sort((a, b) => {
+                    const dateA = new Date(a.date).getTime();
+                    const dateB = new Date(b.date).getTime();
+                    return dateB - dateA;
+                  })
                   .map((record) => (
-                    <div key={record.id} className="flex items-center p-2 border rounded-md">
+                    <div key={record.id || `record-${Math.random()}`} className="flex items-center p-2 border rounded-md">
                       <div className={`h-2 w-2 rounded-full mr-3 ${record.isPresent ? 'bg-green-500' : 'bg-red-500'}`} />
                       <div className="flex-1">
                         <div className="flex items-center">
@@ -155,7 +167,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
                           <span className="text-sm font-medium">{formatDate(record.date)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Event: {record.notes ? record.notes.substring(0, 30) : getEventDescription(record.eventId)}
+                          Event: {record.notes ? record.notes.substring(0, 30) : 
+                            ('eventId' in record ? getEventDescription(record.eventId) : 'Unnamed Event')}
                           {record.isPresent && <Check className="inline-block h-3 w-3 ml-1 text-green-500" />}
                         </p>
                       </div>

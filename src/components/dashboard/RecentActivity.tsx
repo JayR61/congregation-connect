@@ -43,7 +43,7 @@ const RecentActivity = () => {
     const commentActivities = tasks
       .filter(task => task.comments && Array.isArray(task.comments))
       .flatMap(task => 
-        task.comments.map(comment => ({
+        task.comments!.map(comment => ({
           id: comment.id,
           type: 'comment',
           taskId: task.id,

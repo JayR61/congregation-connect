@@ -1,4 +1,4 @@
-import { member } from './member';
+import { Member as ImportedMember } from './member';
 
 // Extend existing types as needed
 export interface Member {

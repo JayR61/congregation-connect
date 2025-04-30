@@ -1,4 +1,3 @@
-
 import { Member } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -41,32 +40,24 @@ export const useMemberActions = ({
     return hasLeadershipStructure || hasLeadershipPosition;
   };
 
-  const updateMember = (id: string, member: Partial<Member>) => {
+  const updateMember = (id: string, updatedFields: Partial<Member>) => {
     let updated = false;
+    
     setMembers(prev => 
-      prev.map(m => {
-        if (m.id === id) {
+      prev.map(member => {
+        if (member.id === id) {
           updated = true;
-          
-          // Determine leadership status when relevant fields change
-          if (member.structures || member.positions) {
-            const updatedMember = { ...m, ...member };
-            member.isLeadership = determineLeadershipStatus(updatedMember);
-          }
-          
-          return { 
-            ...m, 
-            ...member, 
-            updatedAt: new Date() 
+          // Handle newMemberDate property
+          const updatedMember = {
+            ...member,
+            ...updatedFields,
           };
+          
+          return updatedMember;
         }
-        return m;
+        return member;
       })
     );
-    
-    if (updated) {
-      toast.success("Member updated successfully");
-    }
     
     return updated;
   };

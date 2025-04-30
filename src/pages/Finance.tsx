@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,7 @@ const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('all-time');
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const { addTransaction, deleteTransaction, transactions: contextTransactions } = useAppContext();
+  const { addTransaction, deleteTransaction, transactions: contextTransactions, currentUser } = useAppContext();
   
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
@@ -116,8 +115,12 @@ const Finance = () => {
     }
   };
 
-  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => {
-    addTransaction(newTransaction);
+  const handleAddTransaction = (newTransaction: Omit<Transaction, "id" | "createdAt" | "updatedAt" | "createdById">) => {
+    // Add createdById before passing to addTransaction
+    addTransaction({
+      ...newTransaction,
+      createdById: currentUser.id
+    });
     setIsAddTransactionOpen(false);
   };
 

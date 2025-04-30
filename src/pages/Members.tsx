@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload, Users, Award, X } from 'lucide-react';
@@ -224,8 +223,12 @@ const Members = () => {
       
       <MemberDialog 
         open={dialogOpen}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={setDialogOpen}
         member={selectedMember}
+        onSave={(updatedMember) => {
+          // Handle updated member
+          setRefreshKey(prev => prev + 1);
+        }}
       />
     </div>
   );

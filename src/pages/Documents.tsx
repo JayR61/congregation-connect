@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,7 +83,8 @@ const Documents = () => {
   
   // Handlers
   const handleShareDocument = (document: Document) => {
-    shareDocument(document.id, !document.shared);
+    // Changed from boolean to string array (empty array to unshare, or array with IDs to share with)
+    shareDocument(document.id, document.shared ? [] : ['all-users']);
   };
   
   const handleDownloadDocument = (document: Document) => {

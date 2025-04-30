@@ -433,10 +433,13 @@ const MemberDetail = () => {
         </div>
       </div>
       
-      <MemberDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
-        member={member} 
+      <MemberDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        member={member}
+        onSave={(updatedMember) => {
+          // Handle updated member
+        }}
       />
     </div>
   );

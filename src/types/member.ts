@@ -1,6 +1,31 @@
 
 import { User } from './index';
 
+export interface MemberNote {
+  id: string;
+  memberId?: string;
+  content: string;
+  type?: 'pastoral' | 'general' | 'follow-up';
+  createdAt?: Date;
+  updatedById?: string;
+  date: Date;
+  createdById?: string;
+  attachments?: string[];
+}
+
+export interface ResourceProvided {
+  id: string;
+  memberId?: string;
+  name?: string;
+  type?: 'book' | 'course' | 'counseling' | 'financial' | 'other';
+  date: Date;
+  details?: string;
+  providedById?: string;
+  description: string;
+  value?: number;
+  attachments?: string[];
+}
+
 export interface Member {
   id: string;
   firstName: string;
@@ -37,7 +62,9 @@ export interface Member {
   city?: string;
   state?: string;
   zip?: string;
-  mentorshipPrograms?: any[]; // Added for Mentorship component
+  mentorshipPrograms?: any[];
+  roles?: string[]; // Added for Dashboard.tsx
+  volunteerRoles?: string[]; // Added for Volunteers.tsx
 }
 
 export interface FamilyRelationship {

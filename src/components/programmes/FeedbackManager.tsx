@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -319,9 +318,9 @@ export const FeedbackManager = ({
             </div>
             
             <div>
-              <Label htmlFor="comments">Comments (Optional)</Label>
+              <Label htmlFor="comment">Comments (Optional)</Label>
               <Textarea
-                id="comments"
+                id="comment"
                 value={form.comment}
                 onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
                 placeholder="Enter feedback comments"

@@ -1,6 +1,7 @@
+
 import { Programme, ProgrammeAttendance, ProgrammeResource, ProgrammeFeedback, 
   ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory, 
-  ProgrammeTag, Member } from "@/types";
+  ProgrammeTag, Member, ProgrammeStatistics } from "@/types";
 import { format, addDays, addHours, addWeeks } from "date-fns";
 
 // Local storage keys

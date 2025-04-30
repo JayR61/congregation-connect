@@ -310,6 +310,9 @@ export interface ProgrammeReminder {
   status: 'pending' | 'sent' | 'failed' | 'scheduled' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
+  sentAt?: Date;
+  schedule?: 'day_before' | 'hour_before' | 'week_before' | 'custom';
+  customTime?: Date;
 }
 
 export interface ProgrammeTemplate {
@@ -341,6 +344,64 @@ export interface MentorshipProgram {
   goals: string[];
   progress: number;
   notes: string;
+}
+
+// Types needed for other pages
+export interface ChurchResource {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  url?: string;
+  fileSize?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  category: string;
+  tags: string[];
+}
+
+export interface ResourceBooking {
+  id: string;
+  resourceId: string;
+  memberId: string;
+  startDate: Date;
+  endDate: Date;
+  purpose: string;
+  status: 'pending' | 'approved' | 'declined' | 'completed';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SocialMediaAccount {
+  id: string;
+  platform: string;
+  handle: string;
+  url: string;
+  followers: number;
+  lastUpdated: Date;
+  responsible: string;
+  status: 'active' | 'inactive';
+}
+
+export interface Volunteer {
+  id: string;
+  memberId: string;
+  role: string;
+  ministry: string;
+  joinDate: Date;
+  status: 'active' | 'inactive' | 'on leave';
+  hoursPerWeek: number;
+  notes?: string;
+}
+
+export interface ProgrammeStatistics {
+  totalProgrammes: number;
+  activeProgrammes: number;
+  completedProgrammes: number;
+  totalParticipants: number;
+  attendanceRate: number;
+  programmesByType: Record<string, number>;
+  participantsTrend: Array<{month: string; count: number}>;
 }
 
 export interface AppContextProps {
@@ -385,7 +446,7 @@ export interface AppContextProps {
   moveDocument: (documentId: string, folderId: string | null) => boolean;
   addDocumentVersion: (documentId: string, fileUrl: string, notes: string) => boolean;
   attendance: any[];
-  recordAttendance: (attendance: any) => void;
+  recordAttendance: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => void;
   exportProgrammesToCSV: () => void;
   exportAttendanceToCSV: () => void;
   resources: any[];
@@ -402,7 +463,7 @@ export interface AppContextProps {
   removeTagFromProgramme: (programmeId: string, tagId: string) => boolean;
   allocateResource: (resource: any) => any;
   updateResourceStatus: (id: string, status: string) => boolean;
-  exportProgrammeToPDF: (id: string) => void;
+  exportProgrammeToPDF: (id: string, members?: Member[]) => void;
   createProgrammeTemplate: (template: any) => any;
   createProgrammeFromTemplate: (templateId: string) => any;
   exportProgrammeToCalendar: (id: string) => void;

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,10 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, ChevronDown, Download, FileText, LineChart, BarChart3, Calendar, Users, Gauge } from "lucide-react";
+import { CalendarIcon, ChevronDown, Download, FileText, LineChart, BarChart3, Calendar, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
-import { Programme, ProgrammeAttendance } from "@/types";
+import { Programme } from "@/types";
 import { ProgrammeCard } from '@/components/programmes/ProgrammeCard';
 import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics';
 import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
@@ -41,7 +42,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 
 const Programmes = () => {
@@ -178,7 +178,7 @@ const Programmes = () => {
   };
 
   const handleExportPDF = (programmeId: string) => {
-    exportProgrammeToPDF(programmeId, members);
+    exportProgrammeToPDF(programmeId);
   };
 
   const handleExportCalendar = (programmeId: string) => {
@@ -191,68 +191,80 @@ const Programmes = () => {
         return <AttendanceDashboard programmes={programmes} attendance={attendance} members={members} />;
       case 'resources':
         return (
-          <ResourceManagement 
-            programmes={programmes} 
-            resources={programmeResources}
-            onAllocateResource={allocateResource}
-            onUpdateStatus={updateResourceStatus}
-          />
+          <div className="mt-4">
+            <ResourceManagement 
+              programmes={programmes} 
+              resources={programmeResources}
+              onAllocateResource={allocateResource}
+              onUpdateStatus={updateResourceStatus}
+            />
+          </div>
         );
       case 'categories':
         return (
-          <CategoryTagManager 
-            programmes={programmes}
-            categories={programmeCategories}
-            tags={programmeTags}
-            programmeTags={programmeProgrammeTags}
-            onAddCategory={addProgrammeCategory}
-            onAddTag={addProgrammeTag}
-            onAssignTag={assignTagToProgramme}
-            onRemoveTag={removeTagFromProgramme}
-          />
+          <div className="mt-4">
+            <CategoryTagManager 
+              programmes={programmes}
+              categories={programmeCategories}
+              tags={programmeTags}
+              programmeTags={programmeProgrammeTags}
+              onAddCategory={addProgrammeCategory}
+              onAddTag={addProgrammeTag}
+              onAssignTag={assignTagToProgramme}
+              onRemoveTag={removeTagFromProgramme}
+            />
+          </div>
         );
       case 'templates':
         return (
-          <TemplateManager 
-            templates={programmeTemplates}
-            onCreateTemplate={createProgrammeTemplate}
-            onCreateFromTemplate={createProgrammeFromTemplate}
-          />
+          <div className="mt-4">
+            <TemplateManager 
+              templates={programmeTemplates}
+              onCreateTemplate={createProgrammeTemplate}
+              onCreateFromTemplate={createProgrammeFromTemplate}
+            />
+          </div>
         );
       case 'feedback':
         return (
-          <FeedbackManager 
-            programmes={programmes}
-            feedback={programmeFeedback}
-            members={members}
-            onAddFeedback={addProgrammeFeedback}
-          />
+          <div className="mt-4">
+            <FeedbackManager 
+              programmes={programmes}
+              feedback={programmeFeedback}
+              members={members}
+              onAddFeedback={addProgrammeFeedback}
+            />
+          </div>
         );
       case 'kpis':
         return (
-          <KPIManager 
-            programmes={programmes}
-            kpis={programmeKpis}
-            onAddKPI={addProgrammeKPI}
-            onUpdateKPI={updateKPIProgress}
-          />
+          <div className="mt-4">
+            <KPIManager 
+              programmes={programmes}
+              kpis={programmeKpis}
+              onAddKPI={addProgrammeKPI}
+              onUpdateKPI={updateKPIProgress}
+            />
+          </div>
         );
       case 'reminders':
         return (
-          <ReminderManager 
-            programmes={programmes}
-            reminders={programmeReminders}
-            members={members}
-            onAddReminder={createProgrammeReminder}
-            onSendReminder={(id) => {
-              toast.success("Reminder sent successfully");
-              return true;
-            }}
-            onCancelReminder={(id) => {
-              toast.success("Reminder cancelled");
-              return true;
-            }}
-          />
+          <div className="mt-4">
+            <ReminderManager 
+              programmes={programmes}
+              reminders={programmeReminders}
+              members={members}
+              onAddReminder={createProgrammeReminder}
+              onSendReminder={(id) => {
+                toast.success("Reminder sent successfully");
+                return true;
+              }}
+              onCancelReminder={(id) => {
+                toast.success("Reminder cancelled");
+                return true;
+              }}
+            />
+          </div>
         );
       default:
         return null;

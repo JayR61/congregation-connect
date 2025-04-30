@@ -220,9 +220,25 @@ export const AppProvider: React.FC<AppProviderProps> = ({
     return true;
   };
 
+  // Share document functionality
+  const shareDocument = (documentId: string, memberIds: string[]) => {
+    // In a real app, this would create sharing permissions
+    console.log(`Sharing document ${documentId} with members: ${memberIds.join(', ')}`);
+    return true;
+  };
+
   // Method for basic attendance recording
-  const recordAttendance = (attendanceData: any) => {
-    setAttendance(prev => [...prev, attendanceData]);
+  const recordAttendance = (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => {
+    const attendanceRecord = {
+      id: `attendance-${Date.now()}`,
+      programmeId,
+      memberId,
+      date,
+      isPresent,
+      notes
+    };
+    
+    setAttendance(prev => [...prev, attendanceRecord]);
   };
 
   // Export methods (simplified placeholders)
@@ -252,7 +268,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({
     return true;
   };
 
-  const exportProgrammeToPDF = (id: string) => {
+  const exportProgrammeToPDF = (id: string, members?: Member[]) => {
     console.log(`Exporting programme ${id} to PDF`);
     return true;
   };
@@ -410,7 +426,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({
       addProgramme: programmeActions.addProgramme,
       updateProgramme: programmeActions.updateProgramme,
       deleteProgramme: programmeActions.deleteProgramme,
-      shareDocument: documentActions.shareDocument,
+      shareDocument,
       moveDocument,
       recordAttendance,
       exportProgrammesToCSV,

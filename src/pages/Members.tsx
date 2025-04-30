@@ -1,234 +1,215 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Filter, Grid3X3, List, UserPlus, Upload, Users, Award, X } from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "@/components/ui/check";
-import { useQuery } from '@tanstack/react-query';
+
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { Member, ChurchStructure, MemberCategory } from '@/types';
-import MemberCard from '@/components/members/MemberCard';
-import MemberList from '@/components/members/MemberList';
-import MemberDialog from '@/components/members/MemberDialog';
-import { getMembers } from '@/data/mockData';
+import { MemberList } from '@/components/members/MemberList';
+import { MemberDialog } from '@/components/members/MemberDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Download, Plus, ChevronDown } from 'lucide-react';
+import { Member } from '@/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Members = () => {
-  const navigate = useNavigate();
-  const { members } = useAppContext();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { members, addMember } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [currentTab, setCurrentTab] = useState<string>('all');
   
-  const { isLoading } = useQuery({
-    queryKey: ['members'],
-    queryFn: getMembers
-  });
+  const [filteredMembers, setFilteredMembers] = useState<Member[]>(members);
+  const activeMembers = members.filter(member => member.status === 'active');
+  const newMembers = members.filter(member => member.newMemberDate && new Date(member.newMemberDate).getTime() > Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const visitorsProspects = members.filter(member => member.status === 'visitor' || member.status === 'prospect');
+  const inactiveMembers = members.filter(member => member.status === 'inactive');
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = 
-      `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.phone.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    let filtered = [...members];
     
-    const matchesStatus = statusFilter === 'all' || 
-                          member.status === statusFilter || 
-                          (statusFilter === 'active' && member.isActive);
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  // Filter members by active status
-  const activeMembers = filteredMembers.filter(member => member.isActive || member.status === 'active');
-  
-  // Filter members by leadership position
-  const leadershipMembers = filteredMembers.filter(member => 
-    member.isLeadership || 
-    (member.structures && member.structures.some(s => 
-      s === 'senior_leadership' || 
-      s === 'youth_leadership'
-    ))
-  );
-  
-  // Filter new members
-  const newMembers = filteredMembers.filter(member => member.category === 'new');
-
-  const handleAddMember = () => {
-    setSelectedMember(undefined);
-    setDialogOpen(true);
-  };
-  
-  const handleEditMember = (member: Member) => {
-    setSelectedMember(member);
-    setDialogOpen(true);
-  };
-
-  const handleDialogOpenChange = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      setSelectedMember(undefined);
+    // Apply tab filter
+    if (currentTab === 'active') {
+      filtered = filtered.filter(member => member.status === 'active');
+    } else if (currentTab === 'newMembers') {
+      filtered = filtered.filter(member => 
+        member.newMemberDate && 
+        new Date(member.newMemberDate).getTime() > Date.now() - 90 * 24 * 60 * 60 * 1000
+      );
+    } else if (currentTab === 'visitorsProspects') {
+      filtered = filtered.filter(member => member.status === 'visitor' || member.status === 'prospect');
+    } else if (currentTab === 'inactive') {
+      filtered = filtered.filter(member => member.status === 'inactive');
     }
-  };
-
-  const renderMemberList = (memberList: Member[]) => {
-    if (isLoading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="p-6 border rounded-md">
-                <div className="flex items-center space-x-4">
-                  <div className="h-12 w-12 rounded-full bg-gray-200"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-gray-200 rounded"></div>
-                    <div className="h-3 w-32 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        member =>
+          member.firstName.toLowerCase().includes(query) ||
+          member.lastName.toLowerCase().includes(query) ||
+          member.email.toLowerCase().includes(query) ||
+          (member.occupation && member.occupation.toLowerCase().includes(query))
       );
     }
     
-    if (memberList.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium">No members found</h3>
-          <p className="text-muted-foreground mt-2">
-            Try adjusting your search or filter criteria
-          </p>
-          <Button onClick={handleAddMember} className="mt-4">
-            <UserPlus className="mr-2 h-4 w-4" /> Add Member
-          </Button>
-        </div>
-      );
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(member => member.status === statusFilter);
     }
     
-    return viewMode === 'grid' ? (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {memberList.map((member) => (
-          <MemberCard 
-            key={member.id} 
-            member={member} 
-            onClick={() => navigate(`/members/${member.id}`)}
-          />
-        ))}
-      </div>
-    ) : (
-      <MemberList 
-        members={memberList} 
-        onEdit={handleEditMember}
-      />
-    );
+    // Apply role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(member => member.roles?.includes(roleFilter));
+    }
+    
+    setFilteredMembers(filtered);
+  }, [members, searchQuery, statusFilter, roleFilter, currentTab]);
+
+  const handleAddMember = (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
+    addMember(memberData);
+    setDialogOpen(false);
   };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Members</h1>
-          <p className="text-muted-foreground">Manage church members and their information</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleAddMember}>
-            <UserPlus className="mr-2 h-4 w-4" /> Add Member
-          </Button>
-        </div>
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Members</h1>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Member
+        </Button>
       </div>
-
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search members..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="prospect">Prospect</SelectItem>
-              <SelectItem value="visitor">Visitor</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <div className="border rounded-md flex">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-r-none"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-l-none"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <Tabs defaultValue="all" className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">All Members</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="new">New Members</TabsTrigger>
-          <TabsTrigger value="leadership">Leadership</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all">
-          {renderMemberList(filteredMembers)}
-        </TabsContent>
-        
-        <TabsContent value="active">
-          {renderMemberList(activeMembers)}
-        </TabsContent>
-        
-        <TabsContent value="new">
-          {renderMemberList(newMembers)}
-        </TabsContent>
-        
-        <TabsContent value="leadership">
-          {renderMemberList(leadershipMembers)}
-        </TabsContent>
-      </Tabs>
       
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Total Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{members.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Active Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{activeMembers.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>New Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{newMembers.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Visitors & Prospects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{visitorsProspects.length}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="mb-6">
+        <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All Members</TabsTrigger>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="newMembers">New Members</TabsTrigger>
+            <TabsTrigger value="visitorsProspects">Visitors & Prospects</TabsTrigger>
+            <TabsTrigger value="inactive">Inactive</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="flex-grow">
+              <Input
+                placeholder="Search members..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="visitor">Visitor</SelectItem>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="leader">Leader</SelectItem>
+                  <SelectItem value="volunteer">Volunteer</SelectItem>
+                  <SelectItem value="member">Regular Member</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Export as CSV</DropdownMenuItem>
+                  <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+                  <DropdownMenuItem>Print Member Directory</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          
+          <TabsContent value="all" className="mt-0">
+            <MemberList members={filteredMembers} />
+          </TabsContent>
+          
+          <TabsContent value="active" className="mt-0">
+            <MemberList members={filteredMembers} />
+          </TabsContent>
+          
+          <TabsContent value="newMembers" className="mt-0">
+            <MemberList members={filteredMembers} />
+          </TabsContent>
+          
+          <TabsContent value="visitorsProspects" className="mt-0">
+            <MemberList members={filteredMembers} />
+          </TabsContent>
+          
+          <TabsContent value="inactive" className="mt-0">
+            <MemberList members={filteredMembers} />
+          </TabsContent>
+        </Tabs>
+      </div>
+
       <MemberDialog 
-        open={dialogOpen}
+        open={dialogOpen} 
         onOpenChange={setDialogOpen}
-        member={selectedMember}
-        onSave={(updatedMember) => {
-          // Handle updated member
-          setRefreshKey(prev => prev + 1);
-        }}
+        onSave={handleAddMember}
       />
     </div>
   );

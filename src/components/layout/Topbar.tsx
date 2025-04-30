@@ -14,10 +14,10 @@ import { useAppContext } from "@/context/AppContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Topbar = () => {
-  const { currentUser, notifications } = useAppContext();
+  const { currentUser, notifications = [] } = useAppContext();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const unreadNotifications = notifications.filter(n => !n.read);
+  const unreadNotifications = notifications?.filter(n => !n.read) || [];
 
   // Handle the case when currentUser is null
   const defaultUser = {
@@ -80,7 +80,7 @@ const Topbar = () => {
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.length > 0 ? (
+            {notifications?.length > 0 ? (
               notifications.slice(0, 5).map((notification) => (
                 <DropdownMenuItem
                   key={notification.id}
@@ -103,7 +103,7 @@ const Topbar = () => {
                 No notifications
               </div>
             )}
-            {notifications.length > 5 && (
+            {notifications?.length > 5 && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer text-center text-primary">

@@ -63,8 +63,8 @@ export interface Member {
   state?: string;
   zip?: string;
   mentorshipPrograms?: any[];
-  roles?: string[]; // Added for Dashboard.tsx
-  volunteerRoles?: string[]; // Added for Volunteers.tsx
+  roles?: string[];
+  volunteerRoles?: string[];
 }
 
 export interface FamilyRelationship {

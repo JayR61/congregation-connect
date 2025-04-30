@@ -8,6 +8,7 @@ import { AppProvider } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import Layout from "./components/layout/Layout";
+import { mockMembers, mockTasks, mockProgrammes, mockTransactions, mockFinanceCategories, mockDocuments, mockFolders, mockNotifications, mockTaskCategories, mockAttendance, mockResources, mockCategories, mockTags, mockProgrammeTags, mockFeedback, mockKpis, mockReminders, mockTemplates } from './data/mockData';
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -56,7 +57,27 @@ const App = () => (
     <TooltipProvider>
       <ThemeProvider>
         <SettingsProvider>
-          <AppProvider>
+          <AppProvider 
+            initialMembers={mockMembers}
+            initialTasks={mockTasks}
+            initialProgrammes={mockProgrammes}
+            initialTransactions={mockTransactions}
+            initialFinanceCategories={mockFinanceCategories}
+            initialDocuments={mockDocuments}
+            initialFolders={mockFolders}
+            initialNotifications={mockNotifications}
+            initialCurrentUser={defaultUser}
+            initialTaskCategories={mockTaskCategories}
+            initialAttendance={mockAttendance}
+            initialResources={mockResources}
+            initialCategories={mockCategories}
+            initialTags={mockTags}
+            initialProgrammeTags={mockProgrammeTags}
+            initialFeedback={mockFeedback}
+            initialKpis={mockKpis}
+            initialReminders={mockReminders}
+            initialTemplates={mockTemplates}
+          >
             <Toaster />
             <Sonner />
             <BrowserRouter>

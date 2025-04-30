@@ -1,7 +1,6 @@
-
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
-  Folder, Notification, User, Programme, TaskCategory 
+  Folder, Notification, User, Programme, TaskCategory, Volunteer
 } from '@/types';
 
 // Sample data for testing
@@ -49,7 +48,17 @@ export const mockMembers: Member[] = [
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
     roles: ["admin"],
-    volunteerRoles: ["greeter"]
+    volunteerRoles: [{
+      id: "volunteer-1",
+      memberId: "member-2",
+      role: "greeter",
+      ministry: "Hospitality",
+      joinDate: new Date(2019, 5, 1),
+      status: "active",
+      hoursPerWeek: 2,
+      area: "Welcome Team",
+      startDate: new Date(2019, 5, 1)
+    }]
   }
 ];
 

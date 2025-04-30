@@ -42,10 +42,11 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
       description,
       amount: parsedAmount,
       type,
-      categoryId: category,
+      category, // Changed from categoryId to category to match the type definition
       date: new Date(date),
-      attachments: [], // Add missing required properties
-      isRecurring: false
+      attachments: [],
+      isRecurring: false,
+      paymentMethod: "cash" // Added required field from Transaction type
     };
     
     onAddTransaction(newTransaction);

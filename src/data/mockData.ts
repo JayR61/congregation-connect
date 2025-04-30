@@ -1,5 +1,4 @@
-
-import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, ChurchStructure, MemberCategory, ChurchPosition, ChurchStructureData, MemberCategoryData } from '@/types';
+import { Task, Transaction, Member, Document, Folder, User, Notification, TaskCategory, FinanceCategory, ChurchStructure, MemberCategory, ChurchPosition, ChurchStructureData, MemberCategoryData, Programme } from '@/types';
 
 // Add functions to simulate API calls
 export const getTasks = async (): Promise<Task[]> => {
@@ -433,3 +432,21 @@ export const churchPositions: ChurchPosition[] = [
   { id: 'position-8', name: 'Worship Leader', structureId: 'structure-1' },
   { id: 'position-9', name: 'Admin Assistant', structureId: 'structure-1' }
 ];
+
+// Add programmes data
+export const programmes: Programme[] = [];
+
+// Add this function to provide initial data for the application
+export const getInitialData = () => {
+  return {
+    members,
+    tasks,
+    transactions,
+    financeCategories,
+    documents,
+    folders,
+    notifications,
+    currentUser,
+    programmes
+  };
+};

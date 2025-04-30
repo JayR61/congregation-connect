@@ -34,20 +34,41 @@ export interface Transaction {
   description: string;
   amount: number;
   type: 'income' | 'expense';
-  category: string;
+  categoryId: string;
   date: Date;
   attachments: string[];
   isRecurring: boolean;
-  paymentMethod: string;
-  createdById?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdById: string;
+  createdAt: Date;
+  updatedAt: Date;
+  paymentMethod?: string;
 }
 
 export interface FinanceCategory {
   id: string;
   name: string;
+  type: 'income' | 'expense' | 'both';
+  color: string;
   description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MemberNote {
+  id: string;
+  content: string;
+  date: Date;
+  createdById: string;
+  attachments: string[];
+}
+
+export interface ResourceProvided {
+  id: string;
+  description: string;
+  date: Date;
+  value?: number;
+  createdById: string;
+  attachments: string[];
 }
 
 export interface Member {
@@ -57,36 +78,60 @@ export interface Member {
   email: string;
   phone: string;
   address: string;
+  status?: string;
+  birthDate: Date;
+  joinDate?: Date;
+  churchStructureId?: string;
+  memberCategoryId?: string;
+  churchPositionId?: string;
+  isActive?: boolean;
+  avatar?: string;
+  notes?: string;
+  occupation: string;
+  skills: string[];
+  interests?: string[];
+  familyId?: string;
+  familyIds?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  category?: string;
+  newMemberDate?: Date | string | null;
+  isFullMember?: boolean;
+  isLeadership?: boolean;
+  structures?: string[];
+  positions?: Array<{title: string, structure: string, startDate?: Date}>;
+  memberNotes?: MemberNote[];
+  resourcesProvided?: ResourceProvided[];
   city?: string;
   state?: string;
   zip?: string;
   membershipDate: Date;
-  birthDate: Date;
-  occupation: string;
-  skills: string[];
-  interests: string[];
-  familyId?: string;
-  familyIds?: string[]; // Keep for backward compatibility
-  notes?: string;
-  avatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  joinDate?: string; // Keep as string to match existing code
-  status?: string; // Added field
-  isActive?: boolean; // Added field
-  category?: string; // Added field
-  newMemberDate?: string | Date; // Added field
-  isFullMember?: boolean; // Added field
-  isLeadership?: boolean; // Added field
-  structures?: string[]; // Added field
-  positions?: Array<{title: string, structure: string}>; // Added field
-  attendance?: Array<{date: string, isPresent: boolean, notes?: string, eventId?: string, id?: string}>; // Added fields for compatibility
   // Additional fields needed by MemberDialog
   attachments?: any[];
   mentorshipPrograms?: any[];
   volunteerRoles?: any[];
   socialMediaAccounts?: any[];
   resourceBookings?: any[];
+  // Attendance data
+  attendance?: Array<{date: string, isPresent: boolean, notes?: string, eventId?: string, id?: string}>;
+  attendanceHistory?: any[];
+  givingHistory?: any[];
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
+  qualifications?: string[];
+  ministryInvolvement?: string[];
+  socialLinks?: {
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  familyInfo?: string;
+  roles?: string[];
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 // Add missing types for MemberDialog
@@ -150,13 +195,13 @@ export interface Document {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
-  name: string; // Added field
-  fileType: string; // Added field
-  fileSize: number; // Added field
-  thumbnailUrl?: string; // Added field
-  url?: string; // Added field
-  content?: string; // Added field
-  shared?: boolean; // Added field
+  name: string;
+  fileType: string;
+  fileSize: number;
+  thumbnailUrl?: string;
+  url?: string;
+  content?: string;
+  shared?: boolean;
 }
 
 export interface DocumentVersion {
@@ -164,12 +209,12 @@ export interface DocumentVersion {
   uploadDate: Date;
   fileUrl: string;
   uploadedById: string;
-  id: string; // Added field
-  version: number; // Added field for backward compatibility
-  createdAt: Date; // Added field
-  createdById: string; // Added field
-  url: string; // Added field
-  notes?: string; // Added field
+  id: string;
+  version: number;
+  createdAt: Date;
+  createdById: string;
+  url: string;
+  notes?: string;
 }
 
 export interface Folder {
@@ -186,8 +231,9 @@ export interface User {
   lastName: string;
   role: string;
   avatar?: string;
-  createdAt: string;
-  updatedAt: string;
+  lastActive: Date;
+  createdAt: Date;
+  updatedAt?: string;
 }
 
 export interface Notification {
@@ -205,7 +251,7 @@ export interface Programme {
   title: string;
   description: string;
   startDate: Date;
-  endDate: Date;
+  endDate: Date | null;
   location: string;
   category: string;
   tags: string[];
@@ -219,6 +265,12 @@ export interface Programme {
   notes: string;
   createdAt?: Date;
   updatedAt?: Date;
+  type: string;
+  name: string;
+  coordinator: string;
+  capacity: number;
+  recurring?: boolean;
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 }
 
 export interface ProgrammeAttendance {
@@ -237,7 +289,11 @@ export interface ProgrammeResource {
   description: string;
   url: string;
   type: 'document' | 'video' | 'audio' | 'link';
-  status: 'available' | 'in use' | 'outdated';
+  status: 'available' | 'in use' | 'outdated' | 'allocated';
+  quantity?: number;
+  unit?: string;
+  cost?: number;
+  notes?: string;
 }
 
 export interface ProgrammeFeedback {
@@ -256,7 +312,9 @@ export interface ProgrammeReminder {
   message: string;
   scheduledTime: Date;
   sentAt?: Date;
-  status: 'pending' | 'sent' | 'failed';
+  status: 'pending' | 'sent' | 'failed' | 'scheduled';
+  recipients?: string[];
+  scheduledDate?: Date;
 }
 
 export interface ProgrammeKPI {
@@ -269,6 +327,7 @@ export interface ProgrammeKPI {
   description: string;
   createdAt: Date;
   updatedAt: Date;
+  name?: string;
 }
 
 export interface ProgrammeTemplate {
@@ -280,23 +339,54 @@ export interface ProgrammeTemplate {
   content: string;
   createdById: string;
   createdAt: Date;
+  name?: string;
+  type?: string;
+  capacity?: number;
+  resources: Array<{
+    name: string;
+    type: string;
+    quantity: number;
+    unit: string;
+    cost: number;
+    notes: string;
+  }>;
 }
 
 export interface ProgrammeCategory {
   id: string;
   name: string;
   description: string;
+  color?: string;
 }
 
 export interface ProgrammeTag {
   id: string;
   name: string;
   description: string;
+  color?: string;
 }
 
 export interface BulkAttendanceRecord {
   programmeId: string;
   date: Date;
-  memberIds: string[];
+  memberIds: Array<{memberId: string, isPresent: boolean, notes?: string}>;
   notes?: string;
+}
+
+export interface ChurchStructureData {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface MemberCategoryData {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ChurchPosition {
+  id: string;
+  name: string;
+  structureId: string;
 }

@@ -118,16 +118,14 @@ const Programmes = () => {
   const handleAddAttendance = () => {
     if (!selectedProgrammeId) return;
 
-    // Using the correct recordAttendance signature
-    const data = {
+    recordAttendance({
       programmeId: selectedProgrammeId,
       memberId: attendanceForm.memberId,
       date: attendanceForm.date,
       isPresent: attendanceForm.isPresent,
       notes: attendanceForm.notes || undefined
-    };
+    });
     
-    recordAttendance(data);
     setIsAttendanceDialogOpen(false);
     resetAttendanceForm();
   };

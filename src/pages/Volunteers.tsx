@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -64,7 +63,7 @@ const Volunteers = () => {
   const { members, updateMember } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [areaFilter, setAreaFilter] = useState('all'); // Changed from empty string to 'all'
+  const [areaFilter, setAreaFilter] = useState('all');
   const [volunteerData, setVolunteerData] = useState<Partial<Volunteer>>({
     area: '',
     role: '',
@@ -75,10 +74,10 @@ const Volunteers = () => {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   // Get all volunteer roles across all members
-  const allVolunteerRoles = members.reduce<{volunteer: Volunteer, member: Member}[]>((acc, member) => {
-    if (member.volunteerRoles && member.volunteerRoles.length > 0) {
+  const allVolunteerRoles = members.reduce<{volunteer: Volunteer; member: Member}[]>((acc, member) => {
+    if (member.volunteerRoles && Array.isArray(member.volunteerRoles) && member.volunteerRoles.length > 0) {
       const memberRoles = member.volunteerRoles.map(role => ({
-        volunteer: role,
+        volunteer: role as Volunteer,
         member
       }));
       return [...acc, ...memberRoles];
@@ -93,7 +92,7 @@ const Volunteers = () => {
       item.member.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.member.lastName.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesArea = areaFilter === 'all' || item.volunteer.area === areaFilter; // Changed to check for 'all'
+    const matchesArea = areaFilter === 'all' || item.volunteer.area === areaFilter;
     
     return matchesSearch && matchesArea;
   });
@@ -138,7 +137,11 @@ const Volunteers = () => {
       startDate: new Date(volunteerData.startDate),
       endDate: volunteerData.endDate,
       availability: volunteerData.availability || [],
-      notes: volunteerData.notes
+      notes: volunteerData.notes,
+      ministry: volunteerData.area,
+      joinDate: new Date(volunteerData.startDate),
+      status: 'active',
+      hoursPerWeek: 0
     };
 
     // Update the member with the new volunteer role
@@ -296,7 +299,7 @@ const Volunteers = () => {
                   </Label>
                   <Textarea
                     id="notes"
-                    value={volunteerData.notes}
+                    value={volunteerData.notes || ''}
                     onChange={(e) => setVolunteerData(prev => ({ ...prev, notes: e.target.value }))}
                     className="col-span-3"
                     placeholder="Special skills, preferences, etc."
@@ -332,7 +335,7 @@ const Volunteers = () => {
               <SelectValue placeholder="Filter by area" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Areas</SelectItem> {/* Changed from empty value to "all" */}
+              <SelectItem value="all">All Areas</SelectItem>
               {uniqueAreas.map(area => (
                 <SelectItem key={area} value={area}>{area}</SelectItem>
               ))}
@@ -557,4 +560,3 @@ const Volunteers = () => {
 };
 
 export default Volunteers;
-

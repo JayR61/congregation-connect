@@ -402,6 +402,10 @@ export interface Volunteer {
   joinDate: Date;
   status: 'active' | 'inactive' | 'on leave';
   hoursPerWeek: number;
+  area: string;
+  startDate: Date;
+  endDate?: Date;
+  availability?: string[];
   notes?: string;
 }
 

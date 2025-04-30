@@ -1,20 +1,25 @@
 
-// This is a minimal stub to fix export issues
+export interface TemplateManagerProps {
+  templates: any[];
+  onCreateTemplate: (template: any) => any;
+  onCreateFromTemplate: (templateId: string) => any;
+}
 
+// This is a minimal stub to fix export issues
 export const createTemplate = () => {
   return {
     name: "Example Template",
-    title: "Example Title", // Add required fields
+    title: "Example Title",
     description: "Example Description",
     type: "Example Type", 
-    content: "", // Add required field
-    category: "", // Add required field
-    tags: [], // Add required field
-    duration: 60, // Include duration property
+    content: "",
+    category: "",
+    tags: [],
+    duration: 60,
     capacity: 20,
     resources: [{
       name: "Example Resource",
-      type: "document", // Use valid type
+      type: "document",
       quantity: 1,
       unit: "piece",
       cost: 0,
@@ -25,7 +30,7 @@ export const createTemplate = () => {
   };
 };
 
-const TemplateManager = () => {
+const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: TemplateManagerProps) => {
   return (
     <div>Template Manager Component</div>
   );

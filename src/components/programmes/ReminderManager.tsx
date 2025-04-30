@@ -1,6 +1,16 @@
 
-// This is a simplified stub implementation focused on fixing the specific error
+import { Member, Programme } from '@/types';
 
+export interface ReminderManagerProps {
+  programmes: Programme[];
+  reminders: any[];
+  members: Member[];
+  onAddReminder: (reminder: any) => any;
+  onSendReminder: (id: any) => boolean;
+  onCancelReminder: (id: any) => boolean;
+}
+
+// This is a simplified stub implementation focused on fixing the specific error
 export const createReminder = (data: { 
   recipients: string[]; 
   programmeId: string; 
@@ -33,7 +43,7 @@ export const isCancellable = (status: string) => {
   return status !== 'sent' && status !== 'cancelled';
 };
 
-const ReminderManager = () => {
+const ReminderManager = ({ programmes, reminders, members, onAddReminder, onSendReminder, onCancelReminder }: ReminderManagerProps) => {
   return (
     <div>Reminder Manager Component</div>
   );

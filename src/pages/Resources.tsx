@@ -89,8 +89,8 @@ const Resources = () => {
       resourceId: 'res-1',
       memberId: members[0]?.id || '',
       purpose: 'Youth Group Meeting',
-      startDateTime: new Date('2023-07-15T18:00:00'),
-      endDateTime: new Date('2023-07-15T20:00:00'),
+      startDate: new Date('2023-07-15T18:00:00'),
+      endDate: new Date('2023-07-15T20:00:00'),
       status: 'approved'
     },
     {
@@ -98,8 +98,8 @@ const Resources = () => {
       resourceId: 'res-2',
       memberId: members[0]?.id || '',
       purpose: 'Board Presentation',
-      startDateTime: new Date('2023-07-20T14:00:00'),
-      endDateTime: new Date('2023-07-20T16:00:00'),
+      startDate: new Date('2023-07-20T14:00:00'),
+      endDate: new Date('2023-07-20T16:00:00'),
       status: 'pending'
     }
   ]);
@@ -116,8 +116,8 @@ const Resources = () => {
     resourceId: '',
     memberId: '',
     purpose: '',
-    startDateTime: new Date(),
-    endDateTime: new Date(new Date().setHours(new Date().getHours() + 2)),
+    startDate: new Date(),
+    endDate: new Date(new Date().setHours(new Date().getHours() + 2)),
     status: 'pending'
   });
 
@@ -152,7 +152,7 @@ const Resources = () => {
     const newResource: ChurchResource = {
       id: `res-${Date.now()}`,
       name: resourceForm.name,
-      type: resourceForm.type as 'room' | 'equipment' | 'vehicle' | 'other',
+      type: resourceForm.type as string,
       description: resourceForm.description,
       location: resourceForm.location,
       status: resourceForm.status as 'available' | 'in-use' | 'maintenance' | 'reserved',
@@ -176,7 +176,7 @@ const Resources = () => {
 
   const handleAddBooking = () => {
     if (!bookingForm.resourceId || !bookingForm.memberId || !bookingForm.purpose || 
-        !bookingForm.startDateTime || !bookingForm.endDateTime) {
+        !bookingForm.startDate || !bookingForm.endDate) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -186,8 +186,8 @@ const Resources = () => {
       resourceId: bookingForm.resourceId,
       memberId: bookingForm.memberId,
       purpose: bookingForm.purpose,
-      startDateTime: new Date(bookingForm.startDateTime),
-      endDateTime: new Date(bookingForm.endDateTime),
+      startDate: new Date(bookingForm.startDate),
+      endDate: new Date(bookingForm.endDate),
       status: 'pending',
       notes: bookingForm.notes
     };
@@ -206,8 +206,8 @@ const Resources = () => {
       resourceId: '',
       memberId: '',
       purpose: '',
-      startDateTime: new Date(),
-      endDateTime: new Date(new Date().setHours(new Date().getHours() + 2)),
+      startDate: new Date(),
+      endDate: new Date(new Date().setHours(new Date().getHours() + 2)),
       status: 'pending'
     });
   };
@@ -226,7 +226,7 @@ const Resources = () => {
     if (booking) {
       setBookings(prev => prev.map(b => 
         b.id === bookingId 
-          ? { ...b, status: 'rejected' } 
+          ? { ...b, status: 'declined' as 'declined' } // Cast as 'declined' to match allowed values
           : b
       ));
       
@@ -265,6 +265,7 @@ const Resources = () => {
       case 'pending':
         return <Badge variant="warning">Pending</Badge>;
       case 'rejected':
+      case 'declined':
         return <Badge variant="destructive">Rejected</Badge>;
       case 'completed':
         return <Badge variant="outline">Completed</Badge>;
@@ -478,26 +479,26 @@ const Resources = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDateTime" className="text-right">
+                  <Label htmlFor="startDate" className="text-right">
                     Start Date/Time
                   </Label>
                   <Input
-                    id="startDateTime"
+                    id="startDate"
                     type="datetime-local"
-                    value={bookingForm.startDateTime ? new Date(bookingForm.startDateTime).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => setBookingForm(prev => ({ ...prev, startDateTime: new Date(e.target.value) }))}
+                    value={bookingForm.startDate ? new Date(bookingForm.startDate).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setBookingForm(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
                     className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endDateTime" className="text-right">
+                  <Label htmlFor="endDate" className="text-right">
                     End Date/Time
                   </Label>
                   <Input
-                    id="endDateTime"
+                    id="endDate"
                     type="datetime-local"
-                    value={bookingForm.endDateTime ? new Date(bookingForm.endDateTime).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => setBookingForm(prev => ({ ...prev, endDateTime: new Date(e.target.value) }))}
+                    value={bookingForm.endDate ? new Date(bookingForm.endDate).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setBookingForm(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
                     className="col-span-3"
                   />
                 </div>
@@ -570,7 +571,7 @@ const Resources = () => {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg">{resource.name}</CardTitle>
-                      {getStatusBadge(resource.status)}
+                      {getStatusBadge(resource.status || 'available')}
                     </div>
                     <CardDescription>
                       <Badge variant="outline" className="mr-1">
@@ -689,14 +690,14 @@ const Resources = () => {
                           <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                           <span>From: </span>
                           <span className="ml-1 font-medium">
-                            {formatDateTime(booking.startDateTime)}
+                            {formatDateTime(booking.startDate)}
                           </span>
                         </div>
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                           <span>To: </span>
                           <span className="ml-1 font-medium">
-                            {formatDateTime(booking.endDateTime)}
+                            {formatDateTime(booking.endDate)}
                           </span>
                         </div>
                         
@@ -737,7 +738,7 @@ const Resources = () => {
                           Mark Complete
                         </Button>
                       )}
-                      {(booking.status === 'rejected' || booking.status === 'completed') && (
+                      {(booking.status === 'declined' || booking.status === 'rejected' || booking.status === 'completed') && (
                         <Button variant="ghost" size="sm" className="w-full">
                           <Info className="h-4 w-4 mr-1" />
                           View Details

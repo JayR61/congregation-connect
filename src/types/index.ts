@@ -1,4 +1,3 @@
-
 import { Member as ImportedMember } from './member';
 export type { ChurchStructure, MemberCategory } from './member';
 
@@ -300,6 +299,7 @@ export interface ProgrammeResource {
   url: string;
 }
 
+// Add missing schedule and customTime properties to ProgrammeReminder
 export interface ProgrammeReminder {
   id: string;
   recipients: string[];
@@ -346,7 +346,7 @@ export interface MentorshipProgram {
   notes: string;
 }
 
-// Types needed for other pages
+// Add ChurchResource interface
 export interface ChurchResource {
   id: string;
   name: string;
@@ -354,12 +354,19 @@ export interface ChurchResource {
   type: string;
   url?: string;
   fileSize?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  category: string;
-  tags: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  category?: string;
+  tags?: string[];
+  location?: string;
+  status?: 'available' | 'in-use' | 'maintenance' | 'reserved';
+  acquisitionDate?: Date;
+  currentAssigneeId?: string;
+  maintenanceSchedule?: Date;
+  notes?: string;
 }
 
+// Update ResourceBooking to match used properties
 export interface ResourceBooking {
   id: string;
   resourceId: string;
@@ -367,11 +374,13 @@ export interface ResourceBooking {
   startDate: Date;
   endDate: Date;
   purpose: string;
-  status: 'pending' | 'approved' | 'declined' | 'completed';
-  createdAt: Date;
-  updatedAt: Date;
+  status: 'pending' | 'approved' | 'declined' | 'completed' | 'rejected';
+  createdAt?: Date;
+  updatedAt?: Date;
+  notes?: string;
 }
 
+// Add SocialMediaAccount with username field
 export interface SocialMediaAccount {
   id: string;
   platform: string;
@@ -381,8 +390,10 @@ export interface SocialMediaAccount {
   lastUpdated: Date;
   responsible: string;
   status: 'active' | 'inactive';
+  username?: string;
 }
 
+// Add Volunteer interface
 export interface Volunteer {
   id: string;
   memberId: string;
@@ -394,6 +405,7 @@ export interface Volunteer {
   notes?: string;
 }
 
+// Add ProgrammeStatistics interface
 export interface ProgrammeStatistics {
   totalProgrammes: number;
   activeProgrammes: number;

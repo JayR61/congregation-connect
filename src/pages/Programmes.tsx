@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { format } from "date-fns";
 import { CalendarIcon, ChevronDown, Download, FileText, LineChart, BarChart3, Calendar, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from '@/lib/toast';
-import { Programme } from "@/types";
+import { Programme, Member } from "@/types";
 import { ProgrammeCard } from '@/components/programmes/ProgrammeCard';
 import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics';
 import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
@@ -119,14 +118,16 @@ const Programmes = () => {
   const handleAddAttendance = () => {
     if (!selectedProgrammeId) return;
 
-    recordAttendance(
-      selectedProgrammeId,
-      attendanceForm.memberId,
-      attendanceForm.date,
-      attendanceForm.isPresent,
-      attendanceForm.notes || undefined
-    );
+    // Using the correct recordAttendance signature
+    const data = {
+      programmeId: selectedProgrammeId,
+      memberId: attendanceForm.memberId,
+      date: attendanceForm.date,
+      isPresent: attendanceForm.isPresent,
+      notes: attendanceForm.notes || undefined
+    };
     
+    recordAttendance(data);
     setIsAttendanceDialogOpen(false);
     resetAttendanceForm();
   };
@@ -166,9 +167,26 @@ const Programmes = () => {
     setIsAttendanceDialogOpen(true);
   };
 
-  const handleCalendarDateSelect = (date: Date, programmesOnDate: Programme[]) => {
+  const handleCalendarDateSelect = (date: Date) => {
     setSelectedDate(date);
-    setProgrammesOnSelectedDate(programmesOnDate);
+    // Filter programmes on the selected date
+    const programmesList = programmes.filter(programme => {
+      const startDate = new Date(programme.startDate);
+      const endDate = programme.endDate ? new Date(programme.endDate) : null;
+      
+      // Check if the selected date falls within the programme dates
+      return (
+        date.getFullYear() === startDate.getFullYear() &&
+        date.getMonth() === startDate.getMonth() &&
+        date.getDate() === startDate.getDate()
+      ) || (
+        endDate &&
+        date >= startDate &&
+        date <= endDate
+      );
+    });
+    
+    setProgrammesOnSelectedDate(programmesList);
   };
 
   const handleEditProgramme = (programme: Programme) => {

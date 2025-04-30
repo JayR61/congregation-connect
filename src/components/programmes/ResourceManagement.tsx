@@ -1,12 +1,20 @@
 
-// This is a simplified stub implementation focused on fixing type errors
+import { Programme } from '@/types';
 
+export interface ResourceManagementProps {
+  programmes: Programme[];
+  resources: any[];
+  onAllocateResource: (resource: any) => any;
+  onUpdateStatus: (id: string, status: string) => boolean;
+}
+
+// This is a simplified stub implementation focused on fixing type errors
 export const createResource = (data: {
   name: string; 
   programmeId: string;
-  description: string; // Adding missing required fields
-  url: string;         // Adding missing required fields
-  type: "document" | "video" | "audio" | "link" | "room"; // Including "room" as valid type
+  description: string;
+  url: string;
+  type: "document" | "video" | "audio" | "link" | "room";
   quantity: number;
   unit: string;
   cost: number | null;
@@ -26,7 +34,7 @@ export const isDenied = (status: string) => {
 };
 
 // Export as default to fix import issues
-const ResourceManagement = () => {
+const ResourceManagement = ({ programmes, resources, onAllocateResource, onUpdateStatus }: ResourceManagementProps) => {
   return (
     <div>Resource Management Component</div>
   );

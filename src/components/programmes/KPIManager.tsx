@@ -1,7 +1,14 @@
 
-// Add proper export for KPIManager
+import { Programme } from '@/types';
 
-const KPIManager = () => {
+export interface KPIManagerProps {
+  programmes: Programme[];
+  kpis: any[];
+  onAddKPI: (kpi: any) => any;
+  onUpdateKPI: (id: string, progress: number) => boolean;
+}
+
+const KPIManager = ({ programmes, kpis, onAddKPI, onUpdateKPI }: KPIManagerProps) => {
   return (
     <div>KPI Manager Component</div>
   );

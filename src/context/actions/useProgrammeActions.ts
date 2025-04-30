@@ -1,6 +1,14 @@
 
 import { Programme, User } from '@/types';
 
+interface AttendanceData {
+  programmeId: string;
+  memberId: string;
+  date: Date;
+  isPresent: boolean;
+  notes?: string;
+}
+
 interface UseProgrammeActionsProps {
   programmes: Programme[];
   setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
@@ -60,10 +68,18 @@ export const useProgrammeActions = ({
     
     return found;
   };
+
+  const recordAttendance = (data: AttendanceData) => {
+    // Implementation for the recordAttendance function
+    // This would typically update attendance records in a real app
+    console.log("Recording attendance:", data);
+    return true;
+  };
   
   return {
     addProgramme,
     updateProgramme,
-    deleteProgramme
+    deleteProgramme,
+    recordAttendance
   };
 };

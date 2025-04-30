@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Bell, User, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,11 +14,21 @@ import { useAppContext } from "@/context/AppContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Topbar = () => {
-  const { currentUser, notifications, markNotificationAsRead } = useAppContext();
+  const { currentUser, notifications } = useAppContext();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const unreadNotifications = notifications.filter(n => !n.read);
 
+  // Handle the case when currentUser is null
+  const defaultUser = {
+    firstName: "Guest",
+    lastName: "User",
+    email: "guest@example.com",
+    avatar: undefined
+  };
+  
+  const user = currentUser || defaultUser;
+  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -27,7 +37,12 @@ const Topbar = () => {
       .toUpperCase();
   };
 
-  const userInitials = getInitials(`${currentUser.firstName} ${currentUser.lastName}`);
+  const userInitials = getInitials(`${user.firstName} ${user.lastName}`);
+
+  const handleNotificationClick = (id: string) => {
+    // This is a placeholder - we'll implement the real functionality later
+    console.log("Notification clicked:", id);
+  };
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 py-2">
@@ -70,7 +85,7 @@ const Topbar = () => {
                 <DropdownMenuItem
                   key={notification.id}
                   className={`cursor-pointer ${!notification.read ? 'bg-accent/10 font-medium' : ''}`}
-                  onClick={() => markNotificationAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification.id)}
                 >
                   <div className="flex flex-col space-y-1 w-full">
                     <div className="flex justify-between">
@@ -103,7 +118,7 @@ const Topbar = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar>
-                <AvatarImage src={currentUser.avatar || undefined} alt={`${currentUser.firstName} ${currentUser.lastName}`} />
+                <AvatarImage src={user.avatar || undefined} alt={`${user.firstName} ${user.lastName}`} />
                 <AvatarFallback>{userInitials}</AvatarFallback>
               </Avatar>
             </Button>
@@ -111,8 +126,8 @@ const Topbar = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{`${currentUser.firstName} ${currentUser.lastName}`}</span>
-                <span className="text-xs text-muted-foreground">{currentUser.email}</span>
+                <span>{`${user.firstName} ${user.lastName}`}</span>
+                <span className="text-xs text-muted-foreground">{user.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

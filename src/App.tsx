@@ -35,6 +35,22 @@ const queryClient = new QueryClient({
   },
 });
 
+// Initialize with a default user
+const defaultUser = {
+  id: "default-user-1",
+  firstName: "Church",
+  lastName: "Admin",
+  email: "admin@church.org",
+  role: "admin",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+// Save the default user to localStorage if no user exists
+if (!localStorage.getItem('currentUser')) {
+  localStorage.setItem('currentUser', JSON.stringify(defaultUser));
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

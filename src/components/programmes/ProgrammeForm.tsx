@@ -43,11 +43,11 @@ const ProgrammeForm = ({ onSave, onCancel, initialData, isEditing }: ProgrammeFo
   useEffect(() => {
     // Convert date strings to Date objects if needed
     if (typeof formData.startDate === 'string') {
-      setFormData(prev => ({ ...prev, startDate: new Date(prev.startDate as string) }));
+      setFormData(prev => ({ ...prev, startDate: new Date(prev.startDate as unknown as string) }));
     }
     
     if (formData.endDate && typeof formData.endDate === 'string') {
-      setFormData(prev => ({ ...prev, endDate: prev.endDate ? new Date(prev.endDate as string) : null }));
+      setFormData(prev => ({ ...prev, endDate: prev.endDate ? new Date(prev.endDate as unknown as string) : null }));
     }
   }, []);
 

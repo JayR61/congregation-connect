@@ -141,8 +141,10 @@ const Volunteers = () => {
 
     // Update the member with the new volunteer role
     const existingRoles = selectedMember.volunteerRoles || [];
-    const updatedRoles = Array.isArray(existingRoles) 
-      ? [...existingRoles, newVolunteer]
+    
+    // Ensure volunteerRoles is properly handled as Volunteer[] rather than string[]
+    const updatedRoles: Volunteer[] = Array.isArray(existingRoles) 
+      ? [...existingRoles.map(role => typeof role === 'string' ? JSON.parse(role) as Volunteer : role), newVolunteer]
       : [newVolunteer];
       
     updateMember(selectedMember.id, {

@@ -1,4 +1,3 @@
-
 import { User } from './index';
 
 export interface MemberNote {
@@ -36,8 +35,8 @@ export interface Volunteer {
   hoursPerWeek: number;
   availability?: string[];
   notes?: string;
-  area?: string;
-  startDate?: Date;
+  area: string;
+  startDate: Date;
   endDate?: Date;
 }
 

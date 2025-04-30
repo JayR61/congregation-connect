@@ -76,10 +76,27 @@ export const useProgrammeActions = ({
     return true;
   };
   
+  // Overload for compatibility with existing code
+  const recordAttendanceCompat = (
+    programmeId: string, 
+    memberId: string, 
+    date: Date, 
+    isPresent: boolean, 
+    notes?: string
+  ) => {
+    return recordAttendance({
+      programmeId,
+      memberId,
+      date,
+      isPresent,
+      notes
+    });
+  };
+  
   return {
     addProgramme,
     updateProgramme,
     deleteProgramme,
-    recordAttendance
+    recordAttendance: recordAttendanceCompat
   };
 };

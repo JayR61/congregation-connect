@@ -1,3 +1,4 @@
+
 import { Member } from '@/types';
 import { toast } from '@/lib/toast';
 
@@ -17,21 +18,12 @@ export const useMemberActions = ({
       id: `member-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      // Set newMemberDate if the category is 'new'
-      newMemberDate: member.category === 'new' ? new Date() : null,
-      // Ensure attachments exists
-      attachments: member.attachments || [],
-      // Determine if this is a leadership member based on structures or positions
       isLeadership: determineLeadershipStatus(member),
-      // Initialize mentorship, volunteer, and social media arrays if not present
-      mentorshipPrograms: member.mentorshipPrograms || [],
-      volunteerRoles: member.volunteerRoles || [],
-      socialMediaAccounts: member.socialMediaAccounts || [],
-      resourceBookings: member.resourceBookings || []
     };
     
     setMembers(prev => [...prev, newMember]);
     toast.success("Member added successfully");
+    return newMember;
   };
 
   // Helper function to determine leadership status based on structures or positions
@@ -50,18 +42,11 @@ export const useMemberActions = ({
   };
 
   const updateMember = (id: string, member: Partial<Member>) => {
+    let updated = false;
     setMembers(prev => 
       prev.map(m => {
         if (m.id === id) {
-          // Handle category change from regular to new
-          if (member.category === 'new' && m.category !== 'new') {
-            member.newMemberDate = new Date();
-          }
-          
-          // Handle category change from new to something else
-          if (m.category === 'new' && member.category && member.category !== 'new') {
-            member.newMemberDate = null;
-          }
+          updated = true;
           
           // Determine leadership status when relevant fields change
           if (member.structures || member.positions) {
@@ -78,12 +63,24 @@ export const useMemberActions = ({
         return m;
       })
     );
-    toast.success("Member updated successfully");
+    
+    if (updated) {
+      toast.success("Member updated successfully");
+    }
+    
+    return updated;
   };
 
   const deleteMember = (id: string) => {
+    let deleted = false;
+    
     // Also remove this member from any family relationships
     setMembers(prev => {
+      // First, check if the member exists
+      const memberToDelete = prev.find(m => m.id === id);
+      if (!memberToDelete) return prev;
+      
+      deleted = true;
       const updatedMembers = prev.filter(m => m.id !== id);
       
       // Update family relationships for remaining members
@@ -106,7 +103,11 @@ export const useMemberActions = ({
       });
     });
     
-    toast.success("Member removed successfully");
+    if (deleted) {
+      toast.success("Member removed successfully");
+    }
+    
+    return deleted;
   };
 
   // Function to check for members that should be automatically upgraded
@@ -127,7 +128,6 @@ export const useMemberActions = ({
             return {
               ...member,
               category: 'regular' as const,
-              newMemberDate: null,
               updatedAt: new Date()
             };
           }

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ interface UploadDocumentDialogProps {
 const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocumentDialogProps) => {
   const { addDocument, folders } = useAppContext();
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [content, setContent] = useState('');
   const [folderId, setFolderId] = useState<string | null>(currentFolder);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,7 +37,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
 
   const resetForm = () => {
     setName('');
-    setDescription('');
+    setContent('');
     setFile(null);
     setFileContent(null);
   };
@@ -175,19 +174,18 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       
       // Add the document - use proper type for Document
       addDocument({
-        title: name,
         name,
-        description,
-        folderId,
         fileType,
         fileSize: file.size,
+        size: file.size,
         url: fileUrl,
+        folderId,
+        uploadedById: 'current-user',
+        tags: [],
+        title: name,
         thumbnailUrl,
         shared: false,
         content: docContent,
-        uploadedById: 'current-user',
-        uploadDate: new Date(),
-        tags: []
       });
       
       // Close the dialog - form will be reset in the useEffect
@@ -199,6 +197,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       setIsUploading(false);
     }
   };
+  
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -266,11 +265,11 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="content">Description</Label>
             <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               rows={3}
             />
           </div>

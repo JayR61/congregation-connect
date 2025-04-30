@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Define proper TaskStatus type to match what's in types/index.ts
 type LocalTaskStatus = 'pending' | 'in-progress' | 'completed';
+type LocalTaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 
 interface TaskDialogProps {
   open: boolean;
@@ -34,11 +35,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<LocalTaskStatus>('pending');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [priority, setPriority] = useState<TaskPriority>('medium');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<string[]>(['user-1']); // Default to current user
-  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
+  const [recurrence, setRecurrence] = useState<LocalTaskRecurrence>('none');
   
   // Custom category state
   const [showCustomCategory, setShowCustomCategory] = useState(false);
@@ -67,7 +68,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
           setStatus('completed');
         }
         
-        setPriority(task.priority);
+        setPriority(task.priority as TaskPriority);
         setDueDate(task.dueDate);
         // Handle categories - assuming the task uses the categories array property
         if (task.categories) {
@@ -80,7 +81,9 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
         }
         // Handle recurrence if it exists
         if (task.recurrence) {
-          setRecurrence(task.recurrence);
+          // Make sure recurrence value fits our local type
+          const localRecurrence = task.recurrence === 'yearly' ? 'monthly' : task.recurrence as LocalTaskRecurrence;
+          setRecurrence(localRecurrence);
         }
         
         // Set creator info
@@ -131,6 +134,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       const newCategory: TaskCategory = {
         id: `custom-category-${Date.now()}`,
         name: customCategoryName.trim(),
+        description: `Custom category: ${customCategoryName.trim()}`,
         color: customCategoryColor
       };
       
@@ -166,6 +170,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       reporterId: "user-1", // Required field for Task type
       categories: allCategories,
       recurrence,
+      createdById: "user-1", // Required field
+      comments: [], // Required field
+      lastModifiedById: "user-1", // Required field
+      lastModifiedAction: "created", // Required field
     };
     
     if (taskId) {
@@ -409,7 +417,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
               
               <div className="grid gap-2">
                 <Label htmlFor="recurrence">Recurrence</Label>
-                <Select value={recurrence} onValueChange={(value: TaskRecurrence) => setRecurrence(value)}>
+                <Select
+                  value={recurrence}
+                  onValueChange={(value: LocalTaskRecurrence) => setRecurrence(value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Recurrence" />
                   </SelectTrigger>

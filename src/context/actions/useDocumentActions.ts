@@ -20,10 +20,14 @@ export const useDocumentActions = ({
       updatedAt: new Date(),
       versions: [{
         id: `version-1-${Date.now()}`,
+        documentId: `document-${Date.now()}`,
+        version: 1,
         url: documentData.url,
+        uploadedById: currentUser.id,
         createdAt: new Date(),
-        createdById: currentUser.id,
-        notes: 'Initial version'
+        notes: 'Initial version',
+        size: documentData.fileSize || 0,
+        createdById: currentUser.id
       }],
       createdById: currentUser.id,
       shared: false
@@ -66,7 +70,7 @@ export const useDocumentActions = ({
     return found;
   };
   
-  const addDocumentVersion = (documentId: string, version: { url: string, notes?: string }) => {
+  const addDocumentVersion = (documentId: string, fileUrl: string, notes: string) => {
     let found = false;
     
     setDocuments(prev => 
@@ -75,15 +79,19 @@ export const useDocumentActions = ({
           found = true;
           const newVersion = {
             id: `version-${document.versions.length + 1}-${Date.now()}`,
-            url: version.url,
+            documentId,
+            version: document.versions.length + 1,
+            url: fileUrl,
+            uploadedById: currentUser.id,
             createdAt: new Date(),
-            createdById: currentUser.id,
-            notes: version.notes || ''
+            notes: notes || '',
+            size: document.fileSize || 0,
+            createdById: currentUser.id
           };
           
           return { 
             ...document,
-            url: version.url, // Update the document's main URL to the new version
+            url: fileUrl, // Update the document's main URL to the new version
             versions: [...document.versions, newVersion],
             updatedAt: new Date()
           };

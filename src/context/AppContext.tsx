@@ -1,4 +1,3 @@
-
 import React, { useState, createContext, useContext } from 'react';
 import {
   Member,
@@ -13,9 +12,9 @@ import {
   TaskCategory,
   TaskComment
 } from '@/types';
-import { useTransactionActions } from '../context/actions/useTransactionActions';
-import { useNotificationActions } from '../context/actions/useNotificationActions';
-import { useDocumentActions } from '../context/actions/useDocumentActions';
+import { useTransactionActions } from './actions/useTransactionActions';
+import { useNotificationActions } from './actions/useNotificationActions';
+import { useDocumentActions } from './actions/useDocumentActions';
 import { useFolderActions } from './actions/useFolderActions';
 import { useFinanceActions } from './actions/useFinanceActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
@@ -62,7 +61,7 @@ interface AppContextProps {
   deleteProgramme: (id: string) => boolean;
   shareDocument: (documentId: string, memberIds: string[]) => boolean;
   moveDocument: (documentId: string, folderId: string | null) => boolean;
-  addDocumentVersion: (documentId: string, version: any) => boolean;
+  addDocumentVersion: (documentId: string, fileUrl: string, notes: string) => boolean;
   attendance: any[];
   recordAttendance: any;
   exportProgrammesToCSV: any;
@@ -123,12 +122,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteProgramme
   } = useProgrammeActions({ programmes, setProgrammes, currentUser });
 
+  // Fix useTaskActions parameters to match what's expected in the interface
+  const dummyAddNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
+    return notificationActions.addNotification(notification);
+  };
+
   const {
     addTask: baseAddTask,
     updateTask: baseUpdateTask,
     deleteTask: baseDeleteTask,
     addTaskComment: baseAddTaskComment
-  } = useTaskActions({ tasks, setTasks });
+  } = useTaskActions({ 
+    tasks, 
+    setTasks, 
+    currentUser,
+    members,
+    addNotification: dummyAddNotification
+  });
 
   const {
     addMember: baseAddMember,
@@ -155,7 +165,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const removeTagFromProgramme = () => {};
   const shareDocument = (documentId: string, memberIds: string[]) => true;
   const clearAllNotifications = () => true;
-  const addDocumentVersion = (documentId: string, version: any) => true;
+  const addDocumentVersion = (documentId: string, fileUrl: string, notes: string) => {
+    return documentActions.addDocumentVersion(documentId, fileUrl, notes);
+  };
+  const moveDocument = (documentId: string, folderId: string | null) => {
+    return folderActions.moveDocument(documentId, folderId);
+  };
 
   const fixedAddTask = (task: Omit<Task, "id" | "createdAt" | "updatedAt">): Task => {
     const newTask: Task = {
@@ -239,12 +254,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     notifications,
     currentUser,
     addTask: fixedAddTask,
-    updateTask: fixedUpdateTask,
-    deleteTask: fixedDeleteTask,
-    addTaskComment: fixedAddTaskComment,
-    addMember: fixedAddMember,
-    updateMember: fixedUpdateMember,
-    deleteMember: fixedDeleteMember,
+    updateTask: baseUpdateTask,
+    deleteTask: baseDeleteTask,
+    addTaskComment: baseAddTaskComment,
+    addMember: baseAddMember,
+    updateMember: baseUpdateMember,
+    deleteMember: baseDeleteMember,
     addTransaction: transactionActions.addTransaction,
     updateTransaction: transactionActions.updateTransaction,
     deleteTransaction: transactionActions.deleteTransaction,
@@ -259,7 +274,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addFolder: folderActions.addFolder,
     updateFolder: folderActions.updateFolder,
     deleteFolder: folderActions.deleteFolder,
-    moveDocument: folderActions.moveDocument,
+    moveDocument,
     addDocumentVersion,
     addFinanceCategory: financeActions.addFinanceCategory,
     updateFinanceCategory: financeActions.updateFinanceCategory,

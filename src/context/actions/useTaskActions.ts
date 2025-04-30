@@ -18,7 +18,7 @@ export const useTaskActions = ({
   addNotification
 }: UseTaskActionsProps) => {
   
-  const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdById' | 'comments'>) => {
+  const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newTask: Task = {
       ...task,
       id: `task-${Date.now()}`,
@@ -41,111 +41,132 @@ export const useTaskActions = ({
     });
     
     toast.success("Task created successfully");
+    return newTask;
   };
 
-  const updateTask = (id: string, task: Partial<Task>, editorId?: string) => {
-    const editor = editorId || currentUser.id;
+  const updateTask = (id: string, task: Partial<Task>) => {
+    let updated = false;
     const oldTask = tasks.find(t => t.id === id);
     
-    if (!oldTask) return;
+    if (!oldTask) return false;
     
     setTasks(prevTasks => 
-      prevTasks.map(t => 
-        t.id === id 
-          ? { 
+      prevTasks.map(t => {
+        if (t.id === id) {
+          updated = true;
+          return { 
               ...t, 
               ...task, 
               updatedAt: new Date(),
-              lastModifiedById: editor,
+              lastModifiedById: currentUser.id,
               lastModifiedAction: task.status === 'completed' ? 'completed' : 'updated'
-            } 
-          : t
-      )
+            };
+        }
+        return t;
+      })
     );
     
-    const editorMember = members.find(m => m.id === editor);
-    const editorName = editorMember 
-      ? `${editorMember.firstName} ${editorMember.lastName}`
-      : 'Someone';
-    
-    let message = `${editorName} updated the task: "${oldTask.title}"`;
-    if (task.status === 'completed' && oldTask.status !== 'completed') {
-      message = `${editorName} marked the task "${oldTask.title}" as completed`;
-    } else if (task.status && task.status !== oldTask.status) {
-      message = `${editorName} changed the status of "${oldTask.title}" to ${task.status}`;
+    if (updated) {
+      const editorName = `${currentUser.firstName} ${currentUser.lastName}`;
+      
+      let message = `${editorName} updated the task: "${oldTask.title}"`;
+      if (task.status === 'completed' && oldTask.status !== 'completed') {
+        message = `${editorName} marked the task "${oldTask.title}" as completed`;
+      } else if (task.status && task.status !== oldTask.status) {
+        message = `${editorName} changed the status of "${oldTask.title}" to ${task.status}`;
+      }
+      
+      addNotification({
+        title: "Task Updated",
+        message,
+        type: "info",
+        userId: currentUser.id
+      });
+      
+      toast.success("Task updated successfully");
     }
     
-    addNotification({
-      title: "Task Updated",
-      message,
-      type: "info",
-      userId: currentUser.id
-    });
-    
-    toast.success("Task updated successfully");
+    return updated;
   };
 
-  const deleteTask = (id: string, deleterId?: string) => {
-    const deleter = deleterId || currentUser.id;
+  const deleteTask = (id: string) => {
+    let deleted = false;
     const taskToDelete = tasks.find(t => t.id === id);
     
-    if (!taskToDelete) return;
+    if (!taskToDelete) return false;
     
-    setTasks(prevTasks => prevTasks.filter(t => t.id !== id));
-    
-    const deleterMember = members.find(m => m.id === deleter);
-    const deleterName = deleterMember 
-      ? `${deleterMember.firstName} ${deleterMember.lastName}`
-      : 'Someone';
-    
-    addNotification({
-      title: "Task Deleted",
-      message: `${deleterName} deleted the task: "${taskToDelete.title}"`,
-      type: "warning",
-      userId: currentUser.id
+    setTasks(prevTasks => {
+      const filtered = prevTasks.filter(t => {
+        if (t.id === id) {
+          deleted = true;
+          return false;
+        }
+        return true;
+      });
+      return filtered;
     });
     
-    toast.success("Task deleted successfully");
+    if (deleted) {
+      const deleterName = `${currentUser.firstName} ${currentUser.lastName}`;
+      
+      addNotification({
+        title: "Task Deleted",
+        message: `${deleterName} deleted the task: "${taskToDelete.title}"`,
+        type: "warning",
+        userId: currentUser.id
+      });
+      
+      toast.success("Task deleted successfully");
+    }
+    
+    return deleted;
   };
 
   const addTaskComment = (taskId: string, content: string) => {
+    let added = false;
     const taskToUpdate = tasks.find(t => t.id === taskId);
     
     if (!taskToUpdate) {
       toast.error("Task not found");
-      return;
+      return false;
     }
     
     const newComment: TaskComment = {
       id: `comment-${Date.now()}`,
       content,
-      userId: currentUser.id, // Using userId instead of authorId
+      userId: currentUser.id,
       taskId,
       createdAt: new Date()
     };
     
     setTasks(prevTasks => 
-      prevTasks.map(t => 
-        t.id === taskId 
-          ? { 
+      prevTasks.map(t => {
+        if (t.id === taskId) {
+          added = true;
+          return { 
               ...t, 
               comments: [...t.comments, newComment],
               updatedAt: new Date()
-            } 
-          : t
-      )
+            };
+        }
+        return t;
+      })
     );
     
-    const commenterName = `${currentUser.firstName} ${currentUser.lastName}`;
+    if (added) {
+      const commenterName = `${currentUser.firstName} ${currentUser.lastName}`;
+      
+      addNotification({
+        title: "New Comment",
+        message: `${commenterName} commented on task "${taskToUpdate.title}"`,
+        type: "info",
+        userId: currentUser.id
+      });
+      
+      toast.success("Comment added successfully");
+    }
     
-    addNotification({
-      title: "New Comment",
-      message: `${commenterName} commented on task "${taskToUpdate.title}"`,
-      type: "info",
-      userId: currentUser.id
-    });
-    
-    toast.success("Comment added successfully");
+    return added;
   };
 
   return {

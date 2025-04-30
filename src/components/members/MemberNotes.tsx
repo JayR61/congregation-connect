@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,7 +100,10 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
       description: newResource.description,
       date: new Date(newResource.date),
       value: newResource.value ? parseFloat(newResource.value) : undefined,
-      createdById: currentUser.id,
+      providedById: currentUser.id,
+      type: 'other', // Default type
+      name: newResource.description.substring(0, 30), // Use the beginning of description as name
+      details: newResource.description,
       attachments: [],
     };
     

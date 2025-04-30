@@ -5,7 +5,7 @@ import { useAppContext } from "@/context/AppContext";
 import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import { CheckSquare, Clock, CalendarRange, Users, DollarSign, FileText, ArrowUpRight, TrendingUp, TrendingDown, Calendar, LucideIcon } from 'lucide-react';
+import { CheckSquare, Clock, CalendarRange, Users, DollarSign, FileText, ArrowUpRight, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import { UpcomingEvents } from '@/components/dashboard/UpcomingEvents';
 import { TeamPerformance } from '@/components/dashboard/TeamPerformance';
 
@@ -131,7 +131,10 @@ const Dashboard = () => {
           value={members.length.toString()} 
           description="Active members" 
           icon={<Users className="h-5 w-5 text-muted-foreground" />}
-          trend={{ value: members.filter(m => m.isActive).length, label: "active" }}
+          trend={{ 
+            value: members.filter(m => m.isActive).length, 
+            label: "active" 
+          }}
         />
         <StatCard 
           title="Balance" 
@@ -550,7 +553,9 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <div className="font-medium">{member.firstName} {member.lastName}</div>
-                      <div className="text-sm text-muted-foreground">{member.roles.join(', ')}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {member.roles && Array.isArray(member.roles) ? member.roles.join(', ') : 'No roles assigned'}
+                      </div>
                       <div className="mt-2 flex items-center text-xs">
                         <div className={`w-2 h-2 rounded-full ${member.isActive ? 'bg-green-500' : 'bg-gray-300'} mr-1`}></div>
                         <span>{member.isActive ? 'Active' : 'Inactive'}</span>

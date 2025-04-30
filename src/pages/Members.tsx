@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { MemberList } from '@/components/members/MemberList';
-import { MemberDialog } from '@/components/members/MemberDialog';
+import MemberList from '@/components/members/MemberList';
+import MemberDialog from '@/components/members/MemberDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +19,7 @@ const Members = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [currentTab, setCurrentTab] = useState<string>('all');
+  const [editingMember, setEditingMember] = useState<Member | undefined>();
   
   const [filteredMembers, setFilteredMembers] = useState<Member[]>(members);
   const activeMembers = members.filter(member => member.status === 'active');
@@ -71,6 +72,12 @@ const Members = () => {
   const handleAddMember = (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
     addMember(memberData);
     setDialogOpen(false);
+    setEditingMember(undefined);
+  };
+  
+  const handleEditMember = (member: Member) => {
+    setEditingMember(member);
+    setDialogOpen(true);
   };
 
   return (
@@ -185,23 +192,23 @@ const Members = () => {
           </div>
           
           <TabsContent value="all" className="mt-0">
-            <MemberList members={filteredMembers} />
+            <MemberList members={filteredMembers} onEdit={handleEditMember} />
           </TabsContent>
           
           <TabsContent value="active" className="mt-0">
-            <MemberList members={filteredMembers} />
+            <MemberList members={filteredMembers} onEdit={handleEditMember} />
           </TabsContent>
           
           <TabsContent value="newMembers" className="mt-0">
-            <MemberList members={filteredMembers} />
+            <MemberList members={filteredMembers} onEdit={handleEditMember} />
           </TabsContent>
           
           <TabsContent value="visitorsProspects" className="mt-0">
-            <MemberList members={filteredMembers} />
+            <MemberList members={filteredMembers} onEdit={handleEditMember} />
           </TabsContent>
           
           <TabsContent value="inactive" className="mt-0">
-            <MemberList members={filteredMembers} />
+            <MemberList members={filteredMembers} onEdit={handleEditMember} />
           </TabsContent>
         </Tabs>
       </div>
@@ -210,6 +217,7 @@ const Members = () => {
         open={dialogOpen} 
         onOpenChange={setDialogOpen}
         onSave={handleAddMember}
+        member={editingMember}
       />
     </div>
   );

@@ -18,7 +18,8 @@ import {
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ChurchResource, ResourceBooking, Member } from "@/types";

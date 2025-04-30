@@ -1,228 +1,116 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import { Document, DocumentVersion, Folder } from '@/types';
+import { Document, User } from '@/types';
+
+interface UseDocumentActionsProps {
+  documents: Document[];
+  setDocuments: React.Dispatch<React.SetStateAction<Document[]>>;
+  currentUser: User;
+}
 
 export const useDocumentActions = ({
   documents,
   setDocuments,
-  folders,
-  setFolders,
   currentUser
-}) => {
-  // Document CRUD operations
-  const addDocument = (document) => {
-    try {
-      const now = new Date();
-      const newDocument = {
-        ...document,
-        id: uuidv4(),
-        title: document.name || 'Untitled Document',
-        uploadedById: currentUser?.id || 'unknown',
-        uploadDate: now,
-        versions: [{
-          id: uuidv4(),
-          versionNumber: 1,
-          version: 1,
-          uploadDate: now,
-          fileUrl: document.url || '',
-          url: document.url || '',
-          uploadedById: currentUser?.id || 'unknown',
-          createdAt: now,
-          createdById: currentUser?.id || 'unknown',
-          notes: 'Initial version'
-        }],
-        tags: document.tags || [],
-        createdAt: now,
-        updatedAt: now
-      };
-      
-      setDocuments(prevDocuments => [...prevDocuments, newDocument]);
-      return newDocument;
-    } catch (error) {
-      console.error('Error adding document:', error);
-      throw error;
-    }
+}: UseDocumentActionsProps) => {
+  const addDocument = (documentData: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'versions'>) => {
+    const newDocument: Document = {
+      ...documentData,
+      id: `document-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      versions: [{
+        id: `version-1-${Date.now()}`,
+        url: documentData.url,
+        createdAt: new Date(),
+        createdById: currentUser.id,
+        notes: 'Initial version'
+      }],
+      createdById: currentUser.id,
+      shared: false
+    };
+    
+    setDocuments(prev => [...prev, newDocument]);
+    return newDocument;
   };
-
-  const updateDocument = (id, updatedFields) => {
-    try {
-      let found = false;
-      
-      setDocuments(prev => {
-        return prev.map(doc => {
-          if (doc.id === id) {
-            found = true;
-            return {
-              ...doc,
-              ...updatedFields,
-              updatedAt: new Date()
-            };
-          }
-          return doc;
-        });
+  
+  const updateDocument = (id: string, updatedFields: Partial<Document>) => {
+    let found = false;
+    setDocuments(prev => 
+      prev.map(document => {
+        if (document.id === id) {
+          found = true;
+          return { 
+            ...document, 
+            ...updatedFields,
+            updatedAt: new Date()
+          };
+        }
+        return document;
+      })
+    );
+    return found;
+  };
+  
+  const deleteDocument = (id: string) => {
+    let found = false;
+    setDocuments(prev => {
+      const filtered = prev.filter(document => {
+        if (document.id === id) {
+          found = true;
+          return false;
+        }
+        return true;
       });
-      
-      return found;
-    } catch (error) {
-      console.error('Error updating document:', error);
-      return false;
-    }
+      return filtered;
+    });
+    return found;
   };
-
-  const deleteDocument = (id) => {
-    try {
-      let found = false;
-      
-      setDocuments(prev => {
-        const filtered = prev.filter(doc => {
-          if (doc.id === id) {
-            found = true;
-            return false;
-          }
-          return true;
-        });
-        return filtered;
-      });
-      
-      return found;
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      return false;
-    }
+  
+  const addDocumentVersion = (documentId: string, version: { url: string, notes?: string }) => {
+    let found = false;
+    
+    setDocuments(prev => 
+      prev.map(document => {
+        if (document.id === documentId) {
+          found = true;
+          const newVersion = {
+            id: `version-${document.versions.length + 1}-${Date.now()}`,
+            url: version.url,
+            createdAt: new Date(),
+            createdById: currentUser.id,
+            notes: version.notes || ''
+          };
+          
+          return { 
+            ...document,
+            url: version.url, // Update the document's main URL to the new version
+            versions: [...document.versions, newVersion],
+            updatedAt: new Date()
+          };
+        }
+        return document;
+      })
+    );
+    
+    return found;
   };
-
-  // Folder CRUD operations
-  const addFolder = (folder) => {
-    try {
-      const newFolder = {
-        ...folder,
-        id: uuidv4()
-      };
-      
-      setFolders(prev => [...prev, newFolder]);
-      return newFolder;
-    } catch (error) {
-      console.error('Error adding folder:', error);
-      throw error;
-    }
-  };
-
-  const updateFolder = (id, updatedFields) => {
-    try {
-      let found = false;
-      
-      setFolders(prev => {
-        return prev.map(folder => {
-          if (folder.id === id) {
-            found = true;
-            return {
-              ...folder,
-              ...updatedFields
-            };
-          }
-          return folder;
-        });
-      });
-      
-      return found;
-    } catch (error) {
-      console.error('Error updating folder:', error);
-      return false;
-    }
-  };
-
-  const deleteFolder = (id) => {
-    try {
-      let found = false;
-      
-      setFolders(prev => {
-        const filtered = prev.filter(folder => {
-          if (folder.id === id) {
-            found = true;
-            return false;
-          }
-          return true;
-        });
-        return filtered;
-      });
-      
-      // Also update documents that were in this folder to be root level
-      setDocuments(prev => {
-        return prev.map(doc => {
-          if (doc.folderId === id) {
-            return { ...doc, folderId: null };
-          }
-          return doc;
-        });
-      });
-      
-      return found;
-    } catch (error) {
-      console.error('Error deleting folder:', error);
-      return false;
-    }
-  };
-
-  // Additional document operations
-  const addDocumentVersion = (documentId, fileUrl, notes = 'Updated version') => {
-    try {
-      let updated = false;
-      const now = new Date();
-      
-      setDocuments(prev => {
-        return prev.map(doc => {
-          if (doc.id === documentId) {
-            const newVersionNumber = doc.versions.length + 1;
-            const newVersion: DocumentVersion = {
-              id: uuidv4(),
-              versionNumber: newVersionNumber,
-              version: newVersionNumber,
-              uploadDate: now,
-              fileUrl: fileUrl,
-              url: fileUrl,
-              uploadedById: currentUser?.id || 'unknown',
-              createdAt: now,
-              createdById: currentUser?.id || 'unknown',
-              notes
-            };
-            
-            updated = true;
-            return {
-              ...doc,
-              versions: [...doc.versions, newVersion],
-              updatedAt: now
-            };
-          }
-          return doc;
-        });
-      });
-      
-      return updated;
-    } catch (error) {
-      console.error('Error adding document version:', error);
-      return false;
-    }
-  };
-
-  const moveDocument = (documentId, folderId) => {
-    try {
-      return updateDocument(documentId, { folderId });
-    } catch (error) {
-      console.error('Error moving document:', error);
-      return false;
-    }
-  };
-
+  
   return {
     addDocument,
     updateDocument,
     deleteDocument,
-    addFolder,
-    updateFolder,
-    deleteFolder,
-    addDocumentVersion,
-    moveDocument
+    addDocumentVersion
   };
 };
 
-export default useDocumentActions;
+export const addDocument = (documentData: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'versions'>, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
+  return useDocumentActions({ documents, setDocuments, currentUser }).addDocument(documentData);
+};
+
+export const updateDocument = (id: string, updatedFields: Partial<Document>, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
+  return useDocumentActions({ documents, setDocuments, currentUser }).updateDocument(id, updatedFields);
+};
+
+export const deleteDocument = (id: string, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
+  return useDocumentActions({ documents, setDocuments, currentUser }).deleteDocument(id);
+};

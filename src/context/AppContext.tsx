@@ -1,3 +1,4 @@
+
 import React, { useState, createContext, useContext } from 'react';
 import {
   Member,
@@ -12,11 +13,11 @@ import {
   TaskCategory,
   TaskComment
 } from '@/types';
-import { addTransaction, deleteTransaction, updateTransaction } from '../context/actions/useTransactionActions';
-import { addNotification, deleteNotification, updateNotification, markNotificationAsRead } from '../context/actions/useNotificationActions';
-import { addDocument, deleteDocument, updateDocument } from '../context/actions/useDocumentActions';
-import { addFolder, deleteFolder, updateFolder } from '../context/actions/useFolderActions';
-import { addFinanceCategory, deleteFinanceCategory, updateFinanceCategory } from '../context/actions/useFinanceActions';
+import { useTransactionActions } from '../context/actions/useTransactionActions';
+import { useNotificationActions } from '../context/actions/useNotificationActions';
+import { useDocumentActions } from '../context/actions/useDocumentActions';
+import { useFolderActions } from './actions/useFolderActions';
+import { useFinanceActions } from './actions/useFinanceActions';
 import { useProgrammeActions } from './actions/useProgrammeActions';
 import { useTaskActions } from './actions/useTaskActions';
 import { useMemberActions } from './actions/useMemberActions';
@@ -60,6 +61,8 @@ interface AppContextProps {
   updateProgramme: (id: string, updatedFields: Partial<Programme>) => boolean;
   deleteProgramme: (id: string) => boolean;
   shareDocument: (documentId: string, memberIds: string[]) => boolean;
+  moveDocument: (documentId: string, folderId: string | null) => boolean;
+  addDocumentVersion: (documentId: string, version: any) => boolean;
   attendance: any[];
   recordAttendance: any;
   exportProgrammesToCSV: any;
@@ -81,7 +84,7 @@ interface AppContextProps {
 const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export const useAppContext = () => {
-  const context = React.useContext(AppContext);
+  const context = useContext(AppContext);
   if (!context) {
     throw new Error("useAppContext must be used within an AppProvider");
   }
@@ -107,6 +110,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     createdAt: new Date()
   });
 
+  // Use the hooks to get actions
+  const transactionActions = useTransactionActions({ transactions, setTransactions, currentUser });
+  const notificationActions = useNotificationActions({ notifications, setNotifications });
+  const documentActions = useDocumentActions({ documents, setDocuments, currentUser });
+  const folderActions = useFolderActions({ folders, setFolders });
+  const financeActions = useFinanceActions({ transactions, setTransactions, financeCategories, setFinanceCategories });
+
   const {
     addProgramme,
     updateProgramme,
@@ -126,6 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteMember: baseDeleteMember
   } = useMemberActions({ members, setMembers });
 
+  // Placeholder implementations
   const attendance: any[] = [];
   const recordAttendance = () => {};
   const exportProgrammesToCSV = () => {};
@@ -144,6 +155,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const removeTagFromProgramme = () => {};
   const shareDocument = (documentId: string, memberIds: string[]) => true;
   const clearAllNotifications = () => true;
+  const addDocumentVersion = (documentId: string, version: any) => true;
 
   const fixedAddTask = (task: Omit<Task, "id" | "createdAt" | "updatedAt">): Task => {
     const newTask: Task = {
@@ -151,7 +163,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       id: `task-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      comments: []
+      comments: [],
+      createdById: currentUser.id,
+      lastModifiedById: currentUser.id,
+      lastModifiedAction: 'created'
     };
     setTasks((prev) => [...prev, newTask]);
     return newTask;
@@ -230,23 +245,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addMember: fixedAddMember,
     updateMember: fixedUpdateMember,
     deleteMember: fixedDeleteMember,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addNotification,
-    updateNotification,
-    deleteNotification,
-    markNotificationAsRead,
+    addTransaction: transactionActions.addTransaction,
+    updateTransaction: transactionActions.updateTransaction,
+    deleteTransaction: transactionActions.deleteTransaction,
+    addNotification: notificationActions.addNotification,
+    updateNotification: notificationActions.updateNotification,
+    deleteNotification: notificationActions.deleteNotification,
+    markNotificationAsRead: notificationActions.markNotificationAsRead,
     clearAllNotifications,
-    addDocument,
-    updateDocument,
-    deleteDocument,
-    addFolder,
-    updateFolder,
-    deleteFolder,
-    addFinanceCategory,
-    updateFinanceCategory,
-    deleteFinanceCategory,
+    addDocument: documentActions.addDocument,
+    updateDocument: documentActions.updateDocument,
+    deleteDocument: documentActions.deleteDocument,
+    addFolder: folderActions.addFolder,
+    updateFolder: folderActions.updateFolder,
+    deleteFolder: folderActions.deleteFolder,
+    moveDocument: folderActions.moveDocument,
+    addDocumentVersion,
+    addFinanceCategory: financeActions.addFinanceCategory,
+    updateFinanceCategory: financeActions.updateFinanceCategory,
+    deleteFinanceCategory: financeActions.deleteFinanceCategory,
     addProgramme,
     updateProgramme,
     deleteProgramme,

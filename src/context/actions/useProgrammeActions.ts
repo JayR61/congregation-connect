@@ -4,9 +4,9 @@ import { Programme } from '@/types';
 interface ProgrammeActionsProps {
   programmes: Programme[];
   setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
-  attendance: any[];
-  setAttendance: React.Dispatch<React.SetStateAction<any[]>>;
-  currentUser: any;
+  attendance?: any[];
+  setAttendance?: React.Dispatch<React.SetStateAction<any[]>>;
+  currentUser?: any;
 }
 
 export const useProgrammeActions = ({
@@ -15,15 +15,13 @@ export const useProgrammeActions = ({
   currentUser
 }: ProgrammeActionsProps) => {
   const addProgramme = (programmeData: Omit<Programme, 'id' | 'currentAttendees' | 'attendees'>) => {
-    // Ensure all required properties are present
+    // Ensure all required properties are present, including status
     const programme: Programme = {
       ...programmeData,
       id: `programme-${Date.now()}`,
       currentAttendees: 0,
       attendees: [],
-      // These fields should be in the programmeData already, but adding defaults for safety
       status: programmeData.status || 'planning',
-      // Other required fields should be provided in programmeData
     };
     
     setProgrammes(prev => [...prev, programme]);

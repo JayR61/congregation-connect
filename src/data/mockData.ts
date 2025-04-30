@@ -54,7 +54,12 @@ const mockTasks: Task[] = [
     dueDate: new Date(2023, 5, 15),
     createdAt: new Date(),
     updatedAt: new Date(),
-    comments: []
+    comments: [],
+    assigneeIds: ["member-1"], // Adding this field for compatibility
+    categories: [], // Adding this field for compatibility
+    createdById: "member-2", // Adding this field for compatibility
+    lastModifiedById: "member-2", // Adding this field for compatibility
+    lastModifiedAction: "created" // Adding this field for compatibility
   }
 ];
 
@@ -171,6 +176,13 @@ export const getInitialData = () => {
   };
 };
 
-export const getMembers = () => {
-  return mockMembers;
-};
+// Export data directly to fix mockDataHelpers.ts issues
+export const members = mockMembers;
+export const tasks = mockTasks;
+export const documents = mockDocuments;
+export const folders = mockFolders;
+export const transactions = mockTransactions;
+export const getMembers = () => mockMembers;
+export const getTasks = () => mockTasks;
+export const getTransactions = () => mockTransactions;
+

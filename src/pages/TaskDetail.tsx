@@ -1,11 +1,10 @@
-
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, Clock, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getTasks } from "@/data/mockData";
+import { tasks as mockTasks } from "@/data/mockData";
 
 const TaskDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,8 +12,8 @@ const TaskDetail = () => {
   const { data: task, isLoading, error } = useQuery({
     queryKey: ['task', id],
     queryFn: async () => {
-      const tasks = await getTasks();
-      return tasks.find(task => task.id === id) || null;
+      // Using the exported tasks directly instead of getTasks function
+      return mockTasks.find(task => task.id === id) || null;
     }
   });
 
@@ -126,7 +125,7 @@ const TaskDetail = () => {
             <div className="border rounded-lg p-4">
               <div className="text-sm font-medium text-muted-foreground mb-2">Due Date</div>
               <div className="flex items-center">
-                <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</span>
               </div>
             </div>
           </div>

@@ -9,7 +9,7 @@ export const createReminder = (data: {
   scheduledDate: Date; 
   status: "pending" | "sent" | "failed" | "scheduled" | "cancelled";
 }) => {
-  // Fix: convert scheduledDate to scheduledTime and ensure correct status types
+  // Convert scheduledDate to scheduledTime and ensure correct status types
   return {
     ...data,
     scheduledTime: data.scheduledDate, // Using the correct property name
@@ -31,4 +31,12 @@ export const isReschedulable = (status: string) => {
 export const isCancellable = (status: string) => {
   // Check if status is not one of the disallowed values
   return status !== 'sent' && status !== 'cancelled';
+};
+
+// Export default for compatibility
+export default {
+  createReminder,
+  isReminderable,
+  isReschedulable,
+  isCancellable
 };

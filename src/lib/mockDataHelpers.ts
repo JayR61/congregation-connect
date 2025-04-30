@@ -1,6 +1,9 @@
 
 import { Transaction, Task, Document, Folder, Member } from '@/types';
-import { members, documents, folders, tasks, transactions } from '@/data/mockData';
+import { getInitialData } from '@/data/mockData';
+
+// Get data from the mockData.ts exports
+const { members, documents, folders, tasks, transactions } = getInitialData();
 
 // Helper function to format currency
 export const formatCurrency = (amount: number) => {

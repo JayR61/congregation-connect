@@ -384,7 +384,13 @@ export const currentUser: User = {
   createdAt: new Date()
 };
 export const notifications: Notification[] = [];
-export const taskCategories: TaskCategory[] = [];
+export const taskCategories: TaskCategory[] = [
+  { id: 'category-1', name: 'Development', color: '#3B82F6' },
+  { id: 'category-2', name: 'Design', color: '#10B981' },
+  { id: 'category-3', name: 'Marketing', color: '#F59E0B' },
+  { id: 'category-4', name: 'Finance', color: '#6366F1' },
+  { id: 'category-5', name: 'HR', color: '#EC4899' }
+];
 
 // Finance categories
 export const financeCategories: FinanceCategory[] = [
@@ -447,6 +453,7 @@ export const getInitialData = () => {
     folders,
     notifications,
     currentUser,
-    programmes
+    programmes,
+    taskCategories
   };
 };

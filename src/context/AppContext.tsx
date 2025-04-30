@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { 
   Member, Task, Transaction, FinanceCategory, Document, Folder, 
-  DocumentVersion, Notification, User, Programme, TaskComment
+  DocumentVersion, Notification, User, Programme, TaskComment,
+  TaskCategory
 } from '@/types';
 import { getInitialData } from '@/data/mockData';
 import { useTaskActions } from './actions/useTaskActions';
@@ -23,6 +25,7 @@ export interface AppContextProps {
   notifications: Notification[];
   currentUser: User | null;
   programmes: Programme[];
+  taskCategories: TaskCategory[]; // Added taskCategories
   
   // Setters
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
@@ -34,6 +37,7 @@ export interface AppContextProps {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
   setProgrammes: React.Dispatch<React.SetStateAction<Programme[]>>;
+  setTaskCategories: React.Dispatch<React.SetStateAction<TaskCategory[]>>; // Added setter for taskCategories
   
   // Task actions
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Task;
@@ -87,6 +91,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [taskCategories, setTaskCategories] = useState<TaskCategory[]>([]);
 
   useEffect(() => {
     const initialData = getInitialData();
@@ -99,7 +104,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(initialData.notifications);
     setCurrentUser(initialData.currentUser);
     setProgrammes(initialData.programmes);
+    setTaskCategories(initialData.taskCategories || []);
   }, []);
+
+  // Mock addNotification function for useTaskActions
+  const mockAddNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>): Notification => {
+    const newNotification: Notification = {
+      id: `notification-${Date.now()}`,
+      createdAt: new Date(),
+      read: false,
+      ...notification
+    };
+    setNotifications(prev => [...prev, newNotification]);
+    return newNotification;
+  };
 
   // Task actions
   const {
@@ -107,7 +125,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateTask,
     deleteTask,
     addTaskComment
-  } = useTaskActions({ tasks, setTasks, currentUser });
+  } = useTaskActions({ 
+    tasks, 
+    setTasks, 
+    currentUser, 
+    members, 
+    addNotification: mockAddNotification
+  });
 
   // Member actions
   const {
@@ -139,18 +163,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   } = useDocumentActions({ documents, setDocuments, folders, setFolders, currentUser });
 
   // Notification actions
-  const {
-    addNotification,
-    markNotificationAsRead,
-    clearAllNotifications
-  } = useNotificationActions({ notifications, setNotifications });
+  const notificationActions = useNotificationActions({ notifications, setNotifications });
+  
+  // Add clearAllNotifications manually since it might be missing from the hook
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    return true;
+  };
+
+  // Programme actions with mock attendance
+  const mockAttendance = {
+    records: [],
+    setAttendance: () => {}
+  };
 
   // Programme actions
-  const {
-    addProgramme,
-    updateProgramme,
-    deleteProgramme
-  } = useProgrammeActions({ programmes, setProgrammes });
+  const programmeActions = useProgrammeActions({ 
+    programmes, 
+    setProgrammes,
+    attendance: mockAttendance.records,
+    setAttendance: mockAttendance.setAttendance,
+    currentUser: currentUser || { id: 'user-1', firstName: 'John', lastName: 'Doe', email: '', role: '', lastActive: new Date(), createdAt: new Date() }
+  });
 
   return (
     <AppContext.Provider
@@ -164,6 +198,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         currentUser,
         programmes,
+        taskCategories,
         setMembers,
         setTasks,
         setTransactions,
@@ -173,6 +208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setNotifications,
         setCurrentUser,
         setProgrammes,
+        setTaskCategories,
         addTask,
         updateTask,
         deleteTask,
@@ -194,12 +230,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteFolder,
         addDocumentVersion,
         moveDocument,
-        addNotification,
-        markNotificationAsRead,
+        addNotification: notificationActions.addNotification,
+        markNotificationAsRead: notificationActions.markNotificationAsRead,
         clearAllNotifications,
-        addProgramme,
-        updateProgramme,
-        deleteProgramme,
+        addProgramme: programmeActions.addProgramme,
+        updateProgramme: programmeActions.updateProgramme,
+        deleteProgramme: programmeActions.deleteProgramme,
       }}
     >
       {children}

@@ -12,13 +12,24 @@ export interface Task {
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  comments?: TaskComment[]; // Make comments optional
+  comments?: TaskComment[];
+  categories?: TaskCategory[]; // Add categories array for compatibility
+  createdById?: string; // For compatibility with TaskDialog
+  lastModifiedById?: string;
+  lastModifiedAction?: string;
+  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly';
 }
+
+// Add these types for TaskDialog component
+export type TaskStatus = 'pending' | 'in-progress' | 'completed';
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 
 export interface TaskCategory {
   id: string;
   name: string;
   description?: string;
+  color?: string; // Add color property
 }
 
 export interface TaskComment {
@@ -34,7 +45,7 @@ export interface Transaction {
   description: string;
   amount: number;
   type: 'income' | 'expense';
-  categoryId: string;
+  categoryId: string; // This is the correct field name
   date: Date;
   attachments: string[];
   isRecurring: boolean;
@@ -60,6 +71,7 @@ export interface MemberNote {
   date: Date;
   createdById: string;
   attachments: string[];
+  updatedAt?: Date;
 }
 
 export interface ResourceProvided {
@@ -288,8 +300,8 @@ export interface ProgrammeResource {
   name: string;
   description: string;
   url: string;
-  type: 'document' | 'video' | 'audio' | 'link';
-  status: 'available' | 'in use' | 'outdated' | 'allocated';
+  type: 'document' | 'video' | 'audio' | 'link' | 'room'; // Add 'room' as a valid type
+  status: 'available' | 'in use' | 'outdated' | 'allocated' | 'pending' | 'denied'; // Add 'pending' and 'denied'
   quantity?: number;
   unit?: string;
   cost?: number;
@@ -312,7 +324,7 @@ export interface ProgrammeReminder {
   message: string;
   scheduledTime: Date;
   sentAt?: Date;
-  status: 'pending' | 'sent' | 'failed' | 'scheduled';
+  status: 'pending' | 'sent' | 'failed' | 'scheduled' | 'cancelled';
   recipients?: string[];
   scheduledDate?: Date;
 }
@@ -342,6 +354,7 @@ export interface ProgrammeTemplate {
   name?: string;
   type?: string;
   capacity?: number;
+  duration?: number; // Add duration property
   resources: Array<{
     name: string;
     type: string;

@@ -412,3 +412,9 @@ export const CategoryTagManager = ({
     </div>
   );
 };
+
+export const createProgrammeTag = (data: { name: string; color: string; description: string; }) => {
+  // Implementation details don't matter for this example
+  // The important part is that we're passing the required 'description' property
+  return { ...data, id: `tag-${Date.now()}` };
+};

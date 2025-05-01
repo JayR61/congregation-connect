@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Programme } from '@/types';
@@ -106,7 +107,7 @@ export const CalendarView = ({ programmes, onDateSelect = () => {} }: CalendarVi
           onSelect={handleDateSelect}
           className="rounded-md border"
           components={{
-            Day: ({ date }: { date: Date }) => renderDay(date)
+            Day: ({ date }) => renderDay(date)
           }}
         />
         

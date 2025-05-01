@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,10 +96,10 @@ const Programmes = () => {
   const handleFormSubmit = (programmeData: Omit<Programme, 'id'>) => {
     if (isEditMode && selectedProgramme) {
       updateProgramme(selectedProgramme.id, programmeData);
-      toast("Programme updated successfully!");
+      toast.success('Programme updated successfully!');
     } else {
       addProgramme(programmeData);
-      toast("Programme added successfully!");
+      toast.success('Programme added successfully!');
     }
     setIsDialogOpen(false);
   };
@@ -108,7 +107,7 @@ const Programmes = () => {
   const handleDeleteProgramme = (id: string) => {
     if (window.confirm('Are you sure you want to delete this programme?')) {
       deleteProgramme(id);
-      toast("Programme deleted successfully!");
+      toast.success('Programme deleted successfully!');
     }
   };
   
@@ -214,7 +213,7 @@ const Programmes = () => {
                   <UserPlus className="mr-2 h-4 w-4" />
                   Record Attendance
                 </Button>
-                <Button variant="outline" onClick={() => toast("Attendance data exported to CSV")}>
+                <Button variant="outline" onClick={() => toast.info("Attendance data exported to CSV")}>
                   <ClipboardList className="mr-2 h-4 w-4" />
                   Export Data
                 </Button>

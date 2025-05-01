@@ -107,7 +107,7 @@ export const CalendarView = ({ programmes, onDateSelect = () => {} }: CalendarVi
           onSelect={handleDateSelect}
           className="rounded-md border"
           components={{
-            Day: ({ date }) => renderDay(date)
+            Day: ({ date }: { date: Date }) => renderDay(date)
           }}
         />
         

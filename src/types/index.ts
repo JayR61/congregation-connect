@@ -1,4 +1,3 @@
-
 // Add ChurchResource and ResourceBooking types to the index.ts file
 // We'll append to the existing exports
 
@@ -27,7 +26,8 @@ export interface ResourceBooking {
   notes?: string;
 }
 
-// For the build errors we need to re-export all the original types that were imported by other files
+// Fix the existing interfaces to address the type errors
+
 export interface Folder {
   id: string;
   name: string;
@@ -50,7 +50,7 @@ export interface Document {
   description?: string;
   tags?: string[];
   lastModifiedBy?: string;
-  versions?: DocumentVersion[];
+  versions: DocumentVersion[];
   // Additional fields that are used in components
   title?: string;
   thumbnailUrl?: string;
@@ -63,14 +63,13 @@ export interface Document {
 export interface DocumentVersion {
   id: string;
   documentId: string;
-  versionNumber: number;
+  version: number; // Changed from versionNumber to match component usage
   createdAt: Date;
   createdBy: string;
   fileSize: number;
   url: string;
   notes?: string;
   // Additional fields that are used in components
-  version?: string;
   createdById?: string;
 }
 
@@ -92,6 +91,8 @@ export interface Transaction {
   createdAt?: Date;
   updatedAt?: Date;
   createdById?: string;
+  isRecurring?: boolean; // Used in some components
+  categoryId?: string; // Used in some forms
 }
 
 export interface AttendanceRecord {
@@ -115,7 +116,7 @@ export interface Member {
   address?: string;
   dateOfBirth?: Date;
   joinDate: Date;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'prospect' | 'visitor';
   profileImage?: string;
   bio?: string;
   skills?: string[];
@@ -145,6 +146,9 @@ export interface Member {
   state?: string;
   zip?: string;
   mentorshipPrograms?: any[];
+  avatar?: string;
+  memberNotes?: MemberNote[];
+  resourcesProvided?: ResourceProvided[];
 }
 
 export interface MemberNote {
@@ -155,6 +159,7 @@ export interface MemberNote {
   content: string;
   category?: string;
   isPrivate?: boolean;
+  date?: Date; // Added to fix errors
 }
 
 export interface ResourceProvided {
@@ -165,6 +170,7 @@ export interface ResourceProvided {
   date: Date;
   providedBy: string;
   notes?: string;
+  description?: string; // Added to fix errors
 }
 
 export interface Programme {
@@ -175,7 +181,7 @@ export interface Programme {
   endDate?: Date;
   location?: string;
   organizer?: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'active';
   capacity?: number;
   attendees?: string[];
   category?: string;
@@ -190,6 +196,17 @@ export interface Programme {
     sent: boolean;
   }[];
   image?: string;
+  // Additional fields used in components
+  title?: string;
+  type?: string;
+  targetAudience?: string;
+  budget?: number;
+  objectives?: string[];
+  notes?: string;
+  coordinator?: string;
+  recurring?: boolean;
+  frequency?: string;
+  currentAttendees?: number;
 }
 
 export interface ProgrammeAttendance {
@@ -199,6 +216,7 @@ export interface ProgrammeAttendance {
   date: Date;
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string;
+  isPresent?: boolean; // Added to fix errors
 }
 
 export interface BulkAttendanceRecord {
@@ -209,6 +227,7 @@ export interface BulkAttendanceRecord {
     status: 'present' | 'absent' | 'late' | 'excused';
     notes?: string;
   }[];
+  attendees?: any[]; // Added to fix errors
 }
 
 export interface ProgrammeCategory {
@@ -232,6 +251,7 @@ export interface ProgrammeFeedback {
   comments?: string;
   date: Date;
   anonymous?: boolean;
+  comment?: string; // Added to fix errors in component usage
 }
 
 export interface ProgrammeKPI {
@@ -242,6 +262,9 @@ export interface ProgrammeKPI {
   actual?: number;
   unit: string;
   notes?: string;
+  title?: string; // Added to fix errors
+  current?: number; // Added to fix errors
+  description?: string; // Added to fix errors
 }
 
 export interface ProgrammeTemplate {

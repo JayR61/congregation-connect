@@ -42,10 +42,10 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
       description,
       amount: parsedAmount,
       type,
-      categoryId: category, // Fixed property name from category to categoryId
+      category: category, // Using category instead of categoryId to match the type
       date: new Date(date),
       attachments: [],
-      isRecurring: false,
+      recurring: false,
       paymentMethod: "cash"
     };
     

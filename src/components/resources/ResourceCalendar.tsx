@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
+import { Calendar } from '@/components/ui/calendar';
 import { ChurchResource, ResourceBooking, Member } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, getDay } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MapPin, Clock, User, CalendarDays } from 'lucide-react';
 
 interface ResourceCalendarProps {
   resources: ChurchResource[];
@@ -15,160 +14,146 @@ interface ResourceCalendarProps {
 }
 
 const ResourceCalendar: React.FC<ResourceCalendarProps> = ({ resources, bookings, members }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedResource, setSelectedResource] = useState<string | 'all'>('all');
-  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedResource, setSelectedResource] = useState<string>('all');
+
+  // Filter bookings by selected date and resource
   const filteredBookings = bookings.filter(booking => {
-    if (selectedResource !== 'all' && booking.resourceId !== selectedResource) {
-      return false;
-    }
+    const bookingDate = new Date(booking.startDate);
+    const matchesDate = selectedDate ? 
+      bookingDate.getDate() === selectedDate.getDate() &&
+      bookingDate.getMonth() === selectedDate.getMonth() &&
+      bookingDate.getFullYear() === selectedDate.getFullYear() 
+      : true;
+      
+    const matchesResource = selectedResource === 'all' || booking.resourceId === selectedResource;
     
-    const bookingStartMonth = booking.startDate.getMonth();
-    const bookingStartYear = booking.startDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    
-    return bookingStartMonth === currentMonth && bookingStartYear === currentYear;
+    return matchesDate && matchesResource;
   });
   
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const startDate = monthStart;
-  const endDate = monthEnd;
-  
-  const days = eachDayOfInterval({ start: startDate, end: endDate });
-  
-  const getBookingsForDay = (day: Date) => {
-    return filteredBookings.filter(booking => {
-      const bookingStartDate = new Date(booking.startDate);
-      const bookingEndDate = new Date(booking.endDate);
-      
-      const bookingStart = new Date(
-        bookingStartDate.getFullYear(),
-        bookingStartDate.getMonth(),
-        bookingStartDate.getDate()
-      );
-      
-      const bookingEnd = new Date(
-        bookingEndDate.getFullYear(),
-        bookingEndDate.getMonth(),
-        bookingEndDate.getDate()
-      );
-      
-      const currentDay = new Date(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate()
-      );
-      
-      return currentDay >= bookingStart && currentDay <= bookingEnd;
+  // Format time from date object
+  const formatTime = (date: Date) => {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
   
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  
-  const renderHeader = () => {
-    const dateFormat = "MMMM yyyy";
-    
-    return (
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold">
-            {format(currentDate, dateFormat)}
-          </h2>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Select value={selectedResource} onValueChange={(value) => setSelectedResource(value)}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select resource" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Resources</SelectItem>
-              {resources.map(resource => (
-                <SelectItem key={resource.id} value={resource.id}>
-                  {resource.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={prevMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={nextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
+  // Get resource name by ID
+  const getResourceName = (resourceId: string) => {
+    const resource = resources.find(r => r.id === resourceId);
+    return resource ? resource.name : 'Unknown Resource';
   };
   
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Get member name by ID
+  const getMemberName = (memberId: string) => {
+    const member = members.find(m => m.id === memberId);
+    return member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
+  };
   
+  // Get status badge color
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="success">Approved</Badge>;
+      case 'pending':
+        return <Badge variant="warning">Pending</Badge>;
+      case 'declined':
+        return <Badge variant="destructive">Declined</Badge>;
+      case 'completed':
+        return <Badge variant="outline">Completed</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>Resource Booking Calendar</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {renderHeader()}
-        
-        <div className="grid grid-cols-7 gap-2 text-sm font-semibold border-b pb-2 mb-2">
-          {daysOfWeek.map(day => (
-            <div key={day} className="text-center">{day}</div>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-7 gap-2 auto-rows-fr">
-          {Array(getDay(monthStart))
-            .fill(null)
-            .map((_, index) => (
-              <div key={`empty-${index}`} className="p-1 border border-transparent"></div>
-            ))}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <CardTitle>Calendar</CardTitle>
+          <CardDescription>Select a date to view bookings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-md border"
+          />
           
-          {days.map((day, i) => {
-            const dayBookings = getBookingsForDay(day);
-            const isCurrentDay = isToday(day);
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            
-            return (
-              <div 
-                key={day.toString()} 
-                className={`min-h-[100px] p-1 border rounded-md ${
-                  isCurrentDay 
-                    ? 'border-primary bg-primary/5' 
-                    : isCurrentMonth 
-                      ? 'border-gray-200'
-                      : 'border-transparent text-gray-400'
-                }`}
-              >
-                <div className="font-medium mb-1">{format(day, "d")}</div>
-                <div className="space-y-1 overflow-y-auto max-h-[80px]">
-                  {dayBookings.map(booking => {
-                    const resource = resources.find(r => r.id === booking.resourceId);
-                    const member = members.find(m => m.id === booking.memberId);
+          <div className="mt-4">
+            <Select value={selectedResource} onValueChange={setSelectedResource}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by resource" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Resources</SelectItem>
+                {resources.map(resource => (
+                  <SelectItem key={resource.id} value={resource.id}>{resource.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle>
+            Bookings for {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'All Dates'}
+          </CardTitle>
+          <CardDescription>
+            {selectedResource !== 'all' 
+              ? `Filtered to ${getResourceName(selectedResource)}` 
+              : 'All resources'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredBookings.length > 0 ? (
+            <div className="space-y-4">
+              {filteredBookings.map(booking => (
+                <div key={booking.id} className="flex p-4 border rounded-md">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">{booking.purpose}</h3>
+                      {getStatusBadge(booking.status)}
+                    </div>
                     
-                    return (
-                      <div
-                        key={booking.id}
-                        className="p-1 text-xs rounded bg-primary/10 flex flex-col truncate"
-                        title={`${booking.purpose} (${resource?.name})`}
-                      >
-                        <span className="font-medium truncate">{booking.purpose}</span>
-                        <div className="flex justify-between items-center">
-                          <span className="truncate text-muted-foreground">{resource?.name}</span>
-                          <Badge variant="outline" className="text-[10px] px-1">{booking.status}</Badge>
-                        </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div className="flex items-center">
+                        <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{new Date(booking.startDate).toLocaleDateString()} {formatTime(booking.startDate)} - {formatTime(booking.endDate)}</span>
                       </div>
-                    );
-                  })}
+                      
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{getResourceName(booking.resourceId)}</span>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{getMemberName(booking.memberId)}</span>
+                      </div>
+                      
+                      {booking.notes && (
+                        <div className="mt-2 text-muted-foreground">
+                          <p>{booking.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No bookings found for the selected date and resource
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

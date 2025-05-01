@@ -1,4 +1,7 @@
 
+import React from 'react';
+// Include any necessary imports
+
 // Fix for addMentorshipProgram function
 export const createMentorshipProgram = (programData: any) => {
   return {
@@ -8,3 +11,14 @@ export const createMentorshipProgram = (programData: any) => {
     mentees: [programData.menteeId]
   };
 };
+
+const Mentorship = () => {
+  return (
+    <div>
+      <h1>Mentorship</h1>
+      {/* Mentorship content goes here */}
+    </div>
+  );
+};
+
+export default Mentorship;

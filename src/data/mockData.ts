@@ -1,4 +1,3 @@
-
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
@@ -219,4 +218,14 @@ export const getInitialData = () => {
     programmes: mockProgrammes,
     taskCategories: mockTaskCategories
   };
+};
+
+// Fix the properties that have string type errors by ensuring they are string arrays
+export const fixMemberData = (members: any[]) => {
+  return members.map(member => ({
+    ...member,
+    skills: Array.isArray(member.skills) ? member.skills : member.skills ? [member.skills] : [],
+    interests: Array.isArray(member.interests) ? member.interests : member.interests ? [member.interests] : [],
+    // Add any other fields that need to be arrays
+  }));
 };

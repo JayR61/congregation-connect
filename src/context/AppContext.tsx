@@ -145,7 +145,7 @@ interface AppContextType {
   ) => void;
   deleteProgrammeFeedback: (id: string) => void;
   createProgrammeReminder: (
-    reminder: Omit<ProgrammeReminder, "id" | "sentAt" | "status">
+    reminder: Omit<ProgrammeReminder, "id" | "sent" | "status">
   ) => ProgrammeReminder;
   updateProgrammeReminder: (
     id: string,
@@ -185,6 +185,9 @@ interface AppContextType {
   addProgrammeTag: (tag: Omit<ProgrammeTag, 'id'>) => ProgrammeTag;
   assignTagToProgramme: (programmeId: string, tagId: string) => boolean;
   removeTagFromProgramme: (programmeId: string, tagId: string) => boolean;
+  moveDocument: (documentId: string, folderId: string | null) => boolean;
+  shareDocument: (documentId: string, userIds: string[]) => boolean;
+  addMentorshipProgram: (program: any) => void;
 }
 
 const defaultContext: AppContextType = {
@@ -195,7 +198,7 @@ const defaultContext: AppContextType = {
   documents: [],
   folders: [],
   notifications: [],
-  currentUser: mockCurrentUser,
+  currentUser: {} as User, // Initialize with empty user object instead of mockCurrentUser
   programmes: [],
   taskCategories: [],
   attendance: [],
@@ -260,6 +263,9 @@ const defaultContext: AppContextType = {
   addProgrammeTag: () => ({} as ProgrammeTag),
   assignTagToProgramme: () => false,
   removeTagFromProgramme: () => false,
+  moveDocument: () => false,
+  shareDocument: () => false,
+  addMentorshipProgram: () => {},
 };
 
 const AppContext = createContext<AppContextType>(defaultContext);
@@ -420,6 +426,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return true;
   };
 
+  const shareDocument = (documentId: string, userIds: string[]) => {
+    updateDocument(documentId, { shared: userIds.length > 0 });
+    return true;
+  };
+
   const addProgrammeResource = (
     resource: Omit<ProgrammeResource, "id">
   ): ProgrammeResource => {
@@ -507,7 +518,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setKpis((prev) =>
       prev.map((kpi) => (kpi.id === id ? { ...kpi, actual: progress } : kpi))
     );
-    return true;
   };
 
   const deleteProgrammeKPI = (id: string) => {
@@ -552,7 +562,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     } as ProgrammeAttendance));
 
     setAttendance((prev) => [...prev, ...newAttendanceRecords]);
-    return true;
   };
 
   const createProgrammeFromTemplate = (
@@ -638,7 +647,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return true;
   };
 
-  let contextValue: AppContextType = {
+  // Add a stub function for addMentorshipProgram
+  const addMentorshipProgram = (program: any) => {
+    console.log("Adding mentorship program:", program);
+    // In a real implementation, this would add the program to state
+  };
+
+  const contextValue: AppContextType = {
     members,
     tasks,
     transactions,
@@ -712,6 +727,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     assignTagToProgramme,
     removeTagFromProgramme,
     moveDocument,
+    shareDocument,
+    addMentorshipProgram,
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;

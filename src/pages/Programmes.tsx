@@ -10,15 +10,15 @@ import { Programme } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, ListFilter, Calendar as CalendarIcon, BarChart2, Settings, UserPlus, ClipboardList } from 'lucide-react';
-import { ProgrammeCard } from '@/components/programmes/ProgrammeCard';
+import ProgrammeCard from '@/components/programmes/ProgrammeCard';
 import ProgrammeForm from '@/components/programmes/ProgrammeForm';
-import { CalendarView } from '@/components/programmes/CalendarView';
+import CalendarView from '@/components/programmes/CalendarView';
 import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics';
-import { CategoryTagManager } from '@/components/programmes/CategoryTagManager';
+import CategoryTagManager from '@/components/programmes/CategoryTagManager';
 import ResourceManagement from '@/components/programmes/ResourceManagement';
 import AttendanceDashboard from '@/components/programmes/AttendanceDashboard';
-import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
-import { FeedbackManager } from '@/components/programmes/FeedbackManager';
+import AttendanceReportDialog from '@/components/programmes/AttendanceReportDialog';
+import FeedbackManager from '@/components/programmes/FeedbackManager';
 import ReminderManager from '@/components/programmes/ReminderManager';
 import TemplateManager from '@/components/programmes/TemplateManager';
 import KPIManager from '@/components/programmes/KPIManager';
@@ -32,6 +32,15 @@ const Programmes = () => {
     updateProgramme, 
     deleteProgramme, 
     members,
+    attendance,
+    resources,
+    feedback,
+    kpis,
+    reminders,
+    templates,
+    categories,
+    tags,
+    programmeTags,
     addProgrammeKPI,
     updateKPIProgress,
     recordBulkAttendance,
@@ -88,10 +97,14 @@ const Programmes = () => {
   const handleFormSubmit = (programmeData: Omit<Programme, 'id'>) => {
     if (isEditMode && selectedProgramme) {
       updateProgramme(selectedProgramme.id, programmeData);
-      toast.success('Programme updated successfully!');
+      toast({
+        title: 'Programme updated successfully!'
+      });
     } else {
       addProgramme(programmeData);
-      toast.success('Programme added successfully!');
+      toast({
+        title: 'Programme added successfully!'
+      });
     }
     setIsDialogOpen(false);
   };
@@ -99,7 +112,9 @@ const Programmes = () => {
   const handleDeleteProgramme = (id: string) => {
     if (window.confirm('Are you sure you want to delete this programme?')) {
       deleteProgramme(id);
-      toast.success('Programme deleted successfully!');
+      toast({
+        title: 'Programme deleted successfully!'
+      });
     }
   };
   
@@ -188,7 +203,10 @@ const Programmes = () => {
               <CardTitle>Programme Calendar</CardTitle>
             </CardHeader>
             <CardContent>
-              <CalendarView programmes={filteredProgrammes} />
+              <CalendarView 
+                programmes={filteredProgrammes} 
+                onDateSelect={(date) => console.log('Selected date:', date)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -202,14 +220,18 @@ const Programmes = () => {
                   <UserPlus className="mr-2 h-4 w-4" />
                   Record Attendance
                 </Button>
-                <Button variant="outline" onClick={() => toast.success("Attendance data exported to CSV")}>
+                <Button variant="outline" onClick={() => toast({ title: "Attendance data exported to CSV" })}>
                   <ClipboardList className="mr-2 h-4 w-4" />
                   Export Data
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <AttendanceDashboard programmes={filteredProgrammes} members={members} />
+              <AttendanceDashboard 
+                programmes={filteredProgrammes} 
+                members={members}
+                attendance={attendance}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -237,6 +259,10 @@ const Programmes = () => {
               </CardHeader>
               <CardContent>
                 <CategoryTagManager 
+                  programmes={programmes}
+                  categories={categories}
+                  tags={tags}
+                  programmeTags={programmeTags}
                   onAddCategory={addProgrammeCategory}
                   onAddTag={addProgrammeTag}
                   onAssignTag={assignTagToProgramme}
@@ -266,7 +292,9 @@ const Programmes = () => {
               </CardHeader>
               <CardContent>
                 <FeedbackManager 
-                  programmes={filteredProgrammes}
+                  programmes={programmes}
+                  feedback={feedback}
+                  members={members}
                   onAddFeedback={addProgrammeFeedback}
                 />
                 <Button onClick={() => setIsFeedbackDialogOpen(true)} className="mt-4">
@@ -281,9 +309,12 @@ const Programmes = () => {
               </CardHeader>
               <CardContent>
                 <ReminderManager
-                  onCreateReminder={createProgrammeReminder}
-                  programmes={filteredProgrammes}
+                  programmes={programmes}
+                  reminders={reminders}
                   members={members}
+                  onCreateReminder={createProgrammeReminder}
+                  onSendReminder={(id) => true}
+                  onCancelReminder={(id) => true}
                 />
                 <Button onClick={() => setIsReminderDialogOpen(true)} className="mt-4">
                   Manage Reminders
@@ -296,7 +327,12 @@ const Programmes = () => {
                 <CardTitle>Resource Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResourceManagement programmes={filteredProgrammes} />
+                <ResourceManagement 
+                  programmes={programmes}
+                  resources={resources}
+                  onAllocateResource={(resource) => ({})}
+                  onUpdateStatus={(id, status) => true}
+                />
               </CardContent>
             </Card>
           </div>

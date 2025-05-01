@@ -11,22 +11,20 @@ import { useState } from "react";
 
 interface ProgrammeCardProps {
   programme: Programme;
-  onDeleteConfirm: (id: string) => void;
-  onAttendanceClick: (id: string) => void;
-  getTypeBadgeColor: (type: string) => string;
-  onCardClick?: (programme: Programme) => void;
-  onExportPDF?: (programmeId: string) => void;
-  onExportCalendar?: (programmeId: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAttendance: () => void;
+  onExportToPDF?: (programmeId: string) => void;
+  onExportToCalendar?: (programmeId: string) => void;
 }
 
 export const ProgrammeCard = ({ 
   programme, 
-  onDeleteConfirm, 
-  onAttendanceClick,
-  getTypeBadgeColor,
-  onCardClick,
-  onExportPDF,
-  onExportCalendar
+  onEdit,
+  onDelete, 
+  onAttendance,
+  onExportToPDF,
+  onExportToCalendar
 }: ProgrammeCardProps) => {
   const [expanded, setExpanded] = useState(false);
   
@@ -47,13 +45,30 @@ export const ProgrammeCard = ({
     }
   };
 
+  const getTypeBadgeColor = (type: string) => {
+    switch(type) {
+      case 'ministry':
+        return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      case 'counseling':
+        return "bg-pink-100 text-pink-800 hover:bg-pink-200";
+      case 'service':
+        return "bg-amber-100 text-amber-800 hover:bg-amber-200";
+      case 'training':
+        return "bg-green-100 text-green-800 hover:bg-green-200";
+      case 'outreach':
+        return "bg-purple-100 text-purple-800 hover:bg-purple-200";
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+    }
+  };
+
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
     setExpanded(!expanded);
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow h-[360px] flex flex-col" onClick={() => onCardClick && onCardClick(programme)}>
+    <Card className="overflow-hidden hover:shadow-md transition-shadow h-[360px] flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="truncate">{programme.name}</CardTitle>
@@ -89,7 +104,7 @@ export const ProgrammeCard = ({
                   <AlertDialogAction 
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteConfirm(programme.id);
+                      onDelete();
                     }}
                     className="bg-destructive hover:bg-destructive/90"
                   >
@@ -139,28 +154,28 @@ export const ProgrammeCard = ({
                 <span className="text-sm font-medium block mb-1">Description:</span>
                 <p className="text-sm text-muted-foreground">{programme.description}</p>
               </div>
-              {(onExportPDF || onExportCalendar) && (
+              {(onExportToPDF || onExportToCalendar) && (
                 <div className="flex gap-2 mt-2">
-                  {onExportPDF && (
+                  {onExportToPDF && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onExportPDF(programme.id);
+                        onExportToPDF(programme.id);
                       }}
                       className="text-xs flex items-center"
                     >
                       <Download className="h-3 w-3 mr-1" /> PDF
                     </Button>
                   )}
-                  {onExportCalendar && (
+                  {onExportToCalendar && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onExportCalendar(programme.id);
+                        onExportToCalendar(programme.id);
                       }}
                       className="text-xs flex items-center"
                     >
@@ -191,7 +206,7 @@ export const ProgrammeCard = ({
           className="w-full"
           onClick={(e) => {
             e.stopPropagation();
-            onAttendanceClick(programme.id);
+            onAttendance();
           }}
         >
           {programme.endDate && new Date(programme.endDate) < new Date() ? "View Attendance" : "Record Attendance"}
@@ -200,3 +215,5 @@ export const ProgrammeCard = ({
     </Card>
   );
 };
+
+export default ProgrammeCard;

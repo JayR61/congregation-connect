@@ -19,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Define proper TaskStatus type to match what's in types/index.ts
-type LocalTaskStatus = 'pending' | 'in-progress' | 'completed';
+type LocalTaskStatus = 'todo' | 'in-progress' | 'completed' | 'pending';
 type LocalTaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 
 interface TaskDialogProps {
@@ -58,31 +58,35 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       const task = tasks.find(t => t.id === taskId);
       if (task) {
         setTitle(task.title);
-        setDescription(task.description);
-        // Map from the task's status to our local status
-        if (task.status === 'open' || task.status === 'pending') {
+        setDescription(task.description || '');
+        
+        // Map from task status to our local status
+        if (task.status === 'todo' || task.status === 'pending') {
           setStatus('pending');
-        } else if (task.status === 'in progress' || task.status === 'in-progress') {
+        } else if (task.status === 'in-progress') {
           setStatus('in-progress');
-        } else if (task.status === 'done' || task.status === 'completed') {
+        } else if (task.status === 'completed' || task.status === 'done') {
           setStatus('completed');
         }
         
         setPriority(task.priority as TaskPriority);
-        setDueDate(task.dueDate);
-        // Handle categories - assuming the task uses the categories array property
+        setDueDate(task.dueDate || null);
+        
+        // Handle categories
         if (task.categories) {
           setSelectedCategories(task.categories.map(c => c.id));
         }
+        
         if (task.assigneeIds) {
           setAssignees(task.assigneeIds);
-        } else {
+        } else if (task.assigneeId) {
           setAssignees([task.assigneeId]);
         }
+        
         // Handle recurrence if it exists
         if (task.recurrence) {
-          // Make sure recurrence value fits our local type
-          const localRecurrence = task.recurrence === 'yearly' ? 'monthly' : task.recurrence as LocalTaskRecurrence;
+          const localRecurrence = task.recurrence === 'yearly' ? 'monthly' : 
+                                (task.recurrence as LocalTaskRecurrence);
           setRecurrence(localRecurrence);
         }
         
@@ -157,23 +161,31 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, task
       ...customCategories.filter(c => selectedCategories.includes(c.id))
     ];
     
+    // Map local status to task status
+    let taskStatus: TaskStatus;
+    if (status === 'pending') {
+      taskStatus = 'todo';
+    } else if (status === 'in-progress') {
+      taskStatus = 'in-progress';
+    } else {
+      taskStatus = 'completed';
+    }
+    
     // Create task data with required fields from the Task type
     const taskData = {
       title,
       description,
-      status, // Using our local status type which matches TaskStatus
+      status: taskStatus,
       priority,
       dueDate,
-      category: "default", // Required field for Task type
-      assigneeId: assignees[0] || "user-1", // Required field for Task type
+      categoryId: "default", // Required field 
+      assigneeId: assignees[0] || "user-1",
       assigneeIds: assignees,
-      reporterId: "user-1", // Required field for Task type
       categories: allCategories,
       recurrence,
-      createdById: "user-1", // Required field
-      comments: [], // Required field
-      lastModifiedById: "user-1", // Required field
-      lastModifiedAction: "created", // Required field
+      createdById: "user-1",
+      lastModifiedById: "user-1", 
+      lastModifiedAction: "created"
     };
     
     if (taskId) {

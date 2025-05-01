@@ -1,318 +1,423 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Check, Search, UserRound, Users } from 'lucide-react';
-import { BulkAttendanceRecord, Member, Programme } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAppContext } from '@/context/AppContext';
+import { BulkAttendanceRecord, Member } from '@/types';
+import { CalendarIcon, Check, CheckCircle, CircleX, Search, UserCheck, UserX } from 'lucide-react';
+import { toast } from '@/lib/toast';
+import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
-interface BulkAttendanceRecorderProps {
-  programmes: Programme[];
-  members: Member[];
-  onRecordBulkAttendance: (record: BulkAttendanceRecord) => void;
-}
-
-export const BulkAttendanceRecorder = ({ 
-  programmes, 
-  members,
-  onRecordBulkAttendance
-}: BulkAttendanceRecorderProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<{[key: string]: boolean}>({});
-  const [memberNotes, setMemberNotes] = useState<{[key: string]: string}>({});
-  const [selectedProgramme, setSelectedProgramme] = useState<string | null>(null);
+const BulkAttendanceRecorder = ({ programmeId, onSaveComplete }: { programmeId: string, onSaveComplete?: () => void }) => {
+  const { members, programmes, recordBulkAttendance } = useAppContext();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectAll, setSelectAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [attendanceRecords, setAttendanceRecords] = useState<Array<{
+    memberId: string;
+    isPresent: boolean;
+    notes: string;
+  }>>([]);
   
+  const programme = programmes.find(p => p.id === programmeId);
+  
+  // Initialize attendance records with all members
+  useEffect(() => {
+    const initialRecords = members.map(member => ({
+      memberId: member.id,
+      isPresent: false,
+      notes: ''
+    }));
+    
+    setAttendanceRecords(initialRecords);
+  }, [members]);
+  
+  // Filter members based on search query
   const filteredMembers = members.filter(member => {
     const fullName = `${member.firstName} ${member.lastName}`.toLowerCase();
-    return fullName.includes(searchQuery.toLowerCase()) || 
-           member.email.toLowerCase().includes(searchQuery.toLowerCase());
+    return fullName.includes(searchQuery.toLowerCase());
   });
   
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
+  // Toggle attendance for a member
+  const toggleAttendance = (memberId: string) => {
+    setAttendanceRecords(prev => 
+      prev.map(record => 
+        record.memberId === memberId 
+          ? { ...record, isPresent: !record.isPresent } 
+          : record
+      )
+    );
+  };
+  
+  // Update notes for a member
+  const updateNotes = (memberId: string, notes: string) => {
+    setAttendanceRecords(prev => 
+      prev.map(record => 
+        record.memberId === memberId 
+          ? { ...record, notes } 
+          : record
+      )
+    );
+  };
+  
+  // Mark all filtered members as present
+  const markAllPresent = () => {
+    const filteredMemberIds = filteredMembers.map(m => m.id);
     
-    if (checked) {
-      const allSelected = filteredMembers.reduce((acc, member) => {
-        acc[member.id] = true;
-        return acc;
-      }, {} as {[key: string]: boolean});
+    setAttendanceRecords(prev => 
+      prev.map(record => 
+        filteredMemberIds.includes(record.memberId) 
+          ? { ...record, isPresent: true } 
+          : record
+      )
+    );
+  };
+  
+  // Mark all filtered members as absent
+  const markAllAbsent = () => {
+    const filteredMemberIds = filteredMembers.map(m => m.id);
+    
+    setAttendanceRecords(prev => 
+      prev.map(record => 
+        filteredMemberIds.includes(record.memberId) 
+          ? { ...record, isPresent: false } 
+          : record
+      )
+    );
+  };
+  
+  const saveAttendance = () => {
+    if (saving) return;
+    
+    setSaving(true);
+    
+    try {
+      // Convert the attendance state to the format expected by the API
+      const recordsFormat = attendanceRecords.map(record => ({
+        memberId: record.memberId,
+        status: record.isPresent ? 'present' : 'absent', // Convert boolean to status string
+        notes: record.notes || ''
+      }));
       
-      setSelectedMembers(allSelected);
-    } else {
-      setSelectedMembers({});
+      // Fix for the BulkAttendanceRecord.records missing error
+      recordBulkAttendance({
+        programmeId,
+        date: selectedDate,
+        records: recordsFormat,  // <-- Added the required records field
+        attendees: attendanceRecords  // Keep the attendees field as well
+      });
+      
+      toast({
+        title: "Attendance recorded",
+        description: `Successfully recorded attendance for ${programmeId} on ${selectedDate.toLocaleDateString()}`,
+      });
+      
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
+      
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      toast({
+        title: "Error recording attendance",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
     }
   };
   
-  const handleSelectMember = (memberId: string, checked: boolean) => {
-    setSelectedMembers(prev => ({
-      ...prev,
-      [memberId]: checked
-    }));
-    
-    const updatedSelectedMembers = {
-      ...selectedMembers,
-      [memberId]: checked
-    };
-    
-    const allSelected = filteredMembers.every(member => 
-      updatedSelectedMembers[member.id] === true
-    );
-    
-    setSelectAll(allSelected);
-  };
-  
-  const handleAddNotes = (memberId: string, notes: string) => {
-    setMemberNotes(prev => ({
-      ...prev,
-      [memberId]: notes
-    }));
-  };
-  
-  const handleSubmit = () => {
-    if (!selectedProgramme) return;
-    
-    const selectedMemberIds = Object.entries(selectedMembers)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([id, _]) => id);
-    
-    if (selectedMemberIds.length === 0) return;
-    
-    const attendees = selectedMemberIds.map(id => ({
-      memberId: id,
-      isPresent: true,
-      notes: memberNotes[id] || undefined
-    }));
-    
-    const bulkRecord: BulkAttendanceRecord = {
-      programmeId: selectedProgramme,
-      date: selectedDate,
-      attendees: attendees
-    };
-    
-    onRecordBulkAttendance(bulkRecord);
-    setIsDialogOpen(false);
-    resetForm();
-  };
-  
-  const resetForm = () => {
-    setSelectedMembers({});
-    setMemberNotes({});
-    setSelectedProgramme(null);
-    setSelectedDate(new Date());
-    setSearchQuery('');
-    setSelectAll(false);
-  };
-  
-  const selectedCount = Object.values(selectedMembers).filter(Boolean).length;
+  // Get attendance stats
+  const presentCount = attendanceRecords.filter(r => r.isPresent).length;
+  const absentCount = attendanceRecords.length - presentCount;
+  const attendanceRate = attendanceRecords.length > 0 
+    ? Math.round((presentCount / attendanceRecords.length) * 100) 
+    : 0;
   
   return (
-    <div>
-      <Button onClick={() => setIsDialogOpen(true)}>
-        <Users className="mr-2 h-4 w-4" /> Record Bulk Attendance
-      </Button>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>Record Bulk Attendance</DialogTitle>
-            <DialogDescription>
-              Record attendance for multiple members at once.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-6">
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Record Attendance</CardTitle>
+            <CardDescription>
+              {programme ? programme.name : 'Programme'} - {format(selectedDate, 'PPP')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
               <div>
-                <Label htmlFor="programme">Programme</Label>
-                <Select 
-                  value={selectedProgramme || ''} 
-                  onValueChange={setSelectedProgramme}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select programme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {programmes.map(programme => (
-                      <SelectItem key={programme.id} value={programme.id}>
-                        {programme.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="search">Search Members</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="search"
-                  placeholder="Search by name or email"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            
-            <div className="border rounded-md">
-              <div className="p-2 border-b bg-muted/50 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="selectAll" 
-                    checked={selectAll}
-                    onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                <Label>Select Date</Label>
+                <div className="mt-2">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    className="border rounded-md"
                   />
-                  <label 
-                    htmlFor="selectAll" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Select All
-                  </label>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {selectedCount} of {filteredMembers.length} selected
                 </div>
               </div>
               
-              <ScrollArea className="h-[300px]">
-                <div className="p-2 space-y-2">
-                  {filteredMembers.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No members found.
-                    </div>
-                  ) : (
-                    filteredMembers.map(member => {
-                      const isSelected = selectedMembers[member.id] === true;
+              <div className="flex-1">
+                <div className="mb-4">
+                  <Label>Attendance Summary</Label>
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    <Card className="p-4 text-center">
+                      <UserCheck className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                      <p className="text-sm text-muted-foreground">Present</p>
+                      <p className="text-2xl font-bold">{presentCount}</p>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <UserX className="h-5 w-5 mx-auto text-red-500 mb-1" />
+                      <p className="text-sm text-muted-foreground">Absent</p>
+                      <p className="text-2xl font-bold">{absentCount}</p>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <CalendarIcon className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+                      <p className="text-sm text-muted-foreground">Rate</p>
+                      <p className="text-2xl font-bold">{attendanceRate}%</p>
+                    </Card>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Actions</Label>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Button onClick={markAllPresent} variant="outline" className="justify-start">
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                      Mark All as Present
+                    </Button>
+                    <Button onClick={markAllAbsent} variant="outline" className="justify-start">
+                      <CircleX className="h-4 w-4 mr-2 text-red-500" />
+                      Mark All as Absent
+                    </Button>
+                    <Button onClick={saveAttendance} disabled={saving} className="mt-2">
+                      {saving ? 'Saving...' : 'Save Attendance'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Members</CardTitle>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search members..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Tabs defaultValue="all">
+              <div className="px-6 pt-2">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="present">Present</TabsTrigger>
+                  <TabsTrigger value="absent">Absent</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="all" className="m-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="divide-y">
+                    {filteredMembers.map(member => {
+                      const record = attendanceRecords.find(r => r.memberId === member.id);
+                      const isPresent = record?.isPresent || false;
                       
                       return (
-                        <div 
-                          key={member.id} 
-                          className={cn(
-                            "flex items-center justify-between p-2 rounded-md",
-                            isSelected ? "bg-muted/70" : "hover:bg-muted/20"
-                          )}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Checkbox 
-                              id={`member-${member.id}`}
-                              checked={isSelected}
-                              onCheckedChange={(checked) => handleSelectMember(member.id, checked === true)}
-                            />
-                            <div className="flex items-center space-x-2">
-                              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                                {member.avatar ? (
-                                  <img 
-                                    src={member.avatar} 
-                                    alt={`${member.firstName} ${member.lastName}`}
-                                    className="h-8 w-8 rounded-full"
-                                  />
-                                ) : (
-                                  <UserRound className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-medium text-sm">
-                                  {member.firstName} {member.lastName}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {member.email}
-                                </div>
-                              </div>
+                        <div key={member.id} className="flex items-center p-4 hover:bg-muted/50">
+                          <div className="flex items-center flex-1">
+                            <Avatar className="h-8 w-8 mr-2">
+                              <AvatarImage src={member.avatar} />
+                              <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{member.firstName} {member.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{member.email}</p>
                             </div>
                           </div>
-                          
-                          {isSelected && (
-                            <div className="ml-2 flex-1 max-w-[200px]">
-                              <Input 
-                                placeholder="Notes (optional)"
-                                value={memberNotes[member.id] || ''}
-                                onChange={(e) => handleAddNotes(member.id, e.target.value)}
-                                className="h-8 text-xs"
+                          <div className="flex items-center">
+                            <div className="mr-4">
+                              <Input
+                                placeholder="Notes"
+                                value={record?.notes || ''}
+                                onChange={(e) => updateNotes(member.id, e.target.value)}
+                                className="w-32 h-8 text-xs"
                               />
                             </div>
-                          )}
+                            <Button
+                              variant={isPresent ? "default" : "outline"}
+                              size="sm"
+                              className={cn(
+                                "w-20",
+                                isPresent ? "bg-green-600 hover:bg-green-700" : ""
+                              )}
+                              onClick={() => toggleAttendance(member.id)}
+                            >
+                              {isPresent ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-1" /> Present
+                                </>
+                              ) : (
+                                "Absent"
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsDialogOpen(false);
-              resetForm();
-            }}>
-              Cancel
+                    })}
+                    
+                    {filteredMembers.length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground">
+                        No members found matching your search.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+              
+              <TabsContent value="present" className="m-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="divide-y">
+                    {filteredMembers
+                      .filter(member => {
+                        const record = attendanceRecords.find(r => r.memberId === member.id);
+                        return record?.isPresent;
+                      })
+                      .map(member => {
+                        const record = attendanceRecords.find(r => r.memberId === member.id);
+                        
+                        return (
+                          <div key={member.id} className="flex items-center p-4 hover:bg-muted/50">
+                            <div className="flex items-center flex-1">
+                              <Avatar className="h-8 w-8 mr-2">
+                                <AvatarImage src={member.avatar} />
+                                <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{member.firstName} {member.lastName}</p>
+                                <p className="text-xs text-muted-foreground">{member.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="mr-4">
+                                <Input
+                                  placeholder="Notes"
+                                  value={record?.notes || ''}
+                                  onChange={(e) => updateNotes(member.id, e.target.value)}
+                                  className="w-32 h-8 text-xs"
+                                />
+                              </div>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="w-20 bg-green-600 hover:bg-green-700"
+                                onClick={() => toggleAttendance(member.id)}
+                              >
+                                <Check className="h-4 w-4 mr-1" /> Present
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    
+                    {filteredMembers.filter(member => {
+                      const record = attendanceRecords.find(r => r.memberId === member.id);
+                      return record?.isPresent;
+                    }).length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground">
+                        No present members found.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+              
+              <TabsContent value="absent" className="m-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="divide-y">
+                    {filteredMembers
+                      .filter(member => {
+                        const record = attendanceRecords.find(r => r.memberId === member.id);
+                        return !record?.isPresent;
+                      })
+                      .map(member => {
+                        const record = attendanceRecords.find(r => r.memberId === member.id);
+                        
+                        return (
+                          <div key={member.id} className="flex items-center p-4 hover:bg-muted/50">
+                            <div className="flex items-center flex-1">
+                              <Avatar className="h-8 w-8 mr-2">
+                                <AvatarImage src={member.avatar} />
+                                <AvatarFallback>{member.firstName[0]}{member.lastName[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{member.firstName} {member.lastName}</p>
+                                <p className="text-xs text-muted-foreground">{member.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="mr-4">
+                                <Input
+                                  placeholder="Notes"
+                                  value={record?.notes || ''}
+                                  onChange={(e) => updateNotes(member.id, e.target.value)}
+                                  className="w-32 h-8 text-xs"
+                                />
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-20"
+                                onClick={() => toggleAttendance(member.id)}
+                              >
+                                Absent
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    
+                    {filteredMembers.filter(member => {
+                      const record = attendanceRecords.find(r => r.memberId === member.id);
+                      return !record?.isPresent;
+                    }).length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground">
+                        No absent members found.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredMembers.length} of {members.length} members
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
+              Clear Search
             </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={!selectedProgramme || selectedCount === 0}
-            >
-              Record Attendance
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };
+
+export default BulkAttendanceRecorder;

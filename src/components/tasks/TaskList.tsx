@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,11 +39,13 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
 
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
+      case 'todo':
       case 'pending':
         return 'bg-orange-100 text-orange-800';
       case 'in-progress':
         return 'bg-blue-100 text-blue-800';
       case 'completed':
+      case 'done':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -112,7 +113,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
                 </div>
                 
                 <div className="flex -space-x-2">
-                  {task.assigneeIds.slice(0, 3).map((id) => {
+                  {task.assigneeIds && task.assigneeIds.slice(0, 3).map((id) => {
                     const member = members.find(m => m.id === id);
                     return (
                       <Avatar key={id} className="h-6 w-6 border-2 border-background">
@@ -123,7 +124,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
                       </Avatar>
                     );
                   })}
-                  {task.assigneeIds.length > 3 && (
+                  {task.assigneeIds && task.assigneeIds.length > 3 && (
                     <Avatar className="h-6 w-6 border-2 border-background">
                       <AvatarFallback className="text-[10px] bg-muted">
                         +{task.assigneeIds.length - 3}
@@ -159,7 +160,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
               <span>Created by {getCreatorName(task)}</span>
               <span className="mx-2">•</span>
               
-              {task.categories.length > 0 && (
+              {task.categories && task.categories.length > 0 && (
                 <div className="flex items-center gap-1 mr-2">
                   {task.categories.slice(0, 2).map(category => (
                     <Badge 
@@ -189,7 +190,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
           </div>
           
           <div className="flex -space-x-2 ml-4">
-            {task.assigneeIds.slice(0, 3).map((id) => {
+            {task.assigneeIds && task.assigneeIds.slice(0, 3).map((id) => {
               const member = members.find(m => m.id === id);
               return (
                 <Avatar key={id} className="h-7 w-7 border-2 border-background">
@@ -200,7 +201,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
                 </Avatar>
               );
             })}
-            {task.assigneeIds.length > 3 && (
+            {task.assigneeIds && task.assigneeIds.length > 3 && (
               <Avatar className="h-7 w-7 border-2 border-background">
                 <AvatarFallback className="bg-muted">
                   +{task.assigneeIds.length - 3}

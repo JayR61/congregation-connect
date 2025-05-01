@@ -1,3 +1,4 @@
+
 // Add ChurchResource and ResourceBooking types to the index.ts file
 // We'll append to the existing exports
 
@@ -34,7 +35,7 @@ export interface Folder {
   parentId: string | null;
   createdAt: Date;
   updatedAt: Date;
-  createdById?: string; // Add this field to match usage
+  createdById?: string;
 }
 
 export interface Document {
@@ -69,7 +70,6 @@ export interface DocumentVersion {
   fileSize: number;
   url: string;
   notes?: string;
-  // Additional fields that are used in components
   createdById?: string;
 }
 
@@ -87,7 +87,6 @@ export interface Transaction {
   notes?: string;
   recurring?: boolean;
   recurrencePattern?: string;
-  // Additional fields that are used in components
   createdAt?: Date;
   updatedAt?: Date;
   createdById?: string;
@@ -102,7 +101,6 @@ export interface AttendanceRecord {
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string;
   programmeId?: string;
-  // Additional fields used in components
   isPresent?: boolean;
   eventId?: string;
 }
@@ -127,7 +125,6 @@ export interface Member {
   tags?: string[];
   familyMembers?: string[];
   volunteerRoles?: Volunteer[];
-  // Additional fields used in components
   familyIds?: string[];
   familyId?: string | null;
   structures?: string[];
@@ -145,7 +142,7 @@ export interface Member {
   city?: string;
   state?: string;
   zip?: string;
-  mentorshipPrograms?: any[];
+  mentorshipPrograms?: MentorshipProgram[];
   avatar?: string;
   memberNotes?: MemberNote[];
   resourcesProvided?: ResourceProvided[];
@@ -153,24 +150,30 @@ export interface Member {
 
 export interface MemberNote {
   id: string;
-  memberId: string;
-  createdAt: Date;
-  createdBy: string;
   content: string;
+  date: Date;
+  createdBy: string;
+  attachments: any[];
   category?: string;
   isPrivate?: boolean;
-  date?: Date; // Added to fix errors
+  memberId?: string;
 }
 
 export interface ResourceProvided {
   id: string;
-  memberId: string;
-  resourceType: string;
-  resourceDetails: string;
+  description: string;
   date: Date;
-  providedBy: string;
+  providedById: string;
+  type: string;
+  name: string;
+  details: string;
+  value?: number;
+  attachments: any[];
+  memberId?: string;
+  resourceType?: string;
+  resourceDetails?: string;
+  providedBy?: string;
   notes?: string;
-  description?: string; // Added to fix errors
 }
 
 export interface Programme {
@@ -196,7 +199,6 @@ export interface Programme {
     sent: boolean;
   }[];
   image?: string;
-  // Additional fields used in components
   title?: string;
   type?: string;
   targetAudience?: string;
@@ -216,7 +218,7 @@ export interface ProgrammeAttendance {
   date: Date;
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string;
-  isPresent?: boolean; // Added to fix errors
+  isPresent?: boolean;
 }
 
 export interface BulkAttendanceRecord {
@@ -227,7 +229,11 @@ export interface BulkAttendanceRecord {
     status: 'present' | 'absent' | 'late' | 'excused';
     notes?: string;
   }[];
-  attendees?: any[]; // Added to fix errors
+  attendees?: {
+    memberId: string;
+    isPresent: boolean;
+    notes: string;
+  }[];
 }
 
 export interface ProgrammeCategory {
@@ -251,7 +257,7 @@ export interface ProgrammeFeedback {
   comments?: string;
   date: Date;
   anonymous?: boolean;
-  comment?: string; // Added to fix errors in component usage
+  comment?: string;
 }
 
 export interface ProgrammeKPI {
@@ -262,9 +268,10 @@ export interface ProgrammeKPI {
   actual?: number;
   unit: string;
   notes?: string;
-  title?: string; // Added to fix errors
-  current?: number; // Added to fix errors
-  description?: string; // Added to fix errors
+  title?: string;
+  current?: number;
+  description?: string;
+  createdAt?: Date;
 }
 
 export interface ProgrammeTemplate {
@@ -277,14 +284,20 @@ export interface ProgrammeTemplate {
   tags?: string[];
   defaultResourceIds?: string[];
   notes?: string;
+  title?: string;
+  type?: string;
+  content?: string;
+  category?: string;
+  resources?: string[];
+  createdById?: string;
 }
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
+  status: 'todo' | 'in-progress' | 'completed' | 'cancelled' | 'pending' | 'open' | 'done';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   dueDate?: Date;
   assigneeId?: string;
   createdBy: string;
@@ -294,20 +307,22 @@ export interface Task {
   categoryId?: string;
   tags?: string[];
   attachments?: string[];
-  recurrence?: TaskRecurrence;
+  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
   comments?: TaskComment[];
   parentTaskId?: string;
   subtasks?: Task[];
   programmeId?: string;
   effort?: number;
-  // Additional fields used in components
   assigneeIds?: string[]; // For multiple assignees
   createdById?: string;
   lastModifiedById?: string;
   lastModifiedAction?: string;
+  categories?: TaskCategory[];
+  category?: string;
+  reporterId?: string;
 }
 
-export type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'cancelled';
+export type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'cancelled' | 'pending' | 'open' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
 
@@ -444,7 +459,6 @@ export interface AppContextProps {
   removeTagFromProgramme?: (programmeId: string, tagId: string) => boolean;
   addMentorshipProgram?: (program: any) => any;
   addTaskComment?: (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => boolean;
-  addDocumentVersion?: (documentId: string, url: string, notes?: string) => void;
 }
 
 export interface MentorshipProgram {
@@ -460,7 +474,7 @@ export interface MentorshipProgram {
   sessions?: MentorshipSession[];
   resources?: string[];
   notes?: string;
-  menteeId?: string; // Add to match component usage
+  menteeId?: string;
 }
 
 export interface MentorshipSession {
@@ -486,5 +500,5 @@ export interface Volunteer {
   skills?: string[];
   notes?: string;
   area: string;
-  memberId?: string; // Added to match usage in components
+  memberId?: string;
 }

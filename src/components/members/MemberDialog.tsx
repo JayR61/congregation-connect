@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { CalendarIcon, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/AppContext';
 import { Member } from '@/types';
-import { MemberDialogProps } from './MemberDialogProps';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/lib/toast';
 
-const MemberDialog: React.FC<MemberDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  member, 
-  onSave 
-}) => {
+interface MemberDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  memberId?: string;
+}
+
+export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, memberId }) => {
   const { members, addMember, updateMember } = useAppContext();
-  const isEditing = !!member;
   
+  // Form state
   const [formData, setFormData] = useState<Partial<Member>>({
     firstName: '',
     lastName: '',
@@ -31,61 +32,64 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
     phone: '',
     address: '',
     status: 'active',
+    skills: [], // Initialize as an empty array
+    roles: [], // Initialize as an empty array
+    ministries: [], // Initialize as an empty array
+    dateOfBirth: undefined,
     joinDate: new Date(),
-    birthDate: new Date(),
+    city: '',
+    state: '',
+    zip: '',
     occupation: '',
-    skills: [],
-    notes: '',
-    category: 'regular',
-    isActive: true,
-    isFullMember: false,
-    structures: [],
-    positions: []
+    isLeadership: false,
+    isFullMember: true,
+    familyId: null,
   });
   
   const [newSkill, setNewSkill] = useState('');
-  const [familyMembers, setFamilyMembers] = useState<string[]>([]);
-  const [newPosition, setNewPosition] = useState({ title: '', structure: '' });
+  const [newMinistry, setNewMinistry] = useState('');
   
+  // Load member data if editing
   useEffect(() => {
-    if (member) {
+    if (memberId && open) {
+      const member = members.find(m => m.id === memberId);
+      if (member) {
+        setFormData({
+          ...member,
+          // Ensure arrays are initialized
+          skills: member.skills || [],
+          roles: member.roles || [],
+          ministries: member.ministries || [],
+        });
+      }
+    } else if (open) {
+      // Reset form when opening for a new member
       setFormData({
-        ...member,
-        joinDate: member.joinDate ? new Date(member.joinDate) : new Date(),
-        birthDate: member.birthDate ? new Date(member.birthDate) : new Date(),
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        status: 'active',
+        skills: [],
+        roles: [],
+        ministries: [],
+        dateOfBirth: undefined,
+        joinDate: new Date(),
+        city: '',
+        state: '',
+        zip: '',
+        occupation: '',
+        isLeadership: false,
+        isFullMember: true,
+        familyId: null,
       });
-      
-      setFamilyMembers(member.familyIds || []);
-    } else {
-      resetForm();
+      setNewSkill('');
+      setNewMinistry('');
     }
-  }, [member, open]);
+  }, [memberId, open, members]);
   
-  const resetForm = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      status: 'active',
-      joinDate: new Date(),
-      birthDate: new Date(),
-      occupation: '',
-      skills: [],
-      notes: '',
-      category: 'regular',
-      isActive: true,
-      isFullMember: false,
-      structures: [],
-      positions: []
-    });
-    setFamilyMembers([]);
-    setNewSkill('');
-    setNewPosition({ title: '', structure: '' });
-  };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -99,13 +103,11 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
   };
   
   const handleDateChange = (name: string, date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, [name]: date }));
-    }
+    setFormData(prev => ({ ...prev, [name]: date }));
   };
   
   const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills?.includes(newSkill.trim())) {
+    if (newSkill.trim() && formData.skills) {
       setFormData(prev => ({
         ...prev,
         skills: [...(prev.skills || []), newSkill.trim()]
@@ -117,58 +119,65 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
   const handleRemoveSkill = (skill: string) => {
     setFormData(prev => ({
       ...prev,
-      skills: prev.skills?.filter(s => s !== skill) || []
+      skills: (prev.skills || []).filter(s => s !== skill)
     }));
   };
   
-  const handleAddPosition = () => {
-    if (newPosition.title && newPosition.structure) {
+  const handleAddMinistry = () => {
+    if (newMinistry.trim() && formData.ministries) {
       setFormData(prev => ({
         ...prev,
-        positions: [...(prev.positions || []), { ...newPosition }]
+        ministries: [...(prev.ministries || []), newMinistry.trim()]
       }));
-      setNewPosition({ title: '', structure: '' });
+      setNewMinistry('');
     }
   };
   
-  const handleRemovePosition = (index: number) => {
+  const handleRemoveMinistry = (ministry: string) => {
     setFormData(prev => ({
       ...prev,
-      positions: prev.positions?.filter((_, i) => i !== index) || []
+      ministries: (prev.ministries || []).filter(m => m !== ministry)
     }));
   };
   
-  const handleToggleFamilyMember = (memberId: string) => {
-    if (familyMembers.includes(memberId)) {
-      setFamilyMembers(prev => prev.filter(id => id !== memberId));
-    } else {
-      setFamilyMembers(prev => [...prev, memberId]);
-    }
-  };
-  
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      // Show error
+      toast.error("Please fill in all required fields");
       return;
     }
     
-    const memberData = {
-      ...formData,
-      familyIds: familyMembers.length > 0 ? familyMembers : undefined
-    };
-    
-    if (isEditing && member) {
-      updateMember(member.id, memberData);
-      if (onSave) {
-        onSave({ ...member, ...memberData } as Member);
-      }
+    if (memberId) {
+      // Update existing member - partial update is fine
+      updateMember(memberId, formData);
     } else {
-      const newMember = addMember(memberData as Omit<Member, 'id' | 'createdAt' | 'updatedAt'>);
-      if (onSave) {
-        onSave(newMember);
-      }
+      // Create new member - need to ensure all required fields are present
+      const newMemberData = {
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        address: formData.address || '',
+        dateOfBirth: formData.dateOfBirth,
+        joinDate: formData.joinDate || new Date(),
+        status: formData.status || 'active',
+        skills: formData.skills || [],
+        roles: formData.roles || [],
+        ministries: formData.ministries || [],
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        occupation: formData.occupation,
+        isLeadership: formData.isLeadership,
+        isFullMember: formData.isFullMember,
+        familyId: formData.familyId,
+      };
+      addMember(newMemberData);
     }
     
+    toast.success(`Member ${memberId ? 'updated' : 'created'} successfully`);
     onOpenChange(false);
   };
   
@@ -176,32 +185,31 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Member' : 'Add New Member'}</DialogTitle>
+          <DialogTitle>{memberId ? 'Edit Member' : 'Add New Member'}</DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Update member information in the system.' 
-              : 'Add a new member to the system.'}
+            {memberId ? 'Update member information' : 'Enter details for the new member'}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
                 name="firstName"
-                value={formData.firstName || ''}
+                value={formData.firstName}
                 onChange={handleInputChange}
                 required
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
                 name="lastName"
-                value={formData.lastName || ''}
+                value={formData.lastName}
                 onChange={handleInputChange}
                 required
               />
@@ -209,43 +217,32 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email Address *</Label>
             <Input
               id="email"
               name="email"
               type="email"
-              value={formData.email || ''}
+              value={formData.email}
               onChange={handleInputChange}
               required
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone || ''}
-              onChange={handleInputChange}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address || ''}
-              onChange={handleInputChange}
-              rows={2}
-            />
-          </div>
-          
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select
-                value={formData.status || 'active'}
+                value={formData.status}
                 onValueChange={(value) => handleSelectChange('status', value)}
               >
                 <SelectTrigger>
@@ -259,46 +256,51 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category || 'regular'}
-                onValueChange={(value) => handleSelectChange('category', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regular">Regular</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="visitor">Visitor</SelectItem>
-                  <SelectItem value="youth">Youth</SelectItem>
-                  <SelectItem value="child">Child</SelectItem>
-                  <SelectItem value="elder">Elder</SelectItem>
-                  <SelectItem value="pastor">Pastor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Join Date</Label>
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={"outline"}
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.dateOfBirth && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.dateOfBirth}
+                    onSelect={(date) => handleDateChange('dateOfBirth', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="joinDate">Join Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
                       !formData.joinDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.joinDate ? format(formData.joinDate, "PPP") : <span>Pick a date</span>}
+                    {formData.joinDate ? format(formData.joinDate, "PPP") : "Select date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
                     selected={formData.joinDate}
@@ -308,31 +310,48 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              rows={2}
+            />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+              />
+            </div>
             
             <div className="space-y-2">
-              <Label>Birth Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.birthDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.birthDate ? format(formData.birthDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.birthDate}
-                    onSelect={(date) => handleDateChange('birthDate', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="state">State/Province</Label>
+              <Input
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="zip">Postal Code</Label>
+              <Input
+                id="zip"
+                name="zip"
+                value={formData.zip}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
           
@@ -341,7 +360,7 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
             <Input
               id="occupation"
               name="occupation"
-              value={formData.occupation || ''}
+              value={formData.occupation}
               onChange={handleInputChange}
             />
           </div>
@@ -349,19 +368,14 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
           <div className="space-y-2">
             <Label>Skills</Label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {formData.skills?.map((skill) => (
-                <div key={skill} className="flex items-center bg-muted rounded-md px-2 py-1">
-                  <span className="text-sm">{skill}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 ml-1"
+              {formData.skills && formData.skills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                  {skill}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
                     onClick={() => handleRemoveSkill(skill)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
+                  />
+                </Badge>
               ))}
             </div>
             <div className="flex gap-2">
@@ -371,133 +385,66 @@ const MemberDialog: React.FC<MemberDialogProps> = ({
                 placeholder="Add a skill"
                 className="flex-1"
               />
-              <Button type="button" onClick={handleAddSkill} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Button type="button" onClick={handleAddSkill}>Add</Button>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label>Positions</Label>
-            <div className="space-y-2 mb-2">
-              {formData.positions?.map((position, index) => (
-                <div key={index} className="flex items-center justify-between bg-muted rounded-md px-3 py-2">
-                  <div>
-                    <span className="font-medium">{position.title}</span>
-                    <span className="text-sm text-muted-foreground ml-2">({position.structure})</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemovePosition(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+            <Label>Ministries</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {formData.ministries && formData.ministries.map((ministry) => (
+                <Badge key={ministry} variant="secondary" className="flex items-center gap-1">
+                  {ministry}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => handleRemoveMinistry(ministry)}
+                  />
+                </Badge>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="flex gap-2">
               <Input
-                value={newPosition.title}
-                onChange={(e) => setNewPosition({ ...newPosition, title: e.target.value })}
-                placeholder="Position title"
+                value={newMinistry}
+                onChange={(e) => setNewMinistry(e.target.value)}
+                placeholder="Add a ministry"
+                className="flex-1"
               />
-              <Select
-                value={newPosition.structure}
-                onValueChange={(value) => setNewPosition({ ...newPosition, structure: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Structure" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="senior_leadership">Senior Leadership</SelectItem>
-                  <SelectItem value="youth_leadership">Youth Leadership</SelectItem>
-                  <SelectItem value="worship_team">Worship Team</SelectItem>
-                  <SelectItem value="children_ministry">Children Ministry</SelectItem>
-                  <SelectItem value="outreach">Outreach</SelectItem>
-                  <SelectItem value="admin">Administration</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              onClick={handleAddPosition}
-              disabled={!newPosition.title || !newPosition.structure}
-            >
-              Add Position
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => handleCheckboxChange('isActive', checked === true)}
-              />
-              <Label htmlFor="isActive">Active Member</Label>
+              <Button type="button" onClick={handleAddMinistry}>Add</Button>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isFullMember"
-                checked={formData.isFullMember}
-                onCheckedChange={(checked) => handleCheckboxChange('isFullMember', checked === true)}
-              />
-              <Label htmlFor="isFullMember">Full Member</Label>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes || ''}
-              onChange={handleInputChange}
-              rows={3}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isLeadership"
+              checked={formData.isLeadership}
+              onChange={(e) => handleCheckboxChange('isLeadership', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
+            <Label htmlFor="isLeadership">Leadership Position</Label>
           </div>
           
-          {members.length > 0 && (
-            <div className="space-y-2">
-              <Label>Family Members</Label>
-              <div className="border rounded-md p-2 max-h-[200px] overflow-y-auto">
-                {members
-                  .filter(m => !member || m.id !== member.id)
-                  .map(m => (
-                    <div key={m.id} className="flex items-center space-x-2 py-1">
-                      <Checkbox
-                        id={`family-${m.id}`}
-                        checked={familyMembers.includes(m.id)}
-                        onCheckedChange={() => handleToggleFamilyMember(m.id)}
-                      />
-                      <Label htmlFor={`family-${m.id}`} className="cursor-pointer">
-                        {m.firstName} {m.lastName}
-                      </Label>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>
-            {isEditing ? 'Update Member' : 'Add Member'}
-          </Button>
-        </DialogFooter>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isFullMember"
+              checked={formData.isFullMember}
+              onChange={(e) => handleCheckboxChange('isFullMember', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <Label htmlFor="isFullMember">Full Member</Label>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {memberId ? 'Update Member' : 'Add Member'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default MemberDialog;

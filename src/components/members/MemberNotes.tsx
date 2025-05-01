@@ -35,7 +35,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
       // Update existing note
       const updatedNotes = (member.memberNotes || []).map(note => 
         note.id === editingNote.id 
-          ? { ...note, content: newNote, updatedAt: new Date() } 
+          ? { ...note, content: newNote, date: new Date() } 
           : note
       );
       
@@ -51,7 +51,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
         id: `note-${Date.now()}`,
         content: newNote,
         date: new Date(),
-        createdById: currentUser.id,
+        createdBy: currentUser.id,
         attachments: [],
       };
       
@@ -99,11 +99,11 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
       id: `resource-${Date.now()}`,
       description: newResource.description,
       date: new Date(newResource.date),
-      value: newResource.value ? parseFloat(newResource.value) : undefined,
       providedById: currentUser.id,
       type: 'other', // Default type
       name: newResource.description.substring(0, 30), // Use the beginning of description as name
       details: newResource.description,
+      value: newResource.value ? parseFloat(newResource.value) : undefined,
       attachments: [],
     };
     

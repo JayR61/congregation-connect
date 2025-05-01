@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -166,17 +165,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({
   const addTaskComment = (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => {
     setTasks((prev) => prev.map((t) => {
       if (t.id === taskId) {
+        const newComment: TaskComment = {
+          id: `comment-${Date.now()}`,
+          taskId,
+          content: comment.content,
+          createdBy: comment.userId || currentUser.id,
+          createdAt: new Date(),
+          userId: comment.userId
+        };
+        
         return {
           ...t,
           comments: [
-            ...t.comments,
-            {
-              id: `comment-${Date.now()}`,
-              content: comment.content,
-              userId: comment.userId,
-              taskId,
-              createdAt: new Date()
-            }
+            ...(t.comments || []),
+            newComment
           ]
         };
       }
@@ -374,13 +376,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({
     return true;
   };
 
-  const appContextValue: AppContextProps = useMemo(
+  const contextValue = useMemo(
     () => ({
       members,
       tasks,
       programmes,
       transactions,
-      financeCategories,
+      categories: financeCategories,
       documents,
       folders,
       notifications,
@@ -482,7 +484,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({
   );
 
   return (
-    <AppContext.Provider value={appContextValue}>{children}</AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 

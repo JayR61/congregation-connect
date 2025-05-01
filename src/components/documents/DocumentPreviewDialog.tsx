@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -154,7 +153,7 @@ const DocumentPreviewDialog = ({ open, onOpenChange, document }: DocumentPreview
   };
   
   const getVersionLabel = (version: DocumentVersion) => {
-    const creator = members.find(m => m.id === version.createdById);
+    const creator = members.find(m => m.id === version.createdById || version.createdBy);
     const createdByName = creator 
       ? `${creator.firstName} ${creator.lastName}`
       : 'Unknown';

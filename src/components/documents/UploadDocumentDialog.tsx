@@ -172,20 +172,29 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
         ? fileContent 
         : undefined;
       
-      // Add the document - use proper type for Document
+      // Add the document with all required fields
       addDocument({
         name,
         fileType,
         fileSize: file.size,
-        size: file.size,
         url: fileUrl,
         folderId,
-        uploadedById: 'current-user',
+        createdBy: 'current-user',
         tags: [],
         title: name,
         thumbnailUrl,
         shared: false,
         content: docContent,
+        versions: [{
+          id: `version-${Date.now()}`,
+          documentId: `doc-${Date.now()}`,
+          version: 1,
+          createdAt: new Date(),
+          createdBy: 'current-user',
+          fileSize: file.size,
+          url: fileUrl,
+          notes: 'Initial version'
+        }]
       });
       
       // Close the dialog - form will be reset in the useEffect

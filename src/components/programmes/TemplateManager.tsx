@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Programme, ProgrammeTemplate } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from '@/components/ui/badge';
 import { Check, FileText, Plus, Recycle } from "lucide-react";
 import { toast } from '@/lib/toast';
+import { useAppContext } from '@/context/AppContext';
 
 export interface TemplateManagerProps {
   templates: ProgrammeTemplate[];
@@ -18,83 +18,55 @@ export interface TemplateManagerProps {
   onCreateFromTemplate: (templateId: string) => any;
 }
 
-// This is a minimal stub to fix export issues
-export const createTemplate = () => {
-  return {
-    name: "Example Template",
-    title: "Example Title",
-    description: "Example Description",
-    type: "Example Type", 
-    content: "",
-    category: "",
-    tags: [],
-    duration: 60,
-    capacity: 20,
-    resources: [{
-      name: "Example Resource",
-      type: "document",
-      quantity: 1,
-      unit: "piece",
-      cost: 0,
-      notes: "",
-      status: "allocated"
-    }],
-    createdById: "user-1"
-  };
-};
-
 const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: TemplateManagerProps) => {
+  const { createProgrammeTemplate, createProgrammeFromTemplate } = useAppContext();
   const [isNewTemplateDialogOpen, setIsNewTemplateDialogOpen] = useState(false);
   const [isUseTemplateDialogOpen, setIsUseTemplateDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [newTemplate, setNewTemplate] = useState<Partial<ProgrammeTemplate>>({
+  const [template, setTemplate] = useState<Partial<ProgrammeTemplate>>({
     name: '',
-    title: '',
     description: '',
-    type: 'ministry',
-    content: '',
-    category: '',
+    duration: 60, // Default to 60 minutes
+    capacity: 0,
+    categoryId: '',
     tags: [],
-    duration: 60,
-    capacity: 20,
-    resources: [],
-    createdById: 'user-1'
+    defaultResourceIds: [],
+    notes: '',
+    title: '', // Added title for form
+    type: '', // Added type for form
+    content: '', // Added content for form
+    resources: []  // Added resources for form
   });
 
   const handleCreateTemplate = () => {
-    if (!newTemplate.name || !newTemplate.title || !newTemplate.description) {
+    if (!template.name || !template.description || !template.title) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    onCreateTemplate({
-      ...newTemplate,
-      name: newTemplate.name || '',
-      title: newTemplate.title || '',
-      description: newTemplate.description || '',
-      type: newTemplate.type || 'ministry',
-      content: newTemplate.content || '',
-      category: newTemplate.category || '',
-      tags: newTemplate.tags || [],
-      duration: newTemplate.duration || 60,
-      capacity: newTemplate.capacity || 20,
-      resources: newTemplate.resources || [],
-      createdById: newTemplate.createdById || 'user-1'
-    } as Omit<ProgrammeTemplate, 'id' | 'createdAt'>);
+    const templateData = {
+      ...template,
+      duration: Number(template.duration),
+      capacity: template.capacity ? Number(template.capacity) : undefined,
+      categoryId: template.category || undefined // Map to the category field
+    };
+
+    createProgrammeTemplate(templateData);
 
     setIsNewTemplateDialogOpen(false);
-    setNewTemplate({
+    setTemplate({
       name: '',
-      title: '',
       description: '',
-      type: 'ministry',
-      content: '',
-      category: '',
-      tags: [],
       duration: 60,
-      capacity: 20,
-      resources: [],
-      createdById: 'user-1'
+      capacity: 0,
+      categoryId: '',
+      tags: [],
+      defaultResourceIds: [],
+      notes: '',
+      title: '',
+      type: '',
+      content: '',
+      resources: []
     });
     toast.success("Template created successfully");
   };
@@ -105,7 +77,7 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
       return;
     }
 
-    onCreateFromTemplate(selectedTemplateId);
+    createProgrammeFromTemplate(selectedTemplateId);
     setIsUseTemplateDialogOpen(false);
     setSelectedTemplateId(null);
     toast.success("Programme created from template");
@@ -139,8 +111,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   </Label>
                   <Input
                     id="name"
-                    value={newTemplate.name || ''}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    value={template.name || ''}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
                     className="col-span-3"
                     placeholder="e.g., Sunday School Template"
                   />
@@ -151,8 +123,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   </Label>
                   <Input
                     id="title"
-                    value={newTemplate.title || ''}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, title: e.target.value }))}
+                    value={template.title || ''}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, title: e.target.value }))}
                     className="col-span-3"
                     placeholder="e.g., Sunday School Session"
                   />
@@ -162,9 +134,9 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                     Type
                   </Label>
                   <div className="col-span-3">
-                    <Select 
-                      value={newTemplate.type} 
-                      onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value }))}
+                    <Select
+                      value={template.type}
+                      onValueChange={(value) => setTemplate(prev => ({ ...prev, type: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -185,8 +157,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   </Label>
                   <Input
                     id="category"
-                    value={newTemplate.category || ''}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, category: e.target.value }))}
+                    value={template.category || ''}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, category: e.target.value }))}
                     className="col-span-3"
                     placeholder="e.g., Education, Youth, Adult"
                   />
@@ -197,8 +169,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   </Label>
                   <Textarea
                     id="description"
-                    value={newTemplate.description || ''}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                    value={template.description || ''}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
                     className="col-span-3"
                     placeholder="Template description"
                     rows={3}
@@ -211,8 +183,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   <Input
                     id="duration"
                     type="number"
-                    value={newTemplate.duration || 60}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                    value={template.duration || 60}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, duration: Number(e.target.value) }))}
                     className="col-span-3"
                     placeholder="Duration in minutes"
                   />
@@ -224,8 +196,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   <Input
                     id="capacity"
                     type="number"
-                    value={newTemplate.capacity || 20}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                    value={template.capacity || 20}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, capacity: Number(e.target.value) }))}
                     className="col-span-3"
                     placeholder="Maximum capacity"
                   />
@@ -236,8 +208,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                   </Label>
                   <Textarea
                     id="content"
-                    value={newTemplate.content || ''}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
+                    value={template.content || ''}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, content: e.target.value }))}
                     className="col-span-3"
                     placeholder="Programme content structure or outline"
                     rows={4}
@@ -250,7 +222,7 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={isUseTemplateDialogOpen} onOpenChange={setIsUseTemplateDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -295,8 +267,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No templates available. Create one first.</p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         setIsUseTemplateDialogOpen(false);
                         setIsNewTemplateDialogOpen(true);
@@ -310,7 +282,7 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsUseTemplateDialogOpen(false)}>Cancel</Button>
-                <Button 
+                <Button
                   onClick={handleUseTemplate}
                   disabled={!selectedTemplateId}
                 >
@@ -336,7 +308,7 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
               <CardContent>
                 <div className="space-y-3">
                   <p className="text-sm">{template.description}</p>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Duration:</span> {template.duration} min
@@ -358,8 +330,8 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => {
                     setSelectedTemplateId(template.id);

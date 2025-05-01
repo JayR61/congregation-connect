@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppContext } from '@/context/AppContext';
 import { BulkAttendanceRecord, Member } from '@/types';
 import { CalendarIcon, Check, CheckCircle, CircleX, Search, UserCheck, UserX } from 'lucide-react';
-import { toast } from '@/lib/toast';
+import { toast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -110,7 +111,7 @@ const BulkAttendanceRecorder = ({ programmeId, onSaveComplete }: { programmeId: 
       recordBulkAttendance({
         programmeId,
         date: selectedDate,
-        records: recordsFormat,  // <-- Added the required records field
+        records: recordsFormat,  // Add the required records field
         attendees: attendanceRecords  // Keep the attendees field as well
       });
       

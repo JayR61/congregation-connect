@@ -121,51 +121,44 @@ export const useTaskActions = ({
     return deleted;
   };
 
-  const addTaskComment = (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => {
-    let added = false;
-    const taskToUpdate = tasks.find(t => t.id === taskId);
-    
-    if (!taskToUpdate) {
-      toast.error("Task not found");
-      return false;
-    }
-    
-    const newComment: TaskComment = {
-      id: `comment-${Date.now()}`,
-      content: comment.content,
-      userId: comment.userId || currentUser.id,
-      taskId,
-      createdAt: new Date()
-    };
-    
-    setTasks(prevTasks => 
-      prevTasks.map(t => {
-        if (t.id === taskId) {
-          added = true;
-          return { 
-              ...t, 
-              comments: [...t.comments, newComment],
-              updatedAt: new Date()
-            };
+  const addTaskComment = (
+    taskId: string,
+    comment: Omit<TaskComment, "id" | "createdAt" | "taskId">
+  ) => {
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id === taskId) {
+          const newComment: TaskComment = {
+            id: `comment-${Date.now()}`,
+            taskId,
+            content: comment.content,
+            createdBy: comment.userId || currentUser.id,
+            createdAt: new Date(),
+          };
+
+          return {
+            ...task,
+            comments: [...(task.comments || []), newComment],
+          };
         }
-        return t;
+        return task;
       })
     );
-    
-    if (added) {
-      const commenterName = `${currentUser.firstName} ${currentUser.lastName}`;
-      
+
+    // Notify assignee if there is one and it's not the current user
+    const task = tasks.find((t) => t.id === taskId);
+    if (task?.assigneeId && task.assigneeId !== currentUser.id) {
       addNotification({
-        title: "New Comment",
-        message: `${commenterName} commented on task "${taskToUpdate.title}"`,
+        userId: task.assigneeId,
+        title: "New comment on your task",
+        message: `${currentUser.firstName} commented on task: ${task.title}`,
         type: "info",
-        userId: currentUser.id
+        read: false,
+        link: `/tasks/${taskId}`,
       });
-      
-      toast.success("Comment added successfully");
     }
     
-    return added;
+    return true;
   };
 
   return {

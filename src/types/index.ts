@@ -1,4 +1,3 @@
-
 // Add ChurchResource and ResourceBooking types to the index.ts file
 // We'll append to the existing exports
 
@@ -23,7 +22,7 @@ export interface ResourceBooking {
   purpose: string;
   startDate: Date;
   endDate: Date;
-  status: 'pending' | 'approved' | 'declined' | 'completed';
+  status: 'pending' | 'approved' | 'declined' | 'completed' | 'rejected';
   notes?: string;
 }
 
@@ -64,13 +63,14 @@ export interface Document {
 export interface DocumentVersion {
   id: string;
   documentId: string;
-  version: number; // Changed from versionNumber to match component usage
+  version: number;
   createdAt: Date;
   createdBy: string;
   fileSize: number;
   url: string;
   notes?: string;
   createdById?: string;
+  uploadedById?: string;
 }
 
 export interface Transaction {
@@ -146,6 +146,8 @@ export interface Member {
   avatar?: string;
   memberNotes?: MemberNote[];
   resourcesProvided?: ResourceProvided[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface MemberNote {
@@ -157,6 +159,7 @@ export interface MemberNote {
   category?: string;
   isPrivate?: boolean;
   memberId?: string;
+  createdById?: string;
 }
 
 export interface ResourceProvided {
@@ -391,6 +394,20 @@ export interface AppContextProps {
   comments: TaskComment[];
   taskCategories: TaskCategory[];
   mentorshipPrograms: MentorshipProgram[];
+  attendance?: any[];
+  resources?: any[];
+  programmeCategories?: any[];
+  tags?: any[];
+  programmeTags?: any[];
+  feedback?: any[];
+  kpis?: any[];
+  reminders?: any[];
+  templates?: any[];
+  
+  // Comments
+  addComment: (comment: Omit<TaskComment, "id" | "createdAt">) => TaskComment;
+  updateComment: (id: string, comment: Partial<TaskComment>) => boolean;
+  deleteComment: (id: string) => boolean;
   
   // Members
   addMember: (member: Omit<Member, 'id'>) => void;
@@ -423,9 +440,7 @@ export interface AppContextProps {
   deleteFolder: (id: string) => void;
   
   // Task comments
-  addComment: (comment: Omit<TaskComment, 'id' | 'createdAt'>) => void;
-  updateComment: (id: string, comment: Partial<TaskComment>) => void;
-  deleteComment: (id: string) => void;
+  addTaskComment: (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => boolean;
   
   // Notifications
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
@@ -458,7 +473,6 @@ export interface AppContextProps {
   assignTagToProgramme?: (programmeId: string, tagId: string) => boolean;
   removeTagFromProgramme?: (programmeId: string, tagId: string) => boolean;
   addMentorshipProgram?: (program: any) => any;
-  addTaskComment?: (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => boolean;
 }
 
 export interface MentorshipProgram {
@@ -475,6 +489,9 @@ export interface MentorshipProgram {
   resources?: string[];
   notes?: string;
   menteeId?: string;
+  title?: string;
+  mentorId?: string;
+  progress?: number;
 }
 
 export interface MentorshipSession {
@@ -491,6 +508,7 @@ export interface MentorshipSession {
 
 export interface Volunteer {
   id: string;
+  memberId: string;
   position: string;
   department: string;
   startDate: Date;
@@ -500,5 +518,23 @@ export interface Volunteer {
   skills?: string[];
   notes?: string;
   area: string;
-  memberId?: string;
+  ministry?: string;
+  role?: string;
+  joinDate?: Date;
+  availability?: string[];
+}
+
+export interface SocialMediaAccount {
+  id: string;
+  platform: string;
+  username: string;
+  url: string;
+  followers?: number;
+  posts?: number;
+  engagement?: number;
+  lastUpdated?: Date;
+  createdAt: Date;
+  updatedAt?: Date;
+  status: 'active' | 'inactive' | 'archived';
+  notes?: string;
 }

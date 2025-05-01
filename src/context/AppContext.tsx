@@ -97,13 +97,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({
   );
   const [attendance, setAttendance] = useState<any[]>(initialAttendance);
   const [resources, setResources] = useState<any[]>(initialResources);
-  const [categories, setCategories] = useState<any[]>(initialCategories);
+  const [programmeCategories, setProgrammeCategories] = useState<any[]>(initialCategories);
   const [tags, setTags] = useState<any[]>(initialTags);
   const [programmeTags, setProgrammeTags] = useState<any[]>(initialProgrammeTags);
   const [feedback, setFeedback] = useState<any[]>(initialFeedback);
   const [kpis, setKpis] = useState<any[]>(initialKpis);
   const [reminders, setReminders] = useState<any[]>(initialReminders);
   const [templates, setTemplates] = useState<any[]>(initialTemplates);
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [mentorshipPrograms, setMentorshipPrograms] = useState<MentorshipProgram[]>([]);
 
   // Setup notification actions first since it's needed by other action hooks
   const notificationActions = useNotificationActions({ 
@@ -184,6 +186,30 @@ export const AppProvider: React.FC<AppProviderProps> = ({
       }
       return t;
     }));
+    return true;
+  };
+
+  // Task comment methods
+  const addComment = (comment: Omit<TaskComment, "id" | "createdAt">) => {
+    const newComment = {
+      ...comment,
+      id: `comment-${Date.now()}`,
+      createdAt: new Date()
+    };
+    
+    setComments(prev => [...prev, newComment]);
+    return newComment;
+  };
+  
+  const updateComment = (id: string, commentData: Partial<TaskComment>) => {
+    setComments(prev => prev.map(comment => 
+      comment.id === id ? { ...comment, ...commentData } : comment
+    ));
+    return true;
+  };
+  
+  const deleteComment = (id: string) => {
+    setComments(prev => prev.filter(comment => comment.id !== id));
     return true;
   };
 
@@ -390,17 +416,22 @@ export const AppProvider: React.FC<AppProviderProps> = ({
       taskCategories,
       attendance,
       resources,
-      categories,
+      programmeCategories,
       tags,
       programmeTags,
       feedback,
       kpis,
       reminders,
       templates,
+      comments,
+      mentorshipPrograms,
       addTask: taskActions.addTask,
       updateTask: taskActions.updateTask,
       deleteTask: taskActions.deleteTask,
       addTaskComment,
+      addComment,
+      updateComment,
+      deleteComment,
       addMember: memberActions.addMember,
       updateMember: memberActions.updateMember,
       deleteMember: memberActions.deleteMember,
@@ -464,13 +495,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({
       taskCategories,
       attendance,
       resources,
-      categories,
+      programmeCategories,
       tags,
       programmeTags,
       feedback,
       kpis,
       reminders,
       templates,
+      comments,
+      mentorshipPrograms,
       taskActions,
       memberActions,
       transactionActions,
@@ -479,7 +512,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({
       folderActions,
       financeActions,
       programmeActions,
-      addTaskComment
+      addTaskComment,
+      addComment,
+      updateComment,
+      deleteComment
     ]
   );
 

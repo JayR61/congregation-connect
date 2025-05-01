@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MemberNote, ResourceProvided, Member } from '@/types';
-import { FileText, Plus, Edit2, Trash2, PenLine } from 'lucide-react';
-import { toast } from '@/lib/toast';
 import { useAppContext } from '@/context/AppContext';
+import { Member } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from '@/components/ui/use-toast';
 
 interface MemberNotesProps {
   member: Member;
@@ -17,284 +15,262 @@ interface MemberNotesProps {
 
 const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
   const { updateMember, currentUser } = useAppContext();
-  const [newNote, setNewNote] = useState('');
-  const [editingNote, setEditingNote] = useState<MemberNote | null>(null);
+  const [activeTab, setActiveTab] = useState<"notes" | "resources">("notes");
+  const [newNote, setNewNote] = useState({
+    content: "",
+    category: "general",
+    isPrivate: false
+  });
   const [newResource, setNewResource] = useState({
-    description: '',
-    value: '',
-    date: new Date().toISOString().split('T')[0],
+    name: "",
+    type: "book",
+    description: "",
+    details: "",
+    value: 0
   });
   
-  const addNote = () => {
-    if (!newNote.trim()) {
-      toast.error("Note cannot be empty");
+  const handleAddNote = () => {
+    if (!newNote.content) {
+      toast({
+        title: "Missing content",
+        description: "Please enter some content for your note.",
+        variant: "destructive"
+      });
       return;
     }
     
-    if (editingNote) {
-      // Update existing note
-      const updatedNotes = (member.memberNotes || []).map(note => 
-        note.id === editingNote.id 
-          ? { ...note, content: newNote, date: new Date() } 
-          : note
-      );
-      
-      updateMember(member.id, {
-        memberNotes: updatedNotes
-      });
-      
-      setEditingNote(null);
-      toast.success("Note updated successfully");
-    } else {
-      // Add new note
-      const memberNote: MemberNote = {
-        id: `note-${Date.now()}`,
-        content: newNote,
-        date: new Date(),
-        createdBy: currentUser.id,
-        attachments: [],
-      };
-      
-      const updatedNotes = [...(member.memberNotes || []), memberNote];
-      
-      updateMember(member.id, {
-        memberNotes: updatedNotes
-      });
-      
-      toast.success("Note added successfully");
+    // Create a new note and update the member
+    const updatedMember = { ...member };
+    
+    // Initialize memberNotes if it doesn't exist
+    if (!updatedMember.memberNotes) {
+      updatedMember.memberNotes = [];
     }
     
-    setNewNote('');
-  };
-  
-  const editNote = (note: MemberNote) => {
-    setNewNote(note.content);
-    setEditingNote(note);
-  };
-  
-  const deleteNote = (noteId: string) => {
-    if (window.confirm('Are you sure you want to delete this note?')) {
-      const updatedNotes = (member.memberNotes || []).filter(note => note.id !== noteId);
-      
-      updateMember(member.id, {
-        memberNotes: updatedNotes
-      });
-      
-      if (editingNote?.id === noteId) {
-        setEditingNote(null);
-        setNewNote('');
-      }
-      
-      toast.success("Note deleted successfully");
-    }
-  };
-  
-  const addResourceRecord = () => {
-    if (!newResource.description.trim()) {
-      toast.error("Resource description cannot be empty");
-      return;
-    }
-    
-    const resource: ResourceProvided = {
-      id: `resource-${Date.now()}`,
-      description: newResource.description,
-      date: new Date(newResource.date),
-      providedById: currentUser.id,
-      type: 'other', // Default type
-      name: newResource.description.substring(0, 30), // Use the beginning of description as name
-      details: newResource.description,
-      value: newResource.value ? parseFloat(newResource.value) : undefined,
-      attachments: [],
-    };
-    
-    const updatedResources = [...(member.resourcesProvided || []), resource];
-    
-    updateMember(member.id, {
-      resourcesProvided: updatedResources
+    // Add the new note
+    updatedMember.memberNotes.push({
+      id: `note-${Date.now()}`,
+      content: newNote.content,
+      date: new Date(),
+      createdBy: currentUser.id,
+      category: newNote.category,
+      isPrivate: newNote.isPrivate,
+      attachments: []
     });
     
-    setNewResource({
-      description: '',
-      value: '',
-      date: new Date().toISOString().split('T')[0],
+    // Update the member
+    updateMember(member.id, { memberNotes: updatedMember.memberNotes });
+    
+    // Reset the form
+    setNewNote({
+      content: "",
+      category: "general",
+      isPrivate: false
     });
     
-    toast.success("Resource record added successfully");
-  };
-  
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    setActiveTab("notes");
+    
+    toast({
+      title: "Note added",
+      description: "The note has been successfully added."
     });
   };
 
+  const handleAddResource = () => {
+    if (!newResource.description || !newResource.type) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a new resource and update the member
+    const updatedMember = { ...member };
+    
+    // Initialize resourcesProvided if it doesn't exist
+    if (!updatedMember.resourcesProvided) {
+      updatedMember.resourcesProvided = [];
+    }
+    
+    // Add the new resource
+    updatedMember.resourcesProvided.push({
+      id: `resource-${Date.now()}`,
+      description: newResource.description,
+      type: newResource.type,
+      date: new Date(),
+      providedById: currentUser.id,
+      name: newResource.name || '',
+      details: newResource.details || '',
+      value: newResource.value,
+      attachments: []
+    });
+    
+    // Update the member
+    updateMember(member.id, { resourcesProvided: updatedMember.resourcesProvided });
+    
+    // Reset the form
+    setNewResource({
+      name: "",
+      type: "book",
+      description: "",
+      details: "",
+      value: 0
+    });
+    
+    setActiveTab("resources");
+    
+    toast({
+      title: "Resource added",
+      description: "The resource has been successfully added."
+    });
+  };
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Member Notes & Resources</CardTitle>
-        <CardDescription>Track notes and resources provided to this member</CardDescription>
-      </CardHeader>
+    <Tabs defaultValue="notes" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+      <TabsList>
+        <TabsTrigger value="notes">Notes</TabsTrigger>
+        <TabsTrigger value="resources">Resources</TabsTrigger>
+      </TabsList>
       
-      <CardContent>
-        <Tabs defaultValue="notes">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="resources">Resources Provided</TabsTrigger>
-          </TabsList>
+      <TabsContent value="notes">
+        <div className="grid gap-4">
+          <div>
+            <Label htmlFor="note-content">Note Content</Label>
+            <Textarea
+              id="note-content"
+              value={newNote.content}
+              onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+              placeholder="Enter your note here"
+            />
+          </div>
+          <div>
+            <Label htmlFor="note-category">Category</Label>
+            <Select
+              value={newNote.category}
+              onValueChange={(value) => setNewNote({ ...newNote, category: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="pastoral">Pastoral</SelectItem>
+                <SelectItem value="follow-up">Follow-up</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="checkbox"
+              id="note-isPrivate"
+              checked={newNote.isPrivate}
+              onChange={(e) => setNewNote({ ...newNote, isPrivate: e.target.checked })}
+            />
+            <Label htmlFor="note-isPrivate">Private</Label>
+          </div>
+          <Button onClick={handleAddNote}>Add Note</Button>
           
-          <TabsContent value="notes" className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newNote">{editingNote ? 'Edit Note' : 'New Note'}</Label>
-              <Textarea
-                id="newNote"
-                placeholder="Add notes about this member..."
-                className="min-h-[100px]"
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <Button onClick={addNote} className="flex-1">
-                  {editingNote ? <Edit2 className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                  {editingNote ? 'Update Note' : 'Add Note'}
-                </Button>
-                {editingNote && (
-                  <Button variant="outline" onClick={() => {
-                    setEditingNote(null);
-                    setNewNote('');
-                  }}>
-                    Cancel
-                  </Button>
-                )}
-              </div>
+          {member.memberNotes && member.memberNotes.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-lg font-medium">Existing Notes</h4>
+              <ul>
+                {member.memberNotes.map((note) => (
+                  <li key={note.id} className="py-2 border-b">
+                    <p className="text-sm">{note.content}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Category: {note.category}, Created: {note.date.toLocaleDateString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
-            
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-2">Note History</h3>
-              {member.memberNotes && member.memberNotes.length > 0 ? (
-                <ScrollArea className="h-[250px]">
-                  <div className="space-y-3">
-                    {[...member.memberNotes]
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((note) => (
-                        <div key={note.id} className="p-3 border rounded-md">
-                          <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-                            <div className="flex items-center">
-                              <PenLine className="h-3.5 w-3.5 mr-1.5" />
-                              <span>{formatDate(note.date)}</span>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => editNote(note)}>
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="whitespace-pre-line">{note.content}</p>
-                        </div>
-                      ))
-                    }
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="text-center py-6 border rounded-md">
-                  <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <h3 className="font-medium">No Notes</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add notes about this member to keep track of important information.
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+          ) : (
+            <p className="text-muted-foreground">No notes recorded for this member.</p>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="resources">
+        <div className="grid gap-4">
+          <div>
+            <Label htmlFor="resource-name">Resource Name</Label>
+            <Input
+              id="resource-name"
+              value={newResource.name}
+              onChange={(e) => setNewResource({ ...newResource, name: e.target.value })}
+              placeholder="e.g., 'The Purpose Driven Life'"
+            />
+          </div>
+          <div>
+            <Label htmlFor="resource-type">Resource Type</Label>
+            <Select
+              value={newResource.type}
+              onValueChange={(value) => setNewResource({ ...newResource, type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a resource type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="book">Book</SelectItem>
+                <SelectItem value="course">Course</SelectItem>
+                <SelectItem value="counseling">Counseling</SelectItem>
+                <SelectItem value="financial">Financial</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="resource-description">Description</Label>
+            <Textarea
+              id="resource-description"
+              value={newResource.description}
+              onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
+              placeholder="Brief description of the resource"
+            />
+          </div>
+          <div>
+            <Label htmlFor="resource-details">Details</Label>
+            <Input
+              id="resource-details"
+              value={newResource.details}
+              onChange={(e) => setNewResource({ ...newResource, details: e.target.value })}
+              placeholder="Additional details (e.g., URL, session times)"
+            />
+          </div>
+          <div>
+            <Label htmlFor="resource-value">Value (Optional)</Label>
+            <Input
+              type="number"
+              id="resource-value"
+              value={newResource.value}
+              onChange={(e) => setNewResource({ ...newResource, value: Number(e.target.value) })}
+              placeholder="Monetary value of the resource"
+            />
+          </div>
+          <Button onClick={handleAddResource}>Add Resource</Button>
           
-          <TabsContent value="resources" className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 gap-4 p-4 border rounded-md">
-              <div className="space-y-2">
-                <Label htmlFor="resourceDescription">Resource Description</Label>
-                <Textarea
-                  id="resourceDescription"
-                  placeholder="Describe the resource provided..."
-                  className="min-h-[80px]"
-                  value={newResource.description}
-                  onChange={(e) => setNewResource({...newResource, description: e.target.value})}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="resourceValue">Value (Optional)</Label>
-                  <div className="relative">
-                    <span className="absolute left-2 top-2.5">R</span>
-                    <Input
-                      id="resourceValue"
-                      type="number"
-                      placeholder="0.00"
-                      className="pl-6"
-                      value={newResource.value}
-                      onChange={(e) => setNewResource({...newResource, value: e.target.value})}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="resourceDate">Date</Label>
-                  <Input
-                    id="resourceDate"
-                    type="date"
-                    value={newResource.date}
-                    onChange={(e) => setNewResource({...newResource, date: e.target.value})}
-                  />
-                </div>
-              </div>
-              
-              <Button onClick={addResourceRecord} className="w-full mt-2">
-                <Plus className="mr-2 h-4 w-4" /> Add Resource Record
-              </Button>
+          {member.resourcesProvided && member.resourcesProvided.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-lg font-medium">Resources Provided</h4>
+              <ul>
+                {member.resourcesProvided.map((resource) => (
+                  <li key={resource.id} className="py-2 border-b">
+                    <p className="text-sm">{resource.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Type: {resource.type}, Date: {resource.date.toLocaleDateString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
-            
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-2">Resource History</h3>
-              {member.resourcesProvided && member.resourcesProvided.length > 0 ? (
-                <ScrollArea className="h-[250px]">
-                  <div className="space-y-3">
-                    {[...member.resourcesProvided]
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((resource) => (
-                        <div key={resource.id} className="p-3 border rounded-md">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{formatDate(resource.date)}</span>
-                            {resource.value && (
-                              <div className="flex items-center text-sm font-semibold">
-                                <span>R {resource.value.toFixed(2)}</span>
-                              </div>
-                            )}
-                          </div>
-                          <p className="whitespace-pre-line">{resource.description}</p>
-                        </div>
-                      ))
-                    }
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="text-center py-6 border rounded-md">
-                  <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <h3 className="font-medium">No Resource Records</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Record resources, support, or services provided to this member.
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          ) : (
+            <p className="text-muted-foreground">No resources provided to this member.</p>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 

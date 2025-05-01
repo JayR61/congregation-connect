@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import MemberList from '@/components/members/MemberList';
-import MemberDialog from '@/components/members/MemberDialog';
+import { MemberDialog } from '@/components/members/MemberDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

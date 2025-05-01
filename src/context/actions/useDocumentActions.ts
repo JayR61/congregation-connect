@@ -1,5 +1,5 @@
 
-import { Document, User, DocumentVersion } from '@/types';
+import { Document, DocumentVersion, User } from "@/types";
 
 interface UseDocumentActionsProps {
   documents: Document[];
@@ -10,115 +10,85 @@ interface UseDocumentActionsProps {
 export const useDocumentActions = ({
   documents,
   setDocuments,
-  currentUser
+  currentUser,
 }: UseDocumentActionsProps) => {
-  const addDocument = (documentData: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'versions'>) => {
-    const newDocument: Document = {
-      ...documentData,
-      id: `document-${Date.now()}`,
+  const addDocument = (document: Omit<Document, "id" | "createdAt" | "updatedAt">) => {
+    const newDocument = {
+      ...document,
+      id: `doc-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      versions: [{
-        id: `version-1-${Date.now()}`,
-        documentId: `document-${Date.now()}`,
-        version: 1,
-        url: documentData.url,
-        uploadedById: currentUser.id,
-        createdAt: new Date(),
-        notes: 'Initial version',
-        size: documentData.fileSize || 0,
-        createdById: currentUser.id
-      }],
-      createdById: currentUser.id,
-      shared: false
+      versions: [
+        {
+          id: `version-${Date.now()}`,
+          documentId: `doc-${Date.now()}`,
+          version: 1,
+          createdAt: new Date(),
+          createdBy: currentUser.id,
+          fileSize: document.fileSize,
+          url: document.url,
+        },
+      ],
     };
-    
-    setDocuments(prev => [...prev, newDocument]);
-    return newDocument;
+
+    setDocuments((prev) => [...prev, newDocument]);
   };
-  
-  const updateDocument = (id: string, updatedFields: Partial<Document>) => {
-    let found = false;
-    setDocuments(prev => 
-      prev.map(document => {
-        if (document.id === id) {
-          found = true;
-          return { 
-            ...document, 
-            ...updatedFields,
-            updatedAt: new Date()
-          };
-        }
-        return document;
-      })
+
+  const updateDocument = (id: string, document: Partial<Document>) => {
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === id
+          ? { ...d, ...document, updatedAt: new Date() }
+          : d
+      )
     );
-    return found;
   };
-  
+
   const deleteDocument = (id: string) => {
-    let found = false;
-    setDocuments(prev => {
-      const filtered = prev.filter(document => {
-        if (document.id === id) {
-          found = true;
-          return false;
-        }
-        return true;
-      });
-      return filtered;
-    });
-    return found;
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
-  
-  const addDocumentVersion = (documentId: string, fileUrl: string, notes: string) => {
-    let found = false;
-    
-    setDocuments(prev => 
-      prev.map(document => {
-        if (document.id === documentId) {
-          found = true;
+
+  const addDocumentVersion = (
+    documentId: string,
+    fileUrl: string,
+    notes: string = ""
+  ) => {
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.id === documentId) {
+          const latestVersion = doc.versions.reduce(
+            (max, v) => (v.version > max ? v.version : max),
+            0
+          );
+
           const newVersion: DocumentVersion = {
-            id: `version-${document.versions.length + 1}-${Date.now()}`,
+            id: `version-${Date.now()}`,
             documentId,
-            version: document.versions.length + 1,
-            url: fileUrl,
-            uploadedById: currentUser.id,
+            version: latestVersion + 1,
             createdAt: new Date(),
-            notes: notes || '',
-            size: document.fileSize || 0,
-            createdById: currentUser.id
+            createdBy: currentUser.id,
+            fileSize: doc.fileSize, // Assuming same size for simplicity
+            url: fileUrl,
+            notes,
           };
-          
-          return { 
-            ...document,
-            url: fileUrl, // Update the document's main URL to the new version
-            versions: [...document.versions, newVersion],
-            updatedAt: new Date()
+
+          return {
+            ...doc,
+            url: fileUrl, // Update the main document URL to the latest version
+            updatedAt: new Date(),
+            versions: [...doc.versions, newVersion],
           };
         }
-        return document;
+
+        return doc;
       })
     );
-    
-    return found;
   };
-  
+
   return {
     addDocument,
     updateDocument,
     deleteDocument,
-    addDocumentVersion
+    addDocumentVersion,
   };
-};
-
-export const addDocument = (documentData: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'versions'>, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
-  return useDocumentActions({ documents, setDocuments, currentUser }).addDocument(documentData);
-};
-
-export const updateDocument = (id: string, updatedFields: Partial<Document>, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
-  return useDocumentActions({ documents, setDocuments, currentUser }).updateDocument(id, updatedFields);
-};
-
-export const deleteDocument = (id: string, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, currentUser: User) => {
-  return useDocumentActions({ documents, setDocuments, currentUser }).deleteDocument(id);
 };

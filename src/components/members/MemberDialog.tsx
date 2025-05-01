@@ -13,15 +13,17 @@ import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/AppContext';
 import { Member } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/lib/toast';
+import { toast } from '@/components/ui/use-toast';
 
 interface MemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave?: (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  member?: Member;
   memberId?: string;
 }
 
-export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, memberId }) => {
+export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, onSave, member, memberId }) => {
   const { members, addMember, updateMember } = useAppContext();
   
   // Form state
@@ -32,9 +34,9 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
     phone: '',
     address: '',
     status: 'active',
-    skills: [], // Initialize as an empty array
-    roles: [], // Initialize as an empty array
-    ministries: [], // Initialize as an empty array
+    skills: [], 
+    roles: [], 
+    ministries: [], 
     dateOfBirth: undefined,
     joinDate: new Date(),
     city: '',
@@ -145,15 +147,42 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
     
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      toast.error("Please fill in all required fields");
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (memberId) {
       // Update existing member - partial update is fine
       updateMember(memberId, formData);
+    } else if (onSave) {
+      // Use the onSave callback if provided
+      const newMemberData = {
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        address: formData.address || '',
+        dateOfBirth: formData.dateOfBirth,
+        joinDate: formData.joinDate || new Date(),
+        status: formData.status || 'active',
+        skills: formData.skills || [],
+        roles: formData.roles || [],
+        ministries: formData.ministries || [],
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        occupation: formData.occupation,
+        isLeadership: formData.isLeadership,
+        isFullMember: formData.isFullMember,
+        familyId: formData.familyId,
+      };
+      onSave(newMemberData);
     } else {
-      // Create new member - need to ensure all required fields are present
+      // Create new member directly
       const newMemberData = {
         firstName: formData.firstName || '',
         lastName: formData.lastName || '',
@@ -177,7 +206,10 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
       addMember(newMemberData);
     }
     
-    toast.success(`Member ${memberId ? 'updated' : 'created'} successfully`);
+    toast({
+      title: `Member ${memberId ? 'updated' : 'created'} successfully`,
+      description: `${formData.firstName} ${formData.lastName} has been ${memberId ? 'updated' : 'added'} to the system.`
+    });
     onOpenChange(false);
   };
   
@@ -448,3 +480,6 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
     </Dialog>
   );
 };
+
+// Add a default export that re-exports the named export
+export default MemberDialog;

@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
+import { Member, AttendanceRecord } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Mail, Phone, MapPin, Calendar, Users, MessageSquare, Award, Crown, CheckCircle, Clock } from 'lucide-react';
-import MemberDialog from '@/components/members/MemberDialog';
-import AttendanceTracker from '@/components/members/AttendanceTracker';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar, Phone, Mail, MapPin, User, Users, ClipboardList, Star, CalendarDays, Clock, Briefcase } from 'lucide-react';
+import { MemberDialog } from '@/components/members/MemberDialog';
 import MemberNotes from '@/components/members/MemberNotes';
+import AttendanceTracker from '@/components/members/AttendanceTracker';
 import { toast } from '@/lib/toast';
 
 const MemberDetail = () => {

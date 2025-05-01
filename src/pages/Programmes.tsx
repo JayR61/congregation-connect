@@ -23,9 +23,9 @@ import { ResourceManagement } from '@/components/programmes/ResourceManagement';
 import { CategoryTagManager } from '@/components/programmes/CategoryTagManager';
 import { TemplateManager } from '@/components/programmes/TemplateManager';
 import { FeedbackManager } from '@/components/programmes/FeedbackManager';
-import { KPIManager } from '@/components/programmes/KPIManager';
+import KPIManager from '@/components/programmes/KPIManager';
 import { ReminderManager } from '@/components/programmes/ReminderManager';
-import { BulkAttendanceRecorder } from '@/components/programmes/BulkAttendanceRecorder';
+import BulkAttendanceRecorder from '@/components/programmes/BulkAttendanceRecorder';
 
 import {
   DropdownMenu,

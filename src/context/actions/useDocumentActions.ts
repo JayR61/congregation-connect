@@ -13,15 +13,16 @@ export const useDocumentActions = ({
   currentUser,
 }: UseDocumentActionsProps) => {
   const addDocument = (document: Omit<Document, "id" | "createdAt" | "updatedAt">) => {
+    const docId = `doc-${Date.now()}`;
     const newDocument = {
       ...document,
-      id: `doc-${Date.now()}`,
+      id: docId,
       createdAt: new Date(),
       updatedAt: new Date(),
       versions: [
         {
           id: `version-${Date.now()}`,
-          documentId: `doc-${Date.now()}`,
+          documentId: docId,
           version: 1,
           createdAt: new Date(),
           createdBy: currentUser.id,

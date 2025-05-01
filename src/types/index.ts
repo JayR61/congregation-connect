@@ -184,7 +184,7 @@ export interface Programme {
   name: string;
   description: string;
   startDate: Date;
-  endDate?: Date;
+  endDate?: Date | null;
   location?: string;
   organizer?: string;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'active';
@@ -480,7 +480,7 @@ export interface MentorshipProgram {
   name: string;
   description: string;
   startDate: Date;
-  endDate?: Date;
+  endDate?: Date | null;
   mentors: string[];
   mentees: string[];
   status: 'active' | 'completed' | 'cancelled' | 'pending';
@@ -522,6 +522,7 @@ export interface Volunteer {
   role?: string;
   joinDate?: Date;
   availability?: string[];
+  hoursPerWeek?: number;
 }
 
 export interface SocialMediaAccount {
@@ -537,4 +538,37 @@ export interface SocialMediaAccount {
   updatedAt?: Date;
   status: 'active' | 'inactive' | 'archived';
   notes?: string;
+  handle?: string;
+  responsible?: string;
+}
+
+export interface ProgrammeResource {
+  id: string;
+  programmeId: string;
+  resourceId: string;
+  quantity: number;
+  notes?: string;
+  status: 'allocated' | 'returned' | 'damaged';
+}
+
+export interface ProgrammeReminder {
+  id: string;
+  programmeId: string;
+  date: Date;
+  message: string;
+  recipientIds?: string[];
+  sent: boolean;
+  sentDate?: Date;
+  createdBy?: string;
+}
+
+export interface ProgrammeStatistics {
+  totalAttendance: number;
+  averageAttendance: number;
+  growthRate?: number;
+  engagementRate?: number;
+  completionRate?: number;
+  feedbackScore?: number;
+  resourceUtilization?: number;
+  data?: any[];
 }

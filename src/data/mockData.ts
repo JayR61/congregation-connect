@@ -1,6 +1,7 @@
+
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
-  Folder, Notification, User, Programme, TaskCategory, Volunteer
+  Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
 } from '@/types';
 
 // Sample data for testing
@@ -17,6 +18,7 @@ export const mockMembers: Member[] = [
     joinDate: new Date(2020, 0, 1),
     occupation: "Developer",
     skills: ["programming", "teaching"],
+    roles: ["member"],
     createdAt: new Date(),
     updatedAt: new Date(),
     membershipDate: new Date(2020, 0, 1),
@@ -38,6 +40,7 @@ export const mockMembers: Member[] = [
     joinDate: new Date(2019, 3, 10),
     occupation: "Designer",
     skills: ["design", "communication"],
+    roles: ["admin"],
     isLeadership: true,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -47,15 +50,14 @@ export const mockMembers: Member[] = [
     state: "",
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
-    roles: ["admin"],
     volunteerRoles: [{
       id: "volunteer-1",
       memberId: "member-2",
-      role: "greeter",
       ministry: "Hospitality",
+      role: "greeter",
       joinDate: new Date(2019, 5, 1),
       status: "active",
-      hoursPerWeek: 2,
+      hours: 2,
       area: "Welcome Team",
       startDate: new Date(2019, 5, 1)
     }]
@@ -67,7 +69,7 @@ export const mockTasks: Task[] = [
     id: "task-1",
     title: "Plan Sunday Service",
     description: "Coordinate with worship team",
-    status: "in progress",
+    status: "in-progress",
     priority: "high",
     category: "service",
     assigneeId: "member-1",
@@ -75,6 +77,7 @@ export const mockTasks: Task[] = [
     dueDate: new Date(2023, 5, 15),
     createdAt: new Date(),
     updatedAt: new Date(),
+    createdBy: "member-2",
     comments: [],
     assigneeIds: ["member-1"],
     categories: [],
@@ -112,6 +115,7 @@ export const mockTransactions: Transaction[] = [
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
+    category: "Offerings",
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],
@@ -127,17 +131,13 @@ export const mockFinanceCategories: FinanceCategory[] = [
     id: "category-1",
     name: "Offerings",
     type: "income",
-    color: "#4caf50",
-    createdAt: new Date(),
-    updatedAt: new Date()
+    color: "#4caf50"
   },
   {
     id: "category-2",
     name: "Utilities",
     type: "expense",
-    color: "#f44336",
-    createdAt: new Date(),
-    updatedAt: new Date()
+    color: "#f44336"
   }
 ];
 
@@ -151,7 +151,7 @@ export const mockCurrentUser: User = {
   firstName: "Admin",
   lastName: "User",
   role: "admin",
-  lastActive: new Date(),
+  active: true,
   createdAt: new Date()
 };
 
@@ -171,7 +171,7 @@ export const mockProgrammes: Programme[] = [
     budget: 500,
     status: "ongoing",
     objectives: ["Worship", "Fellowship"],
-    kpis: ["attendance", "engagement"],
+    kpis: [],
     notes: "",
     name: "Sunday Service",
     type: "recurring",

@@ -370,36 +370,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({
     return true;
   };
 
+  // Method for adding programme category
   const addProgrammeCategory = (category: any) => {
     const newCategory = { ...category, id: `category-${Date.now()}` };
-    setCategories(prev => [...prev, newCategory]);
+    setProgrammeCategories(prev => [...prev, newCategory]);
     return newCategory;
-  };
-
-  const addProgrammeTag = (tag: any) => {
-    const newTag = { ...tag, id: `tag-${Date.now()}` };
-    setTags(prev => [...prev, newTag]);
-    return newTag;
-  };
-
-  const assignTagToProgramme = (programmeId: string, tagId: string) => {
-    setProgrammes(prev => prev.map(p => {
-      if (p.id === programmeId) {
-        return { ...p, tags: [...p.tags, tagId] };
-      }
-      return p;
-    }));
-    return true;
-  };
-
-  const removeTagFromProgramme = (programmeId: string, tagId: string) => {
-    setProgrammes(prev => prev.map(p => {
-      if (p.id === programmeId) {
-        return { ...p, tags: p.tags.filter(t => t !== tagId) };
-      }
-      return p;
-    }));
-    return true;
   };
 
   const contextValue = useMemo(

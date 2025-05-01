@@ -153,8 +153,7 @@ export const useTaskActions = ({
         title: "New comment on your task",
         message: `${currentUser.firstName} commented on task: ${task.title}`,
         type: "info",
-        read: false,
-        link: `/tasks/${taskId}`,
+        link: `/tasks/${taskId}`
       });
     }
     

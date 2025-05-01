@@ -15,7 +15,7 @@ const Mentorship = () => {
   const [isAddProgramDialogOpen, setIsAddProgramDialogOpen] = useState(false);
   const [newProgram, setNewProgram] = useState<Partial<MentorshipProgram>>({
     title: '',
-    name: '', // Need both name and title
+    name: '', 
     description: '',
     startDate: new Date(),
     endDate: null,
@@ -24,11 +24,12 @@ const Mentorship = () => {
     notes: '',
     status: 'active',
     menteeId: '',
-    mentorId: ''
+    mentors: [],
+    mentees: []
   });
 
   const handleAddProgram = () => {
-    if (!newProgram.title || !newProgram.menteeId || !newProgram.mentorId) {
+    if (!newProgram.title || !newProgram.menteeId || !newProgram.mentors?.length) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -36,9 +37,10 @@ const Mentorship = () => {
     const programData: MentorshipProgram = {
       id: `program-${Date.now()}`,
       title: newProgram.title || '',
-      name: newProgram.title || '', // Set name same as title
+      name: newProgram.title || '',
       menteeId: newProgram.menteeId || '',
-      mentorId: newProgram.mentorId || '',
+      mentors: newProgram.mentors || [],
+      mentees: [newProgram.menteeId || ''],
       status: newProgram.status || 'active',
       startDate: newProgram.startDate || new Date(),
       endDate: newProgram.endDate || null,
@@ -60,7 +62,8 @@ const Mentorship = () => {
       notes: '',
       status: 'active',
       menteeId: '',
-      mentorId: ''
+      mentors: [],
+      mentees: []
     });
     setIsAddProgramDialogOpen(false);
     
@@ -96,7 +99,9 @@ const Mentorship = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <Select value={newProgram.menteeId || ''} onValueChange={(value) => setNewProgram({ ...newProgram, menteeId: value })}>
+              <Select 
+                value={newProgram.menteeId || ''} 
+                onValueChange={(value) => setNewProgram({ ...newProgram, menteeId: value, mentees: [value] })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Mentee" />
                 </SelectTrigger>
@@ -110,7 +115,9 @@ const Mentorship = () => {
               </Select>
             </div>
             <div>
-              <Select value={newProgram.mentorId || ''} onValueChange={(value) => setNewProgram({ ...newProgram, mentorId: value })}>
+              <Select 
+                value={newProgram.mentors?.length ? newProgram.mentors[0] : ''} 
+                onValueChange={(value) => setNewProgram({ ...newProgram, mentors: [value] })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Mentor" />
                 </SelectTrigger>

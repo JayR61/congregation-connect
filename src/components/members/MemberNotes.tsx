@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Member } from '@/types';
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/lib/toast';
 
 interface MemberNotesProps {
   member: Member;
@@ -31,11 +32,7 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
   
   const handleAddNote = () => {
     if (!newNote.content) {
-      toast({
-        title: "Missing content",
-        description: "Please enter some content for your note.",
-        variant: "destructive"
-      });
+      toast.error("Please enter some content for your note.");
       return;
     }
     
@@ -70,19 +67,12 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
     
     setActiveTab("notes");
     
-    toast({
-      title: "Note added",
-      description: "The note has been successfully added."
-    });
+    toast.success("The note has been successfully added.");
   };
 
   const handleAddResource = () => {
     if (!newResource.description || !newResource.type) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+      toast.error("Please fill in all required fields.");
       return;
     }
     
@@ -121,14 +111,11 @@ const MemberNotes: React.FC<MemberNotesProps> = ({ member }) => {
     
     setActiveTab("resources");
     
-    toast({
-      title: "Resource added",
-      description: "The resource has been successfully added."
-    });
+    toast.success("The resource has been successfully added.");
   };
   
   return (
-    <Tabs defaultValue="notes" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+    <Tabs defaultValue="notes" className="w-full" value={activeTab} onValueChange={(value) => setActiveTab(value as "notes" | "resources")}>
       <TabsList>
         <TabsTrigger value="notes">Notes</TabsTrigger>
         <TabsTrigger value="resources">Resources</TabsTrigger>

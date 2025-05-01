@@ -11,7 +11,7 @@ const UpcomingEvents = () => {
   const upcomingTasks = tasks
     .filter(task => 
       task.dueDate && 
-      (task.status !== 'completed' && task.status !== 'done') &&
+      (task.status !== 'completed' && task.status !== 'cancelled') &&
       (new Date(task.dueDate) > today) &&
       ((new Date(task.dueDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24) <= 7)
     )

@@ -32,13 +32,14 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
       return;
     }
 
-    const newRecord = {
+    const newRecord: AttendanceRecord = {
       id: `attendance-${Date.now()}`,
-      eventId: newEvent.eventId,
-      memberId: member.id, // Add required memberId field
-      date: newEvent.date,
-      isPresent: newEvent.isPresent,
+      memberId: member.id,
+      date: new Date(newEvent.date),
+      status: newEvent.isPresent ? 'present' : 'absent',
       notes: newEvent.notes || `Event: ${newEvent.description}`,
+      eventId: newEvent.eventId, // Additional property supported by our updated type
+      isPresent: newEvent.isPresent, // Additional property supported by our updated type
     };
 
     const updatedAttendance = [...(member.attendance || []), newRecord];
@@ -160,16 +161,20 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
                   })
                   .map((record) => (
                     <div key={record.id || `record-${Math.random()}`} className="flex items-center p-2 border rounded-md">
-                      <div className={`h-2 w-2 rounded-full mr-3 ${record.isPresent ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className={`h-2 w-2 rounded-full mr-3 ${
+                        record.status === 'present' || record.isPresent ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
                       <div className="flex-1">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                           <span className="text-sm font-medium">{formatDate(record.date)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Event: {record.notes ? record.notes.substring(0, 30) : 
-                            ('eventId' in record ? getEventDescription(record.eventId) : 'Unnamed Event')}
-                          {record.isPresent && <Check className="inline-block h-3 w-3 ml-1 text-green-500" />}
+                          Event: {record.notes ? String(record.notes).substring(0, 30) : 
+                            ('eventId' in record ? getEventDescription(record.eventId!) : 'Unnamed Event')}
+                          {(record.status === 'present' || record.isPresent) && (
+                            <Check className="inline-block h-3 w-3 ml-1 text-green-500" />
+                          )}
                         </p>
                       </div>
                     </div>

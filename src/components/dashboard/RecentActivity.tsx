@@ -25,7 +25,7 @@ const RecentActivity = () => {
       title: transaction.description,
       amount: transaction.amount,
       transactionType: transaction.type,
-      date: transaction.createdAt || new Date(),
+      date: transaction.date || new Date(), // Use date instead of createdAt
       icon: <DollarSign className="h-4 w-4" />,
       description: `${transaction.type === 'income' ? 'Received' : 'Spent'} $${transaction.amount} for ${transaction.description}`
     }));
@@ -33,10 +33,10 @@ const RecentActivity = () => {
     const documentActivities = documents.map(document => ({
       id: document.id,
       type: 'document',
-      title: document.title || document.name || "Untitled Document",
+      title: document.name, // Use name instead of title
       date: document.createdAt,
       icon: <FileText className="h-4 w-4" />,
-      description: `Document "${document.title || document.name || "Untitled Document"}" was uploaded`
+      description: `Document "${document.name}" was uploaded`
     }));
 
     // Handle task comments safely

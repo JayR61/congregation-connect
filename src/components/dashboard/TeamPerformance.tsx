@@ -10,20 +10,22 @@ const TeamPerformance = () => {
   const memberPerformance = members.map(member => {
     // Support both single assignee and multiple assignees
     const memberTasks = tasks.filter(task => {
-      if (task.assigneeIds && Array.isArray(task.assigneeIds)) {
-        return task.assigneeIds.includes(member.id);
+      if (task.assigneeId === member.id) {
+        return true;
       }
-      return task.assigneeId === member.id;
+      // Safely check assigneeIds if it exists
+      return task.assigneeIds && Array.isArray(task.assigneeIds) && 
+             task.assigneeIds.includes(member.id);
     });
     
     const completedMemberTasks = memberTasks.filter(task => 
-      task.status === 'completed' || task.status === 'done').length;
+      task.status === 'completed').length;
     
     const inProgressMemberTasks = memberTasks.filter(task => 
-      task.status === 'in-progress' || task.status === 'in progress').length;
+      task.status === 'in-progress').length;
     
     const pendingMemberTasks = memberTasks.filter(task => 
-      task.status === 'pending' || task.status === 'open').length;
+      task.status === 'todo').length;
     
     const totalMemberTasks = memberTasks.length;
     

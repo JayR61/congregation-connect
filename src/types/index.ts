@@ -34,6 +34,7 @@ export interface Folder {
   parentId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  createdById?: string; // Add this field to match usage
 }
 
 export interface Document {
@@ -50,6 +51,13 @@ export interface Document {
   tags?: string[];
   lastModifiedBy?: string;
   versions?: DocumentVersion[];
+  // Additional fields that are used in components
+  title?: string;
+  thumbnailUrl?: string;
+  shared?: boolean;
+  content?: string;
+  uploadedById?: string;
+  size?: number; // Alias for fileSize in some places
 }
 
 export interface DocumentVersion {
@@ -61,6 +69,9 @@ export interface DocumentVersion {
   fileSize: number;
   url: string;
   notes?: string;
+  // Additional fields that are used in components
+  version?: string;
+  createdById?: string;
 }
 
 export interface Transaction {
@@ -77,6 +88,10 @@ export interface Transaction {
   notes?: string;
   recurring?: boolean;
   recurrencePattern?: string;
+  // Additional fields that are used in components
+  createdAt?: Date;
+  updatedAt?: Date;
+  createdById?: string;
 }
 
 export interface AttendanceRecord {
@@ -86,6 +101,9 @@ export interface AttendanceRecord {
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string;
   programmeId?: string;
+  // Additional fields used in components
+  isPresent?: boolean;
+  eventId?: string;
 }
 
 export interface Member {
@@ -108,6 +126,25 @@ export interface Member {
   tags?: string[];
   familyMembers?: string[];
   volunteerRoles?: Volunteer[];
+  // Additional fields used in components
+  familyIds?: string[];
+  familyId?: string | null;
+  structures?: string[];
+  positions?: Array<{
+    title: string;
+    structure: string;
+  }>;
+  isActive?: boolean;
+  isLeadership?: boolean;
+  isFullMember?: boolean;
+  category?: string;
+  occupation?: string;
+  birthDate?: Date;
+  newMemberDate?: Date;
+  city?: string;
+  state?: string;
+  zip?: string;
+  mentorshipPrograms?: any[];
 }
 
 export interface MemberNote {
@@ -240,6 +277,11 @@ export interface Task {
   subtasks?: Task[];
   programmeId?: string;
   effort?: number;
+  // Additional fields used in components
+  assigneeIds?: string[]; // For multiple assignees
+  createdById?: string;
+  lastModifiedById?: string;
+  lastModifiedAction?: string;
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'cancelled';
@@ -254,6 +296,7 @@ export interface TaskComment {
   createdAt: Date;
   updatedAt?: Date;
   attachments?: string[];
+  userId?: string;
 }
 
 export interface TaskCategory {
@@ -350,6 +393,35 @@ export interface AppContextProps {
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
   markNotificationAsRead: (id: string) => void;
   deleteNotification: (id: string) => void;
+  
+  // Additional methods used in components
+  moveDocument?: (documentId: string, folderId: string | null) => void;
+  addDocumentVersion?: (documentId: string, fileUrl: string, notes: string) => void;
+  financeCategories?: FinanceCategory[];
+  clearAllNotifications?: () => boolean;
+  shareDocument?: (documentId: string, memberIds: string[]) => void;
+  recordAttendance?: (programmeId: string, memberId: string, date: Date, isPresent: boolean, notes?: string) => void;
+  exportProgrammesToCSV?: () => boolean;
+  exportAttendanceToCSV?: () => boolean;
+  allocateResource?: (resource: any) => any;
+  updateResourceStatus?: (id: string, status: string) => boolean;
+  exportProgrammeToPDF?: (id: string, members?: Member[]) => boolean;
+  createProgrammeTemplate?: (template: any) => any;
+  createProgrammeFromTemplate?: (templateId: string) => any;
+  exportProgrammeToCalendar?: (id: string) => boolean;
+  addProgrammeFeedback?: (feedback: any) => any;
+  addProgrammeKPI?: (kpi: any) => any;
+  updateKPIProgress?: (id: string, progress: number) => boolean;
+  createProgrammeReminder?: (reminder: any) => any;
+  checkAndSendReminders?: () => boolean;
+  recordBulkAttendance?: (data: any) => boolean;
+  addProgrammeCategory?: (category: any) => any;
+  addProgrammeTag?: (tag: any) => any;
+  assignTagToProgramme?: (programmeId: string, tagId: string) => boolean;
+  removeTagFromProgramme?: (programmeId: string, tagId: string) => boolean;
+  addMentorshipProgram?: (program: any) => any;
+  addTaskComment?: (taskId: string, comment: Omit<TaskComment, "id" | "createdAt" | "taskId">) => boolean;
+  addDocumentVersion?: (documentId: string, url: string, notes?: string) => void;
 }
 
 export interface MentorshipProgram {
@@ -365,6 +437,7 @@ export interface MentorshipProgram {
   sessions?: MentorshipSession[];
   resources?: string[];
   notes?: string;
+  menteeId?: string; // Add to match component usage
 }
 
 export interface MentorshipSession {
@@ -389,4 +462,6 @@ export interface Volunteer {
   hours?: number;
   skills?: string[];
   notes?: string;
+  area: string;
+  memberId?: string; // Added to match usage in components
 }

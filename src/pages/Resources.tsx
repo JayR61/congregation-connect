@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -22,7 +21,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ChurchResource, ResourceBooking, Member } from "@/types";
+import { ChurchResource, ResourceBooking, Member } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +41,18 @@ import {
   Settings,
   Tag,
   User,
-  XCircle
+  XCircle,
+  Download,
+  Upload,
+  Share,
+  Star,
+  MessageCircle,
+  BarChart4,
+  PanelLeft,
+  LayoutGrid,
+  LayoutList,
+  Bookmark,
+  Clock
 } from "lucide-react";
 import { toast } from '@/lib/toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -58,7 +68,9 @@ const Resources = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
-  const [resourceView, setResourceView] = useState<'grid' | 'calendar' | 'stats' | 'gallery'>('grid');
+  const [resourceView, setResourceView] = useState<'grid' | 'list' | 'calendar' | 'stats' | 'gallery'>('grid');
+  const [sortOrder, setSortOrder] = useState<'name' | 'date' | 'status' | 'type'>('name');
+  const [favorites, setFavorites] = useState<string[]>([]);
   
   const [resources, setResources] = useState<ChurchResource[]>([
     {
@@ -172,6 +184,11 @@ const Resources = () => {
     status: 'pending'
   });
 
+  // New state for additional features
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  
   const filteredResources = resources.filter(resource => {
     const matchesSearch = 
       resource.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -331,6 +348,72 @@ const Resources = () => {
         return <Badge>{status}</Badge>;
     }
   };
+
+  // New function to toggle favorite status
+  const toggleFavorite = (resourceId: string) => {
+    if (favorites.includes(resourceId)) {
+      setFavorites(favorites.filter(id => id !== resourceId));
+      toast.success("Removed from favorites");
+    } else {
+      setFavorites([...favorites, resourceId]);
+      toast.success("Added to favorites");
+    }
+  };
+
+  // New function for bulk action selection
+  const toggleResourceSelection = (resourceId: string) => {
+    if (selectedResources.includes(resourceId)) {
+      setSelectedResources(selectedResources.filter(id => id !== resourceId));
+    } else {
+      setSelectedResources([...selectedResources, resourceId]);
+    }
+  };
+
+  // New function to handle bulk actions
+  const handleBulkAction = (action: 'delete' | 'share' | 'download') => {
+    if (selectedResources.length === 0) {
+      toast.error("No resources selected");
+      return;
+    }
+
+    switch (action) {
+      case 'delete':
+        toast.success(`${selectedResources.length} resources marked for deletion`);
+        break;
+      case 'share':
+        toast.success(`${selectedResources.length} resources shared`);
+        break;
+      case 'download':
+        toast.success(`${selectedResources.length} resources prepared for download`);
+        break;
+    }
+    
+    setSelectedResources([]);
+  };
+
+  // Sort resources based on selected order
+  const sortResources = (a: ChurchResource, b: ChurchResource) => {
+    switch (sortOrder) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'date':
+        return new Date(b.acquisitionDate || 0).getTime() - new Date(a.acquisitionDate || 0).getTime();
+      case 'status':
+        return a.status.localeCompare(b.status);
+      case 'type':
+        return a.type.localeCompare(b.type);
+      default:
+        return 0;
+    }
+  };
+
+  // Apply sorting to filtered resources
+  const sortedFilteredResources = [...filteredResources].sort(sortResources);
+
+  // Apply favorites filter if needed
+  const displayedResources = showFavoritesOnly 
+    ? sortedFilteredResources.filter(resource => favorites.includes(resource.id))
+    : sortedFilteredResources;
 
   return (
     <div className="p-6">
@@ -595,6 +678,22 @@ const Resources = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          
+          {/* Bulk actions for selected resources */}
+          {selectedResources.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">{selectedResources.length} selected</span>
+              <Button variant="outline" size="sm" onClick={() => handleBulkAction('share')}>
+                <Share className="mr-2 h-4 w-4" /> Share
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleBulkAction('download')}>
+                <Download className="mr-2 h-4 w-4" /> Download
+              </Button>
+              <Button variant="outline" size="sm" className="text-red-500" onClick={() => handleBulkAction('delete')}>
+                <XCircle className="mr-2 h-4 w-4" /> Delete
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -608,7 +707,7 @@ const Resources = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-wrap gap-2">
           {/* View mode selector */}
           <div className="border rounded-md p-1 flex">
             <Button 
@@ -617,8 +716,17 @@ const Resources = () => {
               className="px-2"
               onClick={() => setResourceView('grid')}
             >
-              <Filter className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" />
               <span className="ml-1">Grid</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'list' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('list')}
+            >
+              <LayoutList className="h-4 w-4" />
+              <span className="ml-1">List</span>
             </Button>
             <Button 
               variant={resourceView === 'calendar' ? 'default' : 'ghost'} 
@@ -648,6 +756,30 @@ const Resources = () => {
               <span className="ml-1">Gallery</span>
             </Button>
           </div>
+          
+          {/* Sort order dropdown */}
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as any)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="date">Sort by Date</SelectItem>
+              <SelectItem value="status">Sort by Status</SelectItem>
+              <SelectItem value="type">Sort by Type</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Favorites toggle */}
+          <Button 
+            variant={showFavoritesOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className="gap-2"
+          >
+            <Bookmark className="h-4 w-4" />
+            {showFavoritesOnly ? "All Resources" : "Favorites"}
+          </Button>
           
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
@@ -703,7 +835,7 @@ const Resources = () => {
         <ResourceImageGallery resources={resources} />
       )}
       
-      {resourceView === 'grid' && (
+      {(resourceView === 'grid' || resourceView === 'list') && (
         <Tabs defaultValue="resources" className="mb-6">
           <TabsList>
             <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -711,221 +843,11 @@ const Resources = () => {
           </TabsList>
           
           <TabsContent value="resources" className="mt-4">
-            {filteredResources.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredResources.map(resource => (
-                  <Card key={resource.id} className="hover:bg-muted/50 transition-colors overflow-hidden flex flex-col">
-                    {resource.imageUrl && (
-                      <div className="h-48 overflow-hidden">
-                        <img 
-                          src={resource.imageUrl} 
-                          alt={resource.name}
-                          className="w-full h-full object-cover transition-transform hover:scale-105" 
-                        />
-                      </div>
-                    )}
-                    <CardHeader className={resource.imageUrl ? "pt-4" : ""}>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{resource.name}</CardTitle>
-                        <div className="flex-shrink-0">
-                          {getStatusBadge(resource.status || 'available')}
-                        </div>
-                      </div>
-                      <CardDescription>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          <Badge variant="outline" className="mr-1">
-                            {resource.type.charAt(0).toUpperCase() + resource.type.slice(1)}
-                          </Badge>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <p className="text-sm">{resource.description}</p>
-                        
-                        {resource.location && (
-                          <div className="flex items-center text-sm">
-                            <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{resource.location}</span>
-                          </div>
-                        )}
-                        
-                        {resource.currentAssigneeId && (
-                          <div className="flex items-center text-sm">
-                            <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Assigned to: </span>
-                            <span className="ml-1 font-medium">
-                              {(() => {
-                                const assignee = members.find(m => m.id === resource.currentAssigneeId);
-                                return assignee ? `${assignee.firstName} ${assignee.lastName}` : 'Unknown';
-                              })()}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {resource.maintenanceSchedule && (
-                          <div className="flex items-center text-sm">
-                            <Settings className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Maintenance: </span>
-                            <span className="ml-1">
-                              {new Date(resource.maintenanceSchedule).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {resource.acquisitionDate && (
-                          <div className="flex items-center text-sm">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Acquired: </span>
-                            <span className="ml-1">
-                              {new Date(resource.acquisitionDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between mt-auto pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setBookingForm(prev => ({ ...prev, resourceId: resource.id }));
-                          setIsBookingDialogOpen(true);
-                        }}
-                        disabled={resource.status !== 'available'}
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Book
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Info className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-medium">No Resources Found</h3>
-                <p className="text-muted-foreground mt-2">
-                  No resources have been added yet or match your search.
-                </p>
-                <Button onClick={() => setIsResourceDialogOpen(true)} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" /> Add Resource
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="bookings" className="mt-4">
-            {filteredBookings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBookings.map(booking => {
-                  const resource = resources.find(r => r.id === booking.resourceId);
-                  const member = members.find(m => m.id === booking.memberId);
-                  
-                  return (
-                    <Card key={booking.id} className="hover:bg-muted/50 transition-colors">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">{booking.purpose}</CardTitle>
-                          {getStatusBadge(booking.status)}
-                        </div>
-                        <CardDescription>
-                          <div className="flex items-center mt-1">
-                            <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{resource?.name}</span>
-                          </div>
-                          <div className="flex items-center mt-1">
-                            <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{member?.firstName} {member?.lastName}</span>
-                          </div>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>From: </span>
-                            <span className="ml-1 font-medium">
-                              {formatDateTime(booking.startDate)}
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>To: </span>
-                            <span className="ml-1 font-medium">
-                              {formatDateTime(booking.endDate)}
-                            </span>
-                          </div>
-                          
-                          {booking.notes && (
-                            <div className="pt-2">
-                              <p className="text-muted-foreground mb-1">Notes:</p>
-                              <p>{booking.notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        {booking.status === 'pending' && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1 mr-1"
-                              onClick={() => approveBooking(booking.id)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1 ml-1"
-                              onClick={() => rejectBooking(booking.id)}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {booking.status === 'approved' && (
-                          <Button variant="outline" size="sm" className="w-full">
-                            <ClipboardList className="h-4 w-4 mr-1" />
-                            Mark Complete
-                          </Button>
-                        )}
-                        {(booking.status === 'declined' || booking.status === 'rejected' || booking.status === 'completed') && (
-                          <Button variant="ghost" size="sm" className="w-full">
-                            <Info className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-medium">No Bookings Found</h3>
-                <p className="text-muted-foreground mt-2">
-                  No resource bookings have been made yet or match your search.
-                </p>
-                <Button onClick={() => setIsBookingDialogOpen(true)} className="mt-4">
-                  <Calendar className="mr-2 h-4 w-4" /> Book Resource
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
-  );
-};
-
-export default Resources;
+            {displayedResources.length > 0 ? (
+              resourceView === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {displayedResources.map(resource => (
+                    <Card key={resource.id} className="hover:bg-muted/50 transition-colors overflow-hidden flex flex-col group">
+                      <div className="relative">
+                        {/* Checkbox for bulk selection */}
+                        <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-

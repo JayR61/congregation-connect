@@ -57,21 +57,14 @@ const BulkAttendanceRecorder = ({ programmeId, onSaveComplete }: BulkAttendanceR
       
       setLoading(false);
       setOpen(false);
-      toast({
-        title: "Attendance recorded",
-        description: `Attendance for ${records.length} members has been recorded.`
-      });
+      toast("Attendance recorded", "Attendance for " + records.length + " members has been recorded.");
       
       if (onSaveComplete) {
         onSaveComplete();
       }
     } catch (error) {
       setLoading(false);
-      toast({
-        title: "Error recording attendance",
-        description: "There was a problem saving the attendance records.",
-        variant: "destructive" 
-      });
+      toast("Error recording attendance", "There was a problem saving the attendance records.", "destructive");
     }
   };
   

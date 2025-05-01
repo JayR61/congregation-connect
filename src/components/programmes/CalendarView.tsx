@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Programme } from '@/types';
@@ -63,14 +64,14 @@ export const CalendarView = ({ programmes, onDateSelect = () => {} }: CalendarVi
   }, [selectedDate, programmesByDate]);
   
   // Custom day rendering to show dots for events
-  const renderDay = (day: Date) => {
-    const dateKey = format(day, 'yyyy-MM-dd');
+  const renderDay = (date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd');
     const hasEvents = programmesByDate.has(dateKey);
     const eventCount = programmesByDate.get(dateKey)?.length || 0;
     
     return (
       <div className="relative">
-        <div>{day.getDate()}</div>
+        <div>{date.getDate()}</div>
         {hasEvents && (
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex gap-0.5">
             {eventCount > 3 ? (
@@ -106,7 +107,7 @@ export const CalendarView = ({ programmes, onDateSelect = () => {} }: CalendarVi
           onSelect={handleDateSelect}
           className="rounded-md border"
           components={{
-            Day: ({ day }) => renderDay(day)
+            Day: ({ date }) => renderDay(date)
           }}
         />
         

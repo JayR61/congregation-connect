@@ -97,14 +97,10 @@ const Programmes = () => {
   const handleFormSubmit = (programmeData: Omit<Programme, 'id'>) => {
     if (isEditMode && selectedProgramme) {
       updateProgramme(selectedProgramme.id, programmeData);
-      toast({
-        title: 'Programme updated successfully!'
-      });
+      toast("Programme updated successfully!");
     } else {
       addProgramme(programmeData);
-      toast({
-        title: 'Programme added successfully!'
-      });
+      toast("Programme added successfully!");
     }
     setIsDialogOpen(false);
   };
@@ -112,9 +108,7 @@ const Programmes = () => {
   const handleDeleteProgramme = (id: string) => {
     if (window.confirm('Are you sure you want to delete this programme?')) {
       deleteProgramme(id);
-      toast({
-        title: 'Programme deleted successfully!'
-      });
+      toast("Programme deleted successfully!");
     }
   };
   
@@ -220,7 +214,7 @@ const Programmes = () => {
                   <UserPlus className="mr-2 h-4 w-4" />
                   Record Attendance
                 </Button>
-                <Button variant="outline" onClick={() => toast({ title: "Attendance data exported to CSV" })}>
+                <Button variant="outline" onClick={() => toast("Attendance data exported to CSV")}>
                   <ClipboardList className="mr-2 h-4 w-4" />
                   Export Data
                 </Button>

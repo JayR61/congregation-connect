@@ -13,19 +13,19 @@ interface AttendanceDashboardProps {
   members: Member[];
 }
 
-export const AttendanceDashboard = ({ programmes, attendance, members }: AttendanceDashboardProps) => {
+const AttendanceDashboard = ({ programmes, attendance, members }: AttendanceDashboardProps) => {
   // Calculate statistics
   const statistics = calculateProgrammeStatistics(programmes, attendance);
   
   // Prepare data for charts
-  const programmeTypeData = Object.entries(statistics.programmesByType).map(([type, count]) => ({
+  const programmeTypeData = Object.entries(statistics.programmesByType || {}).map(([type, count]) => ({
     name: type,
     value: count
   }));
 
   const attendanceRateColor = 
-    statistics.attendanceRate >= 80 ? 'bg-green-500' : 
-    statistics.attendanceRate >= 60 ? 'bg-yellow-500' : 
+    (statistics.attendanceRate || 0) >= 80 ? 'bg-green-500' : 
+    (statistics.attendanceRate || 0) >= 60 ? 'bg-yellow-500' : 
     'bg-red-500';
 
   return (
@@ -36,9 +36,9 @@ export const AttendanceDashboard = ({ programmes, attendance, members }: Attenda
             <CardTitle className="text-lg font-medium">Total Programmes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{statistics.totalProgrammes}</div>
+            <div className="text-3xl font-bold">{statistics.totalProgrammes || 0}</div>
             <p className="text-sm text-muted-foreground">
-              {statistics.activeProgrammes} active, {statistics.completedProgrammes} completed
+              {statistics.activeProgrammes || 0} active, {statistics.completedProgrammes || 0} completed
             </p>
           </CardContent>
         </Card>
@@ -48,9 +48,9 @@ export const AttendanceDashboard = ({ programmes, attendance, members }: Attenda
             <CardTitle className="text-lg font-medium">Total Participants</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{statistics.totalParticipants}</div>
+            <div className="text-3xl font-bold">{statistics.totalParticipants || 0}</div>
             <p className="text-sm text-muted-foreground">
-              {Math.round(statistics.totalParticipants / programmes.length || 0)} per programme
+              {Math.round((statistics.totalParticipants || 0) / programmes.length || 0)} per programme
             </p>
           </CardContent>
         </Card>
@@ -60,11 +60,11 @@ export const AttendanceDashboard = ({ programmes, attendance, members }: Attenda
             <CardTitle className="text-lg font-medium">Attendance Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{Math.round(statistics.attendanceRate)}%</div>
+            <div className="text-3xl font-bold">{Math.round(statistics.attendanceRate || 0)}%</div>
             <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
               <div 
                 className={`h-full rounded-full ${attendanceRateColor}`}
-                style={{ width: `${statistics.attendanceRate}%` }}
+                style={{ width: `${statistics.attendanceRate || 0}%` }}
               ></div>
             </div>
           </CardContent>
@@ -119,7 +119,7 @@ export const AttendanceDashboard = ({ programmes, attendance, members }: Attenda
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={statistics.participantsTrend}
+                  data={statistics.participantsTrend || []}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -191,3 +191,5 @@ export const AttendanceDashboard = ({ programmes, attendance, members }: Attenda
     </div>
   );
 };
+
+export default AttendanceDashboard;

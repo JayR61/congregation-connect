@@ -1,4 +1,3 @@
-
 import { Programme, ProgrammeAttendance, ProgrammeResource, ProgrammeFeedback, 
   ProgrammeReminder, ProgrammeKPI, ProgrammeTemplate, ProgrammeCategory, 
   ProgrammeTag, Member, ProgrammeStatistics } from "@/types";
@@ -119,12 +118,12 @@ export const generateProgrammePDF = (programme: Programme, members: Member[], at
   return dataUrl;
 };
 
-// Email/notification reminders
-export const scheduleReminder = (reminder: Omit<ProgrammeReminder, 'id' | 'sentAt' | 'status'>): ProgrammeReminder => {
+// Schedule reminder function
+export const scheduleReminder = (reminder: Omit<ProgrammeReminder, 'id' | 'sent' | 'status'>): ProgrammeReminder => {
   const newReminder: ProgrammeReminder = {
     id: `reminder-${Date.now()}`,
     ...reminder,
-    sentAt: undefined,
+    sent: false,
     status: 'scheduled'
   };
   
@@ -134,7 +133,7 @@ export const scheduleReminder = (reminder: Omit<ProgrammeReminder, 'id' | 'sentA
   return newReminder;
 };
 
-// In a real app, this would be called by a server-side process or cron job
+// Process reminders function
 export const processReminders = () => {
   const reminders = getReminders();
   const programmes = getProgrammes();
@@ -169,14 +168,14 @@ export const processReminders = () => {
     if (shouldSendNow) {
       // In a real app, this would send an actual email or notification
       console.log(`Sending reminder for programme: ${programme.name}`);
-      return { ...reminder, sentAt: now, status: 'sent' as const };
+      return { ...reminder, sentDate: now, sent: true, status: 'sent' as const };
     }
     
     return reminder;
   });
   
   saveReminders(updatedReminders);
-  return updatedReminders.filter(r => r.status === 'sent' && r.sentAt && r.sentAt.getTime() >= now.getTime() - 60000);
+  return updatedReminders.filter(r => r.status === 'sent' && r.sent && r.sentDate && r.sentDate.getTime() >= now.getTime() - 60000);
 };
 
 // Export services for calendar
@@ -223,7 +222,8 @@ export const calculateProgrammeStatistics = (
   
   // Group programmes by type
   const programmesByType = programmes.reduce((acc, curr) => {
-    acc[curr.type] = (acc[curr.type] || 0) + 1;
+    const type = curr.type || 'Unknown';
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   
@@ -260,7 +260,7 @@ export const calculateProgrammeStatistics = (
     totalProgrammes: programmes.length,
     activeProgrammes: activeProgrammes.length,
     completedProgrammes: completedProgrammes.length,
-    totalParticipants: programmes.reduce((acc, curr) => acc + curr.currentAttendees, 0),
+    totalParticipants: programmes.reduce((acc, curr) => acc + (curr.currentAttendees || 0), 0),
     attendanceRate,
     programmesByType,
     participantsTrend

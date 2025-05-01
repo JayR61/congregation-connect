@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,15 +10,15 @@ import { Programme } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, ListFilter, Calendar as CalendarIcon, BarChart2, Settings, UserPlus, ClipboardList } from 'lucide-react';
-import ProgrammeCard from '@/components/programmes/ProgrammeCard';
+import { ProgrammeCard } from '@/components/programmes/ProgrammeCard';
 import ProgrammeForm from '@/components/programmes/ProgrammeForm';
-import CalendarView from '@/components/programmes/CalendarView';
-import ProgrammesAnalytics from '@/components/programmes/ProgrammesAnalytics';
-import CategoryTagManager from '@/components/programmes/CategoryTagManager';
+import { CalendarView } from '@/components/programmes/CalendarView';
+import { ProgrammesAnalytics } from '@/components/programmes/ProgrammesAnalytics';
+import { CategoryTagManager } from '@/components/programmes/CategoryTagManager';
 import ResourceManagement from '@/components/programmes/ResourceManagement';
 import AttendanceDashboard from '@/components/programmes/AttendanceDashboard';
-import AttendanceReportDialog from '@/components/programmes/AttendanceReportDialog';
-import FeedbackManager from '@/components/programmes/FeedbackManager';
+import { AttendanceReportDialog } from '@/components/programmes/AttendanceReportDialog';
+import { FeedbackManager } from '@/components/programmes/FeedbackManager';
 import ReminderManager from '@/components/programmes/ReminderManager';
 import TemplateManager from '@/components/programmes/TemplateManager';
 import KPIManager from '@/components/programmes/KPIManager';

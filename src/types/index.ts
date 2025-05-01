@@ -545,10 +545,11 @@ export interface SocialMediaAccount {
 export interface ProgrammeResource {
   id: string;
   programmeId: string;
-  resourceId: string;
+  name: string;
+  type: string;
   quantity: number;
+  status: 'available' | 'unavailable' | 'allocated';
   notes?: string;
-  status: 'allocated' | 'returned' | 'damaged';
 }
 
 export interface ProgrammeReminder {
@@ -560,15 +561,17 @@ export interface ProgrammeReminder {
   sent: boolean;
   sentDate?: Date;
   createdBy?: string;
+  schedule?: 'day_before' | 'hour_before' | 'week_before' | 'custom';
+  customTime?: Date;
+  status?: 'scheduled' | 'sent' | 'failed';
 }
 
 export interface ProgrammeStatistics {
-  totalAttendance: number;
-  averageAttendance: number;
-  growthRate?: number;
-  engagementRate?: number;
-  completionRate?: number;
-  feedbackScore?: number;
-  resourceUtilization?: number;
-  data?: any[];
+  totalProgrammes: number;
+  activeProgrammes: number;
+  completedProgrammes: number;
+  totalParticipants: number;
+  attendanceRate: number;
+  programmesByType: Record<string, number>;
+  participantsTrend: { month: string; count: number }[];
 }

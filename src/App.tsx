@@ -8,13 +8,6 @@ import { AppProvider } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import Layout from "./components/layout/Layout";
-import { 
-  mockMembers, mockTasks, mockProgrammes, mockTransactions, 
-  mockFinanceCategories, mockDocuments, mockFolders, mockNotifications, 
-  mockTaskCategories, mockAttendance, mockResources, mockCategories, 
-  mockTags, mockProgrammeTags, mockFeedback, mockKpis, mockReminders, 
-  mockTemplates, mockCurrentUser 
-} from './data/mockData';
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -42,40 +35,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// Initialize with a default user
-const defaultUser = mockCurrentUser;
-
-// Save the default user to localStorage if no user exists
-if (!localStorage.getItem('currentUser')) {
-  localStorage.setItem('currentUser', JSON.stringify(defaultUser));
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider>
         <SettingsProvider>
-          <AppProvider 
-            initialMembers={mockMembers}
-            initialTasks={mockTasks}
-            initialProgrammes={mockProgrammes}
-            initialTransactions={mockTransactions}
-            initialFinanceCategories={mockFinanceCategories}
-            initialDocuments={mockDocuments}
-            initialFolders={mockFolders}
-            initialNotifications={mockNotifications}
-            initialCurrentUser={defaultUser}
-            initialTaskCategories={mockTaskCategories}
-            initialAttendance={mockAttendance}
-            initialResources={mockResources}
-            initialCategories={mockCategories}
-            initialTags={mockTags}
-            initialProgrammeTags={mockProgrammeTags}
-            initialFeedback={mockFeedback}
-            initialKpis={mockKpis}
-            initialReminders={mockReminders}
-            initialTemplates={mockTemplates}
-          >
+          <AppProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>

@@ -1,3 +1,4 @@
+
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
@@ -52,13 +53,16 @@ export const mockMembers: Member[] = [
     volunteerRoles: [{
       id: "volunteer-1",
       memberId: "member-2",
-      ministry: "Hospitality",
-      role: "greeter",
-      joinDate: new Date(2019, 5, 1),
+      position: "greeter",
+      department: "Hospitality",
+      startDate: new Date(2019, 5, 1),
       status: "active",
       hours: 2,
       area: "Welcome Team",
-      startDate: new Date(2019, 5, 1)
+      ministry: "Hospitality",
+      role: "greeter",
+      joinDate: new Date(2019, 5, 1),
+      availability: ["Sunday morning"]
     }]
   }
 ];

@@ -1,5 +1,5 @@
 
-import { Folder, Document, User } from '@/types';
+import { Folder, User } from '@/types';
 
 interface UseFolderActionsProps {
   folders: Folder[];
@@ -25,33 +25,41 @@ export const useFolderActions = ({
     setFolders(prev => [...prev, newFolder]);
     return newFolder;
   };
-  
-  const updateFolder = (id: string, updatedFields: Partial<Folder>) => {
+
+  const updateFolder = (id: string, folder: Partial<Folder>) => {
     let found = false;
     
     setFolders(prev => 
-      prev.map(folder => {
-        if (folder.id === id) {
+      prev.map(f => {
+        if (f.id === id) {
           found = true;
           return { 
-            ...folder, 
-            ...updatedFields,
-            updatedAt: new Date()
+            ...f, 
+            ...folder,
+            updatedAt: new Date() 
           };
         }
-        return folder;
+        return f;
       })
     );
     
     return found;
   };
-  
+
   const deleteFolder = (id: string) => {
     let found = false;
     
+    // Check if folder has children
+    const hasChildren = folders.some(f => f.parentId === id);
+    
+    if (hasChildren) {
+      console.error('Cannot delete folder with children');
+      return false;
+    }
+    
     setFolders(prev => {
-      const filtered = prev.filter(folder => {
-        if (folder.id === id) {
+      const filtered = prev.filter(f => {
+        if (f.id === id) {
           found = true;
           return false;
         }
@@ -62,29 +70,10 @@ export const useFolderActions = ({
     
     return found;
   };
-  
-  const moveDocument = (documentId: string, folderId: string | null) => {
-    // Note: This would normally update the document's folderId
-    // For now we'll just return true since we don't have a direct access to documents state here
-    return true;
-  };
-  
+
   return {
     addFolder,
     updateFolder,
-    deleteFolder,
-    moveDocument
+    deleteFolder
   };
-};
-
-export const addFolder = (folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
-  return useFolderActions({ folders, setFolders, currentUser }).addFolder(folder);
-};
-
-export const updateFolder = (id: string, updatedFields: Partial<Folder>, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
-  return useFolderActions({ folders, setFolders, currentUser }).updateFolder(id, updatedFields);
-};
-
-export const deleteFolder = (id: string, folders: Folder[], setFolders: React.Dispatch<React.SetStateAction<Folder[]>>, currentUser: User) => {
-  return useFolderActions({ folders, setFolders, currentUser }).deleteFolder(id);
 };

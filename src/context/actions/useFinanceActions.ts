@@ -1,148 +1,157 @@
 
 import { Transaction, FinanceCategory } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { toast } from '@/lib/toast';
 
 interface UseFinanceActionsProps {
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  financeCategories: FinanceCategory[];
-  setFinanceCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
+  categories: FinanceCategory[];
+  setCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
 }
 
 export const useFinanceActions = ({
   transactions,
   setTransactions,
-  financeCategories,
-  setFinanceCategories
+  categories,
+  setCategories
 }: UseFinanceActionsProps) => {
-  // Transaction CRUD operations
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Transaction | null => {
-    try {
-      const now = new Date();
-      const newTransaction: Transaction = {
-        ...transaction,
-        id: uuidv4(),
-        createdAt: now,
-        updatedAt: now
-      };
-      
-      setTransactions(prev => [...prev, newTransaction]);
-      return newTransaction;
-    } catch (error) {
-      console.error('Error adding transaction:', error);
-      return null;
-    }
+  
+  // Transaction actions
+  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
+    const newTransaction: Transaction = {
+      ...transaction,
+      id: `transaction-${Date.now()}`,
+    };
+    
+    setTransactions(prev => [...prev, newTransaction]);
+    toast.success("Transaction added successfully");
+    return newTransaction;
   };
 
-  const updateTransaction = (id: string, updatedFields: Partial<Transaction>): boolean => {
-    try {
-      let found = false;
-      setTransactions(prev => {
-        return prev.map(transaction => {
-          if (transaction.id === id) {
-            found = true;
-            return {
-              ...transaction,
-              ...updatedFields,
-              updatedAt: new Date()
-            };
-          }
-          return transaction;
-        });
+  const updateTransaction = (id: string, transaction: Partial<Transaction>) => {
+    let updated = false;
+    
+    setTransactions(prev => 
+      prev.map(t => {
+        if (t.id === id) {
+          updated = true;
+          return { ...t, ...transaction };
+        }
+        return t;
+      })
+    );
+    
+    if (updated) {
+      toast.success("Transaction updated successfully");
+    }
+    
+    return updated;
+  };
+
+  const deleteTransaction = (id: string) => {
+    let deleted = false;
+    
+    setTransactions(prev => {
+      const filtered = prev.filter(t => {
+        if (t.id === id) {
+          deleted = true;
+          return false;
+        }
+        return true;
       });
-      return found;
-    } catch (error) {
-      console.error('Error updating transaction:', error);
+      return filtered;
+    });
+    
+    if (deleted) {
+      toast.success("Transaction deleted successfully");
+    }
+    
+    return deleted;
+  };
+
+  // Category actions
+  const addCategory = (category: Omit<FinanceCategory, 'id'>) => {
+    const newCategory: FinanceCategory = {
+      ...category,
+      id: `category-${Date.now()}`
+    };
+    
+    setCategories(prev => [...prev, newCategory]);
+    toast.success("Category added successfully");
+    return newCategory;
+  };
+
+  const updateCategory = (id: string, category: Partial<FinanceCategory>) => {
+    let updated = false;
+    
+    setCategories(prev => 
+      prev.map(c => {
+        if (c.id === id) {
+          updated = true;
+          return { ...c, ...category };
+        }
+        return c;
+      })
+    );
+    
+    if (updated) {
+      toast.success("Category updated successfully");
+    }
+    
+    return updated;
+  };
+
+  const deleteCategory = (id: string) => {
+    let deleted = false;
+    
+    // Check if category is being used in transactions
+    const categoryInUse = transactions.some(t => t.categoryId === id);
+    
+    if (categoryInUse) {
+      toast.error("Cannot delete category that is in use");
       return false;
     }
-  };
-
-  const deleteTransaction = (id: string): boolean => {
-    try {
-      let found = false;
-      setTransactions(prev => {
-        const filtered = prev.filter(transaction => {
-          if (transaction.id === id) {
-            found = true;
-            return false;
-          }
-          return true;
-        });
-        return filtered;
+    
+    setCategories(prev => {
+      const filtered = prev.filter(c => {
+        if (c.id === id) {
+          deleted = true;
+          return false;
+        }
+        return true;
       });
-      return found;
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-      return false;
+      return filtered;
+    });
+    
+    if (deleted) {
+      toast.success("Category deleted successfully");
     }
+    
+    return deleted;
   };
-
-  // Finance Category CRUD operations
-  const addFinanceCategory = (category: Omit<FinanceCategory, 'id'>): FinanceCategory | null => {
-    try {
-      const newCategory: FinanceCategory = {
-        ...category,
-        id: uuidv4()
-      };
-      
-      setFinanceCategories(prev => [...prev, newCategory]);
-      return newCategory;
-    } catch (error) {
-      console.error('Error adding finance category:', error);
-      return null;
-    }
-  };
-
-  const updateFinanceCategory = (id: string, updatedFields: Partial<FinanceCategory>): boolean => {
-    try {
-      let found = false;
-      setFinanceCategories(prev => {
-        return prev.map(category => {
-          if (category.id === id) {
-            found = true;
-            return {
-              ...category,
-              ...updatedFields
-            };
-          }
-          return category;
-        });
-      });
-      return found;
-    } catch (error) {
-      console.error('Error updating finance category:', error);
-      return false;
-    }
-  };
-
-  const deleteFinanceCategory = (id: string): boolean => {
-    try {
-      let found = false;
-      setFinanceCategories(prev => {
-        const filtered = prev.filter(category => {
-          if (category.id === id) {
-            found = true;
-            return false;
-          }
-          return true;
-        });
-        return filtered;
-      });
-      return found;
-    } catch (error) {
-      console.error('Error deleting finance category:', error);
-      return false;
-    }
+  
+  // Financial reporting
+  const calculateIncomeExpenseSummary = () => {
+    return transactions.reduce(
+      (summary, transaction) => {
+        if (transaction.type === 'income') {
+          summary.income += transaction.amount;
+        } else {
+          summary.expense += transaction.amount;
+        }
+        return summary;
+      },
+      { income: 0, expense: 0, balance: 0 }
+    );
   };
 
   return {
     addTransaction,
     updateTransaction,
     deleteTransaction,
-    addFinanceCategory,
-    updateFinanceCategory,
-    deleteFinanceCategory
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    calculateIncomeExpenseSummary
   };
 };
-
-export default useFinanceActions;

@@ -25,8 +25,10 @@ const MoveDocumentDialog = ({ open, onOpenChange, document }: MoveDocumentDialog
   if (!document) return null;
   
   const handleSubmit = () => {
-    moveDocument(document.id, selectedFolderId);
-    onOpenChange(false);
+    if (moveDocument) {
+      moveDocument(document.id, selectedFolderId);
+      onOpenChange(false);
+    }
   };
   
   return (

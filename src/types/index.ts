@@ -1,5 +1,5 @@
-// Add ChurchResource and ResourceBooking types to the index.ts file
-// We'll append to the existing exports
+
+// Adding missing type definitions and fixing existing ones
 
 export interface ChurchResource {
   id: string;
@@ -218,7 +218,7 @@ export interface ProgrammeAttendance {
   id: string;
   programmeId: string;
   memberId: string;
-  date: Date;
+  date: Date | string;
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string;
   isPresent?: boolean;

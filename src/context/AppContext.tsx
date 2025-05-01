@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -24,20 +25,9 @@ import {
   ProgrammeTemplate,
   ProgrammeCategory,
   ProgrammeTag,
+  TaskComment
 } from "@/types";
-import {
-  getInitialData,
-  mockMembers,
-  mockTasks,
-  mockTransactions,
-  mockFinanceCategories,
-  mockDocuments,
-  mockFolders,
-  mockNotifications,
-  mockCurrentUser,
-  mockProgrammes,
-  mockTaskCategories,
-} from "@/data/mockData";
+import { getInitialData } from "@/data/mockData";
 import { useMemberActions } from "./actions/useMemberActions";
 import { useTaskActions } from "./actions/useTaskActions";
 import { useTransactionActions } from "./actions/useTransactionActions";
@@ -373,6 +363,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     programmeTags,
   ]);
 
+  // Define notification actions first to avoid reference errors
+  const { addNotification, updateNotification, deleteNotification } =
+    useNotificationActions({
+      notifications,
+      setNotifications,
+    });
+
   const { addMember, updateMember, deleteMember } = useMemberActions({
     members,
     setMembers,
@@ -388,6 +385,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     useTransactionActions({
       transactions,
       setTransactions,
+      currentUser,
     });
   const { addFinanceCategory, updateFinanceCategory, deleteFinanceCategory } =
     useFinanceCategoryActions({
@@ -403,12 +401,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const { addFolder, updateFolder, deleteFolder } = useFolderActions({
     folders,
     setFolders,
+    currentUser,
   });
-  const { addNotification, updateNotification, deleteNotification } =
-    useNotificationActions({
-      notifications,
-      setNotifications,
-    });
+  
   const {
     addProgramme,
     updateProgramme,
@@ -419,6 +414,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setProgrammes,
     currentUser,
   });
+
+  const moveDocument = (documentId: string, folderId: string | null) => {
+    updateDocument(documentId, { folderId });
+    return true;
+  };
 
   const addProgrammeResource = (
     resource: Omit<ProgrammeResource, "id">
@@ -469,12 +469,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const createProgrammeReminder = (
-    reminder: Omit<ProgrammeReminder, "id" | "sentAt" | "status">
+    reminder: Omit<ProgrammeReminder, "id" | "sent" | "status">
   ): ProgrammeReminder => {
     const newReminder: ProgrammeReminder = {
       ...reminder,
       id: `reminder-${Date.now()}`,
-      sentAt: undefined,
+      sent: false,
       status: "scheduled",
     };
     setReminders((prev) => [...prev, newReminder]);
@@ -498,7 +498,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const newKPI: ProgrammeKPI = {
       ...kpi,
       id: `kpi-${Date.now()}`,
-      progress: 0,
     };
     setKpis((prev) => [...prev, newKPI]);
     return newKPI;
@@ -506,8 +505,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const updateKPIProgress = (id: string, progress: number) => {
     setKpis((prev) =>
-      prev.map((kpi) => (kpi.id === id ? { ...kpi, progress } : kpi))
+      prev.map((kpi) => (kpi.id === id ? { ...kpi, actual: progress } : kpi))
     );
+    return true;
   };
 
   const deleteProgrammeKPI = (id: string) => {
@@ -548,9 +548,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       memberId: data.memberId,
       date: new Date().toISOString(),
       isPresent: data.isPresent,
-    }));
+      status: data.isPresent ? 'present' : 'absent'
+    } as ProgrammeAttendance));
 
     setAttendance((prev) => [...prev, ...newAttendanceRecords]);
+    return true;
   };
 
   const createProgrammeFromTemplate = (
@@ -577,10 +579,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const exportProgrammeToPDF = (programmeId: string) => {
     console.log(`Exporting programme with id ${programmeId} to PDF`);
+    return true;
   };
 
   const exportProgrammeToCalendar = (programmeId: string) => {
     console.log(`Exporting programme with id ${programmeId} to Calendar`);
+    return true;
   };
 
   const addTaskCategory = (category: Omit<TaskCategory, "id">) => {
@@ -589,16 +593,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       id: `task-category-${Date.now()}`,
     };
     setTaskCategories((prev) => [...prev, newTaskCategory]);
+    return newTaskCategory;
   };
 
   const updateTaskCategory = (id: string, category: Partial<TaskCategory>) => {
     setTaskCategories((prev) =>
       prev.map((tc) => (tc.id === id ? { ...tc, ...category } : tc))
     );
+    return true;
   };
 
   const deleteTaskCategory = (id: string) => {
     setTaskCategories((prev) => prev.filter((tc) => tc.id !== id));
+    return true;
   };
 
   const addProgrammeCategory = (category: Omit<ProgrammeCategory, 'id'>) => {
@@ -704,6 +711,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     addProgrammeTag,
     assignTagToProgramme,
     removeTagFromProgramme,
+    moveDocument,
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;

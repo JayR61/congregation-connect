@@ -13,7 +13,7 @@ interface AttendanceDashboardProps {
   members: Member[];
 }
 
-const AttendanceDashboard = ({ programmes, attendance, members }: AttendanceDashboardProps) => {
+export const AttendanceDashboard = ({ programmes, attendance, members }: AttendanceDashboardProps) => {
   // Calculate statistics
   const statistics = calculateProgrammeStatistics(programmes, attendance);
   

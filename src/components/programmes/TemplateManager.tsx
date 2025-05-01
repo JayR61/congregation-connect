@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Programme, ProgrammeTemplate } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,14 +46,22 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
     }
 
     const templateData = {
-      ...template,
-      duration: Number(template.duration),
-      capacity: template.capacity ? Number(template.capacity) : undefined,
-      categoryId: template.category || undefined // Map to the category field
+      name: template.name || '',
+      description: template.description || '',
+      duration: Number(template.duration) || 60,
+      capacity: template.capacity ? Number(template.capacity) : 20,
+      categoryId: template.categoryId || '',
+      tags: template.tags || [],
+      defaultResourceIds: template.defaultResourceIds || [],
+      notes: template.notes || '',
+      title: template.title || '',
+      type: template.type || '',
+      content: template.content || '',
+      category: template.category || '',
+      resources: template.resources || []
     };
 
     createProgrammeTemplate(templateData);
-
     setIsNewTemplateDialogOpen(false);
     setTemplate({
       name: '',
@@ -77,7 +86,13 @@ const TemplateManager = ({ templates, onCreateTemplate, onCreateFromTemplate }: 
       return;
     }
 
-    createProgrammeFromTemplate(selectedTemplateId);
+    createProgrammeFromTemplate(selectedTemplateId, {
+      name: "New Programme from Template",
+      description: "Programme created from template",
+      startDate: new Date(),
+      status: "upcoming"
+    });
+    
     setIsUseTemplateDialogOpen(false);
     setSelectedTemplateId(null);
     toast.success("Programme created from template");

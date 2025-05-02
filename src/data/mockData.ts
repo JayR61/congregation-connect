@@ -1,4 +1,3 @@
-
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
@@ -74,7 +73,7 @@ export const mockTasks: Task[] = [
     description: "Coordinate with worship team",
     status: "in-progress",
     priority: "high",
-    category: "service",  // Changed from string array to string to match Task type
+    category: ["service"],  // Changed from string to string array to match Task type
     assigneeId: "member-1",
     reporterId: "member-2",
     dueDate: new Date(2023, 5, 15),
@@ -118,7 +117,7 @@ export const mockTransactions: Transaction[] = [
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
-    category: "Offerings",  // This is correct as string to match Transaction type
+    category: ["Offerings"],  // Changed from string to string array to match Transaction type
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],

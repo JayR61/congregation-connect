@@ -74,7 +74,7 @@ export const mockTasks: Task[] = [
     description: "Coordinate with worship team",
     status: "in-progress",
     priority: "high",
-    category: "service",  // Fixed: changed to string to match Task interface
+    category: ["service"],  // Fixed: Changed to string array to match Task interface
     assigneeId: "member-1",
     reporterId: "member-2",
     dueDate: new Date(2023, 5, 15),
@@ -118,7 +118,7 @@ export const mockTransactions: Transaction[] = [
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
-    category: "Offerings",  // Fixed: changed to string to match Transaction interface
+    category: ["Offerings"],  // Fixed: Changed to string array to match Transaction interface
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],

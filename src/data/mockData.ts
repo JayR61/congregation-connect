@@ -1,3 +1,4 @@
+
 import { 
   Member, Task, Transaction, FinanceCategory, Document, 
   Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
@@ -73,7 +74,7 @@ export const mockTasks: Task[] = [
     description: "Coordinate with worship team",
     status: "in-progress",
     priority: "high",
-    category: ["service"],  // Changed from string to string array to match Task type
+    category: ["service"],  // Ensuring this is a string array
     assigneeId: "member-1",
     reporterId: "member-2",
     dueDate: new Date(2023, 5, 15),
@@ -117,7 +118,7 @@ export const mockTransactions: Transaction[] = [
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
-    category: ["Offerings"],  // Changed from string to string array to match Transaction type
+    category: ["Offerings"],  // Ensuring this is a string array
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],
@@ -165,7 +166,7 @@ export const mockProgrammes: Programme[] = [
     startDate: new Date(2023, 0, 1),
     endDate: null,
     location: "Main Sanctuary",
-    category: "worship",  // Kept as string to match Programme type
+    category: "worship",  // Ensuring this is a string (not an array)
     tags: ["sunday", "service"],
     targetAudience: "Everyone",
     currentAttendees: 150,

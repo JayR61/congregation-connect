@@ -166,7 +166,7 @@ export const mockProgrammes: Programme[] = [
     startDate: new Date(2023, 0, 1),
     endDate: null,
     location: "Main Sanctuary",
-    category: "worship",  // This is kept as string to match Programme type
+    category: "worship",  // Kept as string to match Programme type
     tags: ["sunday", "service"],
     targetAudience: "Everyone",
     currentAttendees: 150,

@@ -74,7 +74,7 @@ export const mockTasks: Task[] = [
     description: "Coordinate with worship team",
     status: "in-progress",
     priority: "high",
-    category: ["service"],  // Ensure this is consistently a string array
+    category: ["service"],  // This is already a string array, which is correct
     assigneeId: "member-1",
     reporterId: "member-2",
     dueDate: new Date(2023, 5, 15),
@@ -118,7 +118,7 @@ export const mockTransactions: Transaction[] = [
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
-    category: ["Offerings"],  // Ensure this is consistently a string array
+    category: "Offerings",  // Changed from array to string to match Transaction type
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],
@@ -166,7 +166,7 @@ export const mockProgrammes: Programme[] = [
     startDate: new Date(2023, 0, 1),
     endDate: null,
     location: "Main Sanctuary",
-    category: "worship",
+    category: "worship",  // Changed from array to string to match Programme type
     tags: ["sunday", "service"],
     targetAudience: "Everyone",
     currentAttendees: 150,

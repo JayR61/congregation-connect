@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -339,6 +340,7 @@ const Resources = () => {
           <p className="text-muted-foreground">Manage and book church resources</p>
         </div>
         <div className="flex gap-2">
+          {/* Resource Dialog */}
           <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -475,6 +477,7 @@ const Resources = () => {
             </DialogContent>
           </Dialog>
 
+          {/* Booking Dialog */}
           <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -710,6 +713,7 @@ const Resources = () => {
           </TabsList>
           
           <TabsContent value="resources" className="mt-4">
+            {/* Resources content */}
             {filteredResources.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredResources.map(resource => (
@@ -819,6 +823,7 @@ const Resources = () => {
           </TabsContent>
           
           <TabsContent value="bookings" className="mt-4">
+            {/* Bookings content */}
             {filteredBookings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredBookings.map(booking => {
@@ -844,4 +849,87 @@ const Resources = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2 text-sm
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                            <span>From: </span>
+                            <span className="ml-1 font-medium">
+                              {formatDateTime(booking.startDate)}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                            <span>To: </span>
+                            <span className="ml-1 font-medium">
+                              {formatDateTime(booking.endDate)}
+                            </span>
+                          </div>
+                          
+                          {booking.notes && (
+                            <div className="pt-2">
+                              <p className="text-muted-foreground mb-1">Notes:</p>
+                              <p>{booking.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between">
+                        {booking.status === 'pending' && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 mr-1"
+                              onClick={() => approveBooking(booking.id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 ml-1"
+                              onClick={() => rejectBooking(booking.id)}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {booking.status === 'approved' && (
+                          <Button variant="outline" size="sm" className="w-full">
+                            <ClipboardList className="h-4 w-4 mr-1" />
+                            Mark Complete
+                          </Button>
+                        )}
+                        {(booking.status === 'declined' || booking.status === 'rejected' || booking.status === 'completed') && (
+                          <Button variant="ghost" size="sm" className="w-full">
+                            <Info className="h-4 w-4 mr-1" />
+                            View Details
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-lg font-medium">No Bookings Found</h3>
+                <p className="text-muted-foreground mt-2">
+                  No resource bookings have been made yet or match your search.
+                </p>
+                <Button onClick={() => setIsBookingDialogOpen(true)} className="mt-4">
+                  <Calendar className="mr-2 h-4 w-4" /> Book Resource
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
+};
+
+export default Resources;

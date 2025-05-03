@@ -1,4 +1,3 @@
-
 // Adding missing type definitions and fixing existing ones
 
 export interface ChurchResource {
@@ -78,7 +77,7 @@ export interface Transaction {
   date: Date;
   amount: number;
   description: string;
-  category: string;
+  category: string; // Changed from string[] to string to match mock data
   type: 'income' | 'expense';
   paymentMethod?: string;
   reference?: string;
@@ -321,7 +320,7 @@ export interface Task {
   lastModifiedById?: string;
   lastModifiedAction?: string;
   categories?: TaskCategory[];
-  category?: string;
+  category?: string; // Changed from string[] to string to match mock data
   reporterId?: string;
 }
 

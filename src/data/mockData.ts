@@ -3,7 +3,7 @@ import {
   Folder, Notification, User, Programme, TaskCategory, Volunteer, ProgrammeKPI
 } from '@/types';
 
-// Sample data for testing
+// Sample data for testing - MEMBERS
 export const mockMembers: Member[] = [
   {
     id: "member-1",
@@ -66,6 +66,7 @@ export const mockMembers: Member[] = [
   }
 ];
 
+// TASKS
 export const mockTasks: Task[] = [
   {
     id: "task-1",
@@ -73,7 +74,7 @@ export const mockTasks: Task[] = [
     description: "Coordinate with worship team",
     status: "in-progress",
     priority: "high",
-    category: ["service"],  // Fixed: Changed from string to string array
+    category: ["service"],  // Fixed: Using string array instead of string
     assigneeId: "member-1",
     reporterId: "member-2",
     dueDate: new Date(2023, 5, 15),
@@ -89,7 +90,7 @@ export const mockTasks: Task[] = [
   }
 ];
 
-// Add task categories
+// TASK CATEGORIES
 export const mockTaskCategories: TaskCategory[] = [
   {
     id: "category-1",
@@ -111,13 +112,14 @@ export const mockTaskCategories: TaskCategory[] = [
   }
 ];
 
+// TRANSACTIONS
 export const mockTransactions: Transaction[] = [
   {
     id: "transaction-1",
     description: "Sunday offering",
     amount: 1250.00,
     type: "income",
-    category: ["Offerings"],  // Fixed: Changed from string to string array
+    category: ["Offerings"],  // Fixed: Using string array instead of string
     categoryId: "category-1",
     date: new Date(2023, 4, 7),
     attachments: [],
@@ -128,6 +130,7 @@ export const mockTransactions: Transaction[] = [
   }
 ];
 
+// FINANCE CATEGORIES
 export const mockFinanceCategories: FinanceCategory[] = [
   {
     id: "category-1",
@@ -143,6 +146,7 @@ export const mockFinanceCategories: FinanceCategory[] = [
   }
 ];
 
+// OTHER MOCK DATA
 export const mockDocuments: Document[] = [];
 export const mockFolders: Folder[] = [];
 export const mockNotifications: Notification[] = [];
@@ -157,6 +161,7 @@ export const mockCurrentUser: User = {
   createdAt: new Date()
 };
 
+// PROGRAMMES
 export const mockProgrammes: Programme[] = [
   {
     id: "programme-1",
@@ -205,6 +210,7 @@ export const getMembers = () => mockMembers;
 export const getTasks = () => mockTasks;
 export const getTransactions = () => mockTransactions;
 
+// Helper function to get initial data for the app context
 export const getInitialData = () => {
   return {
     members: mockMembers,
@@ -220,7 +226,7 @@ export const getInitialData = () => {
   };
 };
 
-// Fix the properties that have string type errors by ensuring they are string arrays
+// Helper function to fix member data properties
 export const fixMemberData = (members: any[]) => {
   return members.map(member => ({
     ...member,

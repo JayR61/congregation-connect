@@ -42,7 +42,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
       description,
       amount: parsedAmount,
       type,
-      category: category, // Using category instead of categoryId to match the type
+      category: [category], // Fixed: Wrap category in an array to match the string[] type
       date: new Date(date),
       attachments: [],
       recurring: false,

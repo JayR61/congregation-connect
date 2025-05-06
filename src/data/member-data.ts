@@ -23,7 +23,8 @@ export const mockMembers: Member[] = [
     city: "",
     state: "",
     zip: "",
-    newMemberDate: new Date(2020, 0, 1)
+    newMemberDate: new Date(2020, 0, 1),
+    interests: [] // Adding missing property as an empty array
   },
   {
     id: "member-2",
@@ -47,6 +48,7 @@ export const mockMembers: Member[] = [
     state: "",
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
+    interests: [], // Adding missing property as an empty array
     volunteerRoles: [{
       id: "volunteer-1",
       memberId: "member-2",

@@ -10,7 +10,7 @@ export const mockProgrammes: Programme[] = [
     startDate: new Date(2023, 0, 1),
     endDate: null,
     location: "Main Sanctuary",
-    category: ["worship"],  // Changed from string to string array
+    category: "worship",  // Changed back to string as per the expected type
     tags: ["sunday", "service"],
     targetAudience: "Everyone",
     currentAttendees: 150,

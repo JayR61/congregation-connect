@@ -24,7 +24,8 @@ export const mockMembers: Member[] = [
     state: "",
     zip: "",
     newMemberDate: new Date(2020, 0, 1),
-    interests: [] // Adding missing property as an empty array
+    interests: [], // Keep empty array
+    category: ["member"] // Changed from string to string array
   },
   {
     id: "member-2",
@@ -48,7 +49,8 @@ export const mockMembers: Member[] = [
     state: "",
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
-    interests: [], // Adding missing property as an empty array
+    interests: [], // Keep empty array
+    category: ["leadership"], // Changed from string to string array
     volunteerRoles: [{
       id: "volunteer-1",
       memberId: "member-2",

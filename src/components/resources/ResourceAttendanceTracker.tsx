@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/lib/toast';
 import { Users, CheckCircle, XCircle } from 'lucide-react';
 
-interface ResourceAttendanceTrackerProps {
+export interface ResourceAttendanceTrackerProps {
   resources: ChurchResource[];
   bookings: ResourceBooking[];
   attendance: AttendanceRecord[];

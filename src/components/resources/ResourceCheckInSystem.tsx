@@ -1,29 +1,29 @@
-
 import React, { useState } from 'react';
 import { ChurchResource, ResourceBooking, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { toast } from '@/lib/toast';
-import { QrCode, Search, CheckCircle, XCircle, Clock, MoreHorizontal, User } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, CalendarCheck, Clock, QrCode } from 'lucide-react';
 
-interface ResourceCheckInSystemProps {
+export interface ResourceCheckInSystemProps {
   resources: ChurchResource[];
   bookings: ResourceBooking[];
   members: Member[];
-  onCheckIn?: (bookingId: string) => void;
-  onCheckOut?: (bookingId: string) => void;
+  onCheckIn: (bookingId: string) => void;
+  onCheckOut: (bookingId: string) => void;
 }
 
 const ResourceCheckInSystem: React.FC<ResourceCheckInSystemProps> = ({
   resources,
   bookings,
   members,
-  onCheckIn = () => {},
-  onCheckOut = () => {}
+  onCheckIn,
+  onCheckOut
 }) => {
   const [qrCode, setQrCode] = useState('');
   const [manualResourceId, setManualResourceId] = useState('');

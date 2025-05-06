@@ -36,10 +36,10 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
       id: `attendance-${Date.now()}`,
       memberId: member.id,
       date: new Date(newEvent.date),
-      status: newEvent.isPresent ? 'present' : 'absent',
+      isPresent: newEvent.isPresent,
       notes: newEvent.notes || `Event: ${newEvent.description}`,
-      eventId: newEvent.eventId, // Additional property supported by our updated type
-      isPresent: newEvent.isPresent, // Additional property supported by our updated type
+      eventId: newEvent.eventId,
+      createdAt: new Date()
     };
 
     const updatedAttendance = [...(member.attendance || []), newRecord];
@@ -162,7 +162,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
                   .map((record) => (
                     <div key={record.id || `record-${Math.random()}`} className="flex items-center p-2 border rounded-md">
                       <div className={`h-2 w-2 rounded-full mr-3 ${
-                        record.status === 'present' || record.isPresent ? 'bg-green-500' : 'bg-red-500'
+                        record.isPresent ? 'bg-green-500' : 'bg-red-500'
                       }`} />
                       <div className="flex-1">
                         <div className="flex items-center">
@@ -171,8 +171,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ member }) => {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Event: {record.notes ? String(record.notes).substring(0, 30) : 
-                            ('eventId' in record ? getEventDescription(record.eventId!) : 'Unnamed Event')}
-                          {(record.status === 'present' || record.isPresent) && (
+                            ('eventId' in record ? getEventDescription(record.eventId as string) : 'Unnamed Event')}
+                          {record.isPresent && (
                             <Check className="inline-block h-3 w-3 ml-1 text-green-500" />
                           )}
                         </p>

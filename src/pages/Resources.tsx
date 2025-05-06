@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -993,19 +992,19 @@ const Resources = () => {
           resources={resources} 
           bookings={bookings} 
           members={members}
-          onAddBooking={() => setIsBookingDialogOpen(true)}
         />
       ) : resourceView === 'stats' ? (
         <ResourceStatistics 
           resources={resources} 
           bookings={bookings} 
-          healthLogs={healthLogs}
         />
       ) : resourceView === 'gallery' ? (
         <ResourceImageGallery resources={resources} />
       ) : resourceView === 'attendance' ? (
         <ResourceAttendanceTracker 
           resources={resources}
+          bookings={bookings}
+          members={members}
           attendance={attendance}
           onRecordAttendance={handleRecordAttendance}
         />
@@ -1029,6 +1028,7 @@ const Resources = () => {
         <ResourceCheckInSystem 
           resources={resources}
           bookings={bookings}
+          members={members}
           onCheckIn={handleCheckIn}
           onCheckOut={handleCheckOut}
         />

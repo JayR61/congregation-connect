@@ -25,7 +25,7 @@ export const mockMembers: Member[] = [
     zip: "",
     newMemberDate: new Date(2020, 0, 1),
     interests: [], // Keep empty array
-    category: ["member"] // Changed from string to string array
+    category: ["member"] // Array of categories
   },
   {
     id: "member-2",
@@ -50,7 +50,7 @@ export const mockMembers: Member[] = [
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
     interests: [], // Keep empty array
-    category: ["leadership"], // Changed from string to string array
+    category: ["leadership"], // Array of categories
     volunteerRoles: [{
       id: "volunteer-1",
       memberId: "member-2",

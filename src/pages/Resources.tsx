@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ChurchResource, ResourceBooking, Member, ResourceCategory, ResourceHealthLog, ResourceInventoryAlert } from "@/types";
+import { AttendanceRecord } from "@/types/attendance.types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -254,7 +255,7 @@ const Resources = () => {
     }
   };
 
-  // Record attendance
+  // Record attendance - update the function signature to use AttendanceRecord
   const handleRecordAttendance = (data: Partial<AttendanceRecord>) => {
     if (!data.id) {
       // New attendance record
@@ -264,10 +265,12 @@ const Resources = () => {
         memberId: data.memberId as string,
         date: data.date || new Date(),
         isPresent: data.isPresent || true,
+        status: data.status || (data.isPresent ? 'present' : 'absent'),
         checkInTime: data.checkInTime,
         checkOutTime: data.checkOutTime,
         notes: data.notes,
-        createdAt: new Date()
+        createdAt: new Date(),
+        eventId: data.eventId
       };
       
       setAttendance(prev => [...prev, newAttendance]);

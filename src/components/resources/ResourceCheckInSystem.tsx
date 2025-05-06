@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ChurchResource, ResourceBooking, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, CalendarCheck, Clock, QrCode } from 'lucide-react';
+import { 
+  Calendar, 
+  CalendarCheck, 
+  Clock, 
+  QrCode, 
+  Search, 
+  CheckCircle, 
+  XCircle, 
+  MoreHorizontal 
+} from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 export interface ResourceCheckInSystemProps {
   resources: ChurchResource[];

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -889,4 +890,155 @@ const Resources = () => {
           
           {/* Status filter */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] sm:w-[18
+            <SelectTrigger className="w-[140px] sm:w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="in-use">In Use</SelectItem>
+              <SelectItem value="maintenance">Maintenance</SelectItem>
+              <SelectItem value="reserved">Reserved</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Location filter (if you have multiple locations) */}
+          {uniqueLocations.length > 0 && (
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger className="w-[140px] sm:w-[180px]">
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {uniqueLocations.map(location => (
+                  <SelectItem key={location} value={location as string}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </div>
+      
+      {/* Main content area - conditionally render based on view mode */}
+      {resourceView === 'grid' ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredResources.map(resource => (
+            <Card key={resource.id} className="overflow-hidden">
+              {resource.imageUrl && (
+                <div className="aspect-w-16 aspect-h-9 overflow-hidden">
+                  <img 
+                    src={resource.imageUrl} 
+                    alt={resource.name} 
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+              )}
+              <CardHeader className="p-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{resource.name}</CardTitle>
+                  {getStatusBadge(resource.status)}
+                </div>
+                <CardDescription className="flex items-center gap-1">
+                  <Tag className="h-4 w-4" /> {resource.type}
+                  {resource.location && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <MapPin className="h-4 w-4" /> {resource.location}
+                    </>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <p className="text-sm text-muted-foreground line-clamp-2">{resource.description}</p>
+                {resource.healthStatus !== undefined && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Thermometer className="h-4 w-4 text-muted-foreground" />
+                    <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${resource.healthStatus > 70 ? 'bg-green-500' : resource.healthStatus > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
+                        style={{ width: `${resource.healthStatus}%` }}
+                      />
+                    </div>
+                    <span className="text-xs">{resource.healthStatus}%</span>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="p-4 pt-0 flex justify-between">
+                <Button variant="outline" size="sm">
+                  <Info className="h-4 w-4 mr-1" />
+                  Details
+                </Button>
+                <Button 
+                  size="sm" 
+                  disabled={resource.status !== 'available'}
+                  onClick={() => {
+                    setBookingForm(prev => ({
+                      ...prev,
+                      resourceId: resource.id
+                    }));
+                    setIsBookingDialogOpen(true);
+                  }}
+                >
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Book
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : resourceView === 'calendar' ? (
+        <ResourceCalendar 
+          resources={resources} 
+          bookings={bookings} 
+          members={members}
+          onAddBooking={() => setIsBookingDialogOpen(true)}
+        />
+      ) : resourceView === 'stats' ? (
+        <ResourceStatistics 
+          resources={resources} 
+          bookings={bookings} 
+          healthLogs={healthLogs}
+        />
+      ) : resourceView === 'gallery' ? (
+        <ResourceImageGallery resources={resources} />
+      ) : resourceView === 'attendance' ? (
+        <ResourceAttendanceTracker 
+          resources={resources}
+          attendance={attendance}
+          onRecordAttendance={handleRecordAttendance}
+        />
+      ) : resourceView === 'health' ? (
+        <ResourceHealthMonitor 
+          resources={resources}
+          healthLogs={healthLogs}
+          onLogHealth={handleLogHealth}
+          onUpdateMaintenanceDate={handleUpdateMaintenanceDate}
+        />
+      ) : resourceView === 'categories' ? (
+        <ResourceCategoryManager 
+          categories={categories}
+          resources={resources}
+          onAddCategory={handleAddCategory}
+          onEditCategory={handleEditCategory}
+          onDeleteCategory={handleDeleteCategory}
+          onAssignCategory={handleAssignCategory}
+        />
+      ) : resourceView === 'checkin' ? (
+        <ResourceCheckInSystem 
+          resources={resources}
+          bookings={bookings}
+          onCheckIn={handleCheckIn}
+          onCheckOut={handleCheckOut}
+        />
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Select a view from above to continue</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Resources;

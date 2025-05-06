@@ -1,11 +1,13 @@
 
 export interface AttendanceRecord {
   id: string;
+  programmeId?: string;
+  resourceId?: string;
   memberId: string;
   date: Date;
-  status: 'present' | 'absent' | 'late' | 'excused';
+  isPresent: boolean;
+  checkInTime?: Date;
+  checkOutTime?: Date;
   notes?: string;
-  programmeId?: string;
-  isPresent?: boolean;
-  eventId?: string;
+  createdAt: Date;
 }

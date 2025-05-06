@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { 
@@ -22,26 +21,33 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ChurchResource, ResourceBooking, Member } from "@/types";
+import { ChurchResource, ResourceBooking, Member, ResourceCategory, ResourceHealthLog, ResourceInventoryAlert } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
+  BarChart, 
   Briefcase,
   Calendar,
   CheckCircle,
   ChevronRight,
   ClipboardList,
+  Download,
   Filter,
   Image,
   Info,
   LineChart,
   MapPin,
   Plus,
+  QrCode,
   Search,
   Settings,
+  Shield,
   Tag,
+  Thermometer,
   User,
+  Users,
+  Wallet,
   XCircle
 } from "lucide-react";
 import { toast } from '@/lib/toast';
@@ -49,6 +55,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import ResourceCalendar from '@/components/resources/ResourceCalendar';
 import ResourceStatistics from '@/components/resources/ResourceStatistics';
 import ResourceImageGallery from '@/components/resources/ResourceImageGallery';
+import ResourceAttendanceTracker from '@/components/resources/ResourceAttendanceTracker';
+import ResourceHealthMonitor from '@/components/resources/ResourceHealthMonitor';
+import ResourceCategoryManager from '@/components/resources/ResourceCategoryManager';
+import ResourceCheckInSystem from '@/components/resources/ResourceCheckInSystem';
+
+// Import mock data from our new file
+import { 
+  mockResources, 
+  mockResourceBookings, 
+  mockAttendance, 
+  mockResourceCategories, 
+  mockHealthLogs, 
+  mockInventoryAlerts 
+} from '@/data/resource-attendance-data';
 
 const Resources = () => {
   const { members, updateMember } = useAppContext();
@@ -58,101 +78,18 @@ const Resources = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
-  const [resourceView, setResourceView] = useState<'grid' | 'calendar' | 'stats' | 'gallery'>('grid');
+  const [resourceView, setResourceView] = useState<'grid' | 'calendar' | 'stats' | 'gallery' | 'health' | 'attendance' | 'categories' | 'checkin' | 'approval' | 'reports'>('grid');
   
-  const [resources, setResources] = useState<ChurchResource[]>([
-    {
-      id: 'res-1',
-      name: 'Main Sanctuary',
-      type: 'room',
-      description: 'Main church sanctuary for services',
-      location: 'Main Building, 1st Floor',
-      status: 'available',
-      acquisitionDate: new Date('2000-01-01'),
-      imageUrl: 'https://source.unsplash.com/photo-1518770660439-4636190af475'
-    },
-    {
-      id: 'res-2',
-      name: 'Projector',
-      type: 'equipment',
-      description: 'HD Projector for presentations',
-      location: 'Media Room',
-      status: 'in-use',
-      currentAssigneeId: members[0]?.id,
-      acquisitionDate: new Date('2021-03-15'),
-      imageUrl: 'https://source.unsplash.com/photo-1488590528505-98d2b5aba04b'
-    },
-    {
-      id: 'res-3',
-      name: 'Church Van',
-      type: 'vehicle',
-      description: '15-passenger van for church activities',
-      location: 'Church Parking Lot',
-      status: 'maintenance',
-      maintenanceSchedule: new Date('2023-07-30'),
-      acquisitionDate: new Date('2018-06-10'),
-      imageUrl: 'https://source.unsplash.com/photo-1605810230434-7631ac76ec81'
-    },
-    {
-      id: 'res-4',
-      name: 'Conference Room',
-      type: 'room',
-      description: 'Meeting space for up to 20 people',
-      location: 'Main Building, 2nd Floor',
-      status: 'available',
-      acquisitionDate: new Date('2005-03-15'),
-      imageUrl: 'https://source.unsplash.com/photo-1461749280684-dccba630e2f6'
-    },
-    {
-      id: 'res-5',
-      name: 'Sound System',
-      type: 'equipment',
-      description: 'Professional audio equipment for services',
-      location: 'Main Sanctuary',
-      status: 'available',
-      acquisitionDate: new Date('2019-10-05'),
-      imageUrl: 'https://source.unsplash.com/photo-1581091226825-a6a2a5aee158'
-    }
-  ]);
-  
-  const [bookings, setBookings] = useState<ResourceBooking[]>([
-    {
-      id: 'book-1',
-      resourceId: 'res-1',
-      memberId: members[0]?.id || '',
-      purpose: 'Youth Group Meeting',
-      startDate: new Date('2023-07-15T18:00:00'),
-      endDate: new Date('2023-07-15T20:00:00'),
-      status: 'approved'
-    },
-    {
-      id: 'book-2',
-      resourceId: 'res-2',
-      memberId: members[0]?.id || '',
-      purpose: 'Board Presentation',
-      startDate: new Date('2023-07-20T14:00:00'),
-      endDate: new Date('2023-07-20T16:00:00'),
-      status: 'pending'
-    },
-    {
-      id: 'book-3',
-      resourceId: 'res-1',
-      memberId: members[1]?.id || '',
-      purpose: 'Prayer Meeting',
-      startDate: new Date('2023-07-25T19:00:00'),
-      endDate: new Date('2023-07-25T21:00:00'),
-      status: 'approved'
-    },
-    {
-      id: 'book-4',
-      resourceId: 'res-4',
-      memberId: members[0]?.id || '',
-      purpose: 'Leadership Training',
-      startDate: new Date('2023-07-22T09:00:00'),
-      endDate: new Date('2023-07-22T16:00:00'),
-      status: 'approved'
-    }
-  ]);
+  const [resources, setResources] = useState<ChurchResource[]>(mockResources);
+  const [bookings, setBookings] = useState<ResourceBooking[]>(mockResourceBookings);
+  const [attendance, setAttendance] = useState(mockAttendance);
+  const [categories, setCategories] = useState(mockResourceCategories);
+  const [healthLogs, setHealthLogs] = useState(mockHealthLogs);
+  const [inventoryAlerts, setInventoryAlerts] = useState(mockInventoryAlerts);
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportType, setReportType] = useState<'usage' | 'inventory' | 'maintenance' | 'financial'>('usage');
   
   const [resourceForm, setResourceForm] = useState<Partial<ChurchResource>>({
     name: '',
@@ -160,7 +97,13 @@ const Resources = () => {
     description: '',
     location: '',
     status: 'available',
-    imageUrl: ''
+    imageUrl: '',
+    category: '',
+    healthStatus: 100,
+    inventoryCount: 1,
+    minimumInventory: 1,
+    purchasePrice: 0,
+    currentValue: 0
   });
   
   const [bookingForm, setBookingForm] = useState<Partial<ResourceBooking>>({
@@ -169,7 +112,8 @@ const Resources = () => {
     purpose: '',
     startDate: new Date(),
     endDate: new Date(new Date().setHours(new Date().getHours() + 2)),
-    status: 'pending'
+    status: 'pending',
+    notes: ''
   });
 
   const filteredResources = resources.filter(resource => {
@@ -216,7 +160,14 @@ const Resources = () => {
       currentAssigneeId: resourceForm.currentAssigneeId,
       maintenanceSchedule: resourceForm.maintenanceSchedule,
       notes: resourceForm.notes,
-      imageUrl: resourceForm.imageUrl || 'https://source.unsplash.com/photo-1487058792275-0ad4aaf24ca7'
+      imageUrl: resourceForm.imageUrl || 'https://source.unsplash.com/photo-1487058792275-0ad4aaf24ca7',
+      category: resourceForm.category,
+      healthStatus: resourceForm.healthStatus || 100,
+      inventoryCount: resourceForm.inventoryCount || 1,
+      minimumInventory: resourceForm.minimumInventory || 1,
+      purchasePrice: resourceForm.purchasePrice,
+      currentValue: resourceForm.currentValue,
+      qrCode: `res-${Date.now()}-qrcode`
     };
 
     setResources(prev => [...prev, newResource]);
@@ -241,9 +192,9 @@ const Resources = () => {
 
     const newBooking: ResourceBooking = {
       id: `book-${Date.now()}`,
-      resourceId: bookingForm.resourceId,
-      memberId: bookingForm.memberId,
-      purpose: bookingForm.purpose,
+      resourceId: bookingForm.resourceId as string,
+      memberId: bookingForm.memberId as string,
+      purpose: bookingForm.purpose as string,
       startDate: new Date(bookingForm.startDate),
       endDate: new Date(bookingForm.endDate),
       status: 'pending',
@@ -273,7 +224,12 @@ const Resources = () => {
   const approveBooking = (bookingId: string) => {
     setBookings(prev => prev.map(booking => 
       booking.id === bookingId 
-        ? { ...booking, status: 'approved' } 
+        ? { 
+            ...booking, 
+            status: 'approved',
+            approvedById: 'user-1', // Would be the current user's ID
+            approvedDate: new Date()
+          } 
         : booking
     ));
     toast.success("Booking approved");
@@ -296,6 +252,187 @@ const Resources = () => {
       
       toast.success("Booking rejected");
     }
+  };
+
+  // Record attendance
+  const handleRecordAttendance = (data: Partial<AttendanceRecord>) => {
+    if (!data.id) {
+      // New attendance record
+      const newAttendance: AttendanceRecord = {
+        id: `att-${Date.now()}`,
+        resourceId: data.resourceId as string,
+        memberId: data.memberId as string,
+        date: data.date || new Date(),
+        isPresent: data.isPresent || true,
+        checkInTime: data.checkInTime,
+        checkOutTime: data.checkOutTime,
+        notes: data.notes,
+        createdAt: new Date()
+      };
+      
+      setAttendance(prev => [...prev, newAttendance]);
+      
+      // Update booking if applicable
+      if (data.resourceId) {
+        setBookings(prev => prev.map(b => 
+          b.resourceId === data.resourceId && b.memberId === data.memberId
+            ? { ...b, checkedInAt: data.checkInTime || new Date() }
+            : b
+        ));
+      }
+    } else {
+      // Update existing record
+      setAttendance(prev => prev.map(a => 
+        a.id === data.id
+          ? { ...a, ...data }
+          : a
+      ));
+      
+      // Update booking if applicable (check-out)
+      if (data.checkOutTime) {
+        const record = attendance.find(a => a.id === data.id);
+        if (record?.resourceId) {
+          setBookings(prev => prev.map(b => 
+            b.resourceId === record.resourceId && b.memberId === record.memberId
+              ? { ...b, checkedOutAt: data.checkOutTime }
+              : b
+          ));
+          
+          // Update resource status
+          setResources(prev => prev.map(r => 
+            r.id === record.resourceId
+              ? { ...r, status: 'available' }
+              : r
+          ));
+        }
+      }
+    }
+  };
+
+  // Check in resource
+  const handleCheckIn = (bookingId: string) => {
+    setBookings(prev => prev.map(b => 
+      b.id === bookingId
+        ? { ...b, checkedInAt: new Date() }
+        : b
+    ));
+    
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setResources(prev => prev.map(r => 
+        r.id === booking.resourceId
+          ? { ...r, status: 'in-use', currentAssigneeId: booking.memberId }
+          : r
+      ));
+      
+      // Add attendance record
+      handleRecordAttendance({
+        resourceId: booking.resourceId,
+        memberId: booking.memberId,
+        date: new Date(),
+        isPresent: true,
+        checkInTime: new Date()
+      });
+    }
+  };
+
+  // Check out resource
+  const handleCheckOut = (bookingId: string) => {
+    setBookings(prev => prev.map(b => 
+      b.id === bookingId
+        ? { ...b, checkedOutAt: new Date() }
+        : b
+    ));
+    
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setResources(prev => prev.map(r => 
+        r.id === booking.resourceId
+          ? { ...r, status: 'available', currentAssigneeId: undefined }
+          : r
+      ));
+      
+      // Update attendance record
+      const attendanceRecord = attendance.find(a => 
+        a.resourceId === booking.resourceId && 
+        a.memberId === booking.memberId &&
+        !a.checkOutTime
+      );
+      
+      if (attendanceRecord) {
+        setAttendance(prev => prev.map(a => 
+          a.id === attendanceRecord.id
+            ? { ...a, checkOutTime: new Date() }
+            : a
+        ));
+      }
+    }
+  };
+
+  // Log resource health
+  const handleLogHealth = (data: Omit<ResourceHealthLog, 'id'>) => {
+    const newHealthLog: ResourceHealthLog = {
+      id: `health-${Date.now()}`,
+      ...data
+    };
+    
+    setHealthLogs(prev => [...prev, newHealthLog]);
+    
+    // Update resource health status
+    setResources(prev => prev.map(r => 
+      r.id === data.resourceId
+        ? { ...r, healthStatus: data.status }
+        : r
+    ));
+  };
+
+  // Update maintenance date
+  const handleUpdateMaintenanceDate = (resourceId: string, date: Date) => {
+    setResources(prev => prev.map(r => 
+      r.id === resourceId
+        ? { ...r, nextMaintenanceDate: date }
+        : r
+    ));
+  };
+
+  // Add category
+  const handleAddCategory = (category: Omit<ResourceCategory, 'id'>) => {
+    const newCategory: ResourceCategory = {
+      id: `cat-${Date.now()}`,
+      ...category
+    };
+    
+    setCategories(prev => [...prev, newCategory]);
+  };
+
+  // Edit category
+  const handleEditCategory = (id: string, data: Partial<ResourceCategory>) => {
+    setCategories(prev => prev.map(c => 
+      c.id === id
+        ? { ...c, ...data }
+        : c
+    ));
+  };
+
+  // Delete category
+  const handleDeleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  // Assign category to resource
+  const handleAssignCategory = (resourceId: string, categoryId: string) => {
+    setResources(prev => prev.map(r => 
+      r.id === resourceId
+        ? { ...r, category: categoryId }
+        : r
+    ));
+  };
+
+  // Generate PDF report
+  const handleGeneratePDF = () => {
+    toast.success("PDF report is being generated");
+    setIsReportDialogOpen(false);
+    // In a real application, we would generate a PDF here
   };
 
   const formatDateTime = (date: Date) => {
@@ -331,6 +468,9 @@ const Resources = () => {
         return <Badge>{status}</Badge>;
     }
   };
+
+  // Pending resource bookings
+  const pendingBookings = bookings.filter(b => b.status === 'pending');
 
   return (
     <div className="p-6">
@@ -462,6 +602,88 @@ const Resources = () => {
                     id="notes"
                     value={resourceForm.notes}
                     onChange={(e) => setResourceForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={resourceForm.category}
+                      onValueChange={(value) => setResourceForm(prev => ({ ...prev, category: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="healthStatus" className="text-right">
+                    Health Status
+                  </Label>
+                  <Input
+                    id="healthStatus"
+                    type="number"
+                    value={resourceForm.healthStatus}
+                    onChange={(e) => setResourceForm(prev => ({ ...prev, healthStatus: Number(e.target.value) }))}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="inventoryCount" className="text-right">
+                    Inventory Count
+                  </Label>
+                  <Input
+                    id="inventoryCount"
+                    type="number"
+                    value={resourceForm.inventoryCount}
+                    onChange={(e) => setResourceForm(prev => ({ ...prev, inventoryCount: Number(e.target.value) }))}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="minimumInventory" className="text-right">
+                    Minimum Inventory
+                  </Label>
+                  <Input
+                    id="minimumInventory"
+                    type="number"
+                    value={resourceForm.minimumInventory}
+                    onChange={(e) => setResourceForm(prev => ({ ...prev, minimumInventory: Number(e.target.value) }))}
+                    className="col-span-3"
+                  />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="purchasePrice" className="text-right">
+                    Purchase Price
+                  </Label>
+                  <Input
+                    id="purchasePrice"
+                    type="number"
+                    value={resourceForm.purchasePrice}
+                    onChange={(e) => setResourceForm(prev => ({ ...prev, purchasePrice: Number(e.target.value) }))}
+                    className="col-span-3"
+                  />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="currentValue" className="text-right">
+                    Current Value
+                  </Label>
+                  <Input
+                    id="currentValue"
+                    type="number"
+                    value={resourceForm.currentValue}
+                    onChange={(e) => setResourceForm(prev => ({ ...prev, currentValue: Number(e.target.value) }))}
                     className="col-span-3"
                   />
                 </div>
@@ -610,9 +832,9 @@ const Resources = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View mode selector */}
-          <div className="border rounded-md p-1 flex">
+          <div className="border rounded-md p-1 flex flex-wrap">
             <Button 
               variant={resourceView === 'grid' ? 'default' : 'ghost'} 
               size="sm" 
@@ -620,7 +842,7 @@ const Resources = () => {
               onClick={() => setResourceView('grid')}
             >
               <Filter className="h-4 w-4" />
-              <span className="ml-1">Grid</span>
+              <span className="ml-1 hidden sm:inline">Grid</span>
             </Button>
             <Button 
               variant={resourceView === 'calendar' ? 'default' : 'ghost'} 
@@ -629,7 +851,7 @@ const Resources = () => {
               onClick={() => setResourceView('calendar')}
             >
               <Calendar className="h-4 w-4" />
-              <span className="ml-1">Calendar</span>
+              <span className="ml-1 hidden sm:inline">Calendar</span>
             </Button>
             <Button 
               variant={resourceView === 'stats' ? 'default' : 'ghost'} 
@@ -637,8 +859,8 @@ const Resources = () => {
               className="px-2"
               onClick={() => setResourceView('stats')}
             >
-              <LineChart className="h-4 w-4" />
-              <span className="ml-1">Stats</span>
+              <BarChart className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Stats</span>
             </Button>
             <Button 
               variant={resourceView === 'gallery' ? 'default' : 'ghost'} 
@@ -647,12 +869,13 @@ const Resources = () => {
               onClick={() => setResourceView('gallery')}
             >
               <Image className="h-4 w-4" />
-              <span className="ml-1">Gallery</span>
+              <span className="ml-1 hidden sm:inline">Gallery</span>
             </Button>
           </div>
           
+          {/* Type filter */}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[120px] sm:w-[180px]">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
@@ -666,270 +889,4 @@ const Resources = () => {
           
           {/* Status filter */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="in-use">In Use</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="reserved">Reserved</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {/* Location filter */}
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {uniqueLocations.map((location) => (
-                <SelectItem key={location} value={location}>{location}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {resourceView === 'calendar' && (
-        <ResourceCalendar resources={resources} bookings={bookings} members={members} />
-      )}
-      
-      {resourceView === 'stats' && (
-        <ResourceStatistics resources={resources} bookings={bookings} />
-      )}
-      
-      {resourceView === 'gallery' && (
-        <ResourceImageGallery resources={resources} />
-      )}
-      
-      {resourceView === 'grid' && (
-        <Tabs defaultValue="resources" className="mb-6">
-          <TabsList>
-            <TabsTrigger value="resources">Resources</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="resources" className="mt-4">
-            {/* Resources content */}
-            {filteredResources.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredResources.map(resource => (
-                  <Card key={resource.id} className="hover:bg-muted/50 transition-colors overflow-hidden flex flex-col">
-                    {resource.imageUrl && (
-                      <div className="h-48 overflow-hidden">
-                        <img 
-                          src={resource.imageUrl} 
-                          alt={resource.name}
-                          className="w-full h-full object-cover transition-transform hover:scale-105" 
-                        />
-                      </div>
-                    )}
-                    <CardHeader className={resource.imageUrl ? "pt-4" : ""}>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{resource.name}</CardTitle>
-                        <div className="flex-shrink-0">
-                          {getStatusBadge(resource.status || 'available')}
-                        </div>
-                      </div>
-                      <CardDescription>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          <Badge variant="outline" className="mr-1">
-                            {resource.type.charAt(0).toUpperCase() + resource.type.slice(1)}
-                          </Badge>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <p className="text-sm">{resource.description}</p>
-                        
-                        {resource.location && (
-                          <div className="flex items-center text-sm">
-                            <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{resource.location}</span>
-                          </div>
-                        )}
-                        
-                        {resource.currentAssigneeId && (
-                          <div className="flex items-center text-sm">
-                            <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Assigned to: </span>
-                            <span className="ml-1 font-medium">
-                              {(() => {
-                                const assignee = members.find(m => m.id === resource.currentAssigneeId);
-                                return assignee ? `${assignee.firstName} ${assignee.lastName}` : 'Unknown';
-                              })()}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {resource.maintenanceSchedule && (
-                          <div className="flex items-center text-sm">
-                            <Settings className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Maintenance: </span>
-                            <span className="ml-1">
-                              {new Date(resource.maintenanceSchedule).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {resource.acquisitionDate && (
-                          <div className="flex items-center text-sm">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Acquired: </span>
-                            <span className="ml-1">
-                              {new Date(resource.acquisitionDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between mt-auto pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setBookingForm(prev => ({ ...prev, resourceId: resource.id }));
-                          setIsBookingDialogOpen(true);
-                        }}
-                        disabled={resource.status !== 'available'}
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Book
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Info className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-medium">No Resources Found</h3>
-                <p className="text-muted-foreground mt-2">
-                  No resources have been added yet or match your search.
-                </p>
-                <Button onClick={() => setIsResourceDialogOpen(true)} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" /> Add Resource
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="bookings" className="mt-4">
-            {/* Bookings content */}
-            {filteredBookings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBookings.map(booking => {
-                  const resource = resources.find(r => r.id === booking.resourceId);
-                  const member = members.find(m => m.id === booking.memberId);
-                  
-                  return (
-                    <Card key={booking.id} className="hover:bg-muted/50 transition-colors">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">{booking.purpose}</CardTitle>
-                          {getStatusBadge(booking.status)}
-                        </div>
-                        <CardDescription>
-                          <div className="flex items-center mt-1">
-                            <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{resource?.name}</span>
-                          </div>
-                          <div className="flex items-center mt-1">
-                            <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>{member?.firstName} {member?.lastName}</span>
-                          </div>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>From: </span>
-                            <span className="ml-1 font-medium">
-                              {formatDateTime(booking.startDate)}
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>To: </span>
-                            <span className="ml-1 font-medium">
-                              {formatDateTime(booking.endDate)}
-                            </span>
-                          </div>
-                          
-                          {booking.notes && (
-                            <div className="pt-2">
-                              <p className="text-muted-foreground mb-1">Notes:</p>
-                              <p>{booking.notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        {booking.status === 'pending' && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1 mr-1"
-                              onClick={() => approveBooking(booking.id)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1 ml-1"
-                              onClick={() => rejectBooking(booking.id)}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {booking.status === 'approved' && (
-                          <Button variant="outline" size="sm" className="w-full">
-                            <ClipboardList className="h-4 w-4 mr-1" />
-                            Mark Complete
-                          </Button>
-                        )}
-                        {(booking.status === 'declined' || booking.status === 'rejected' || booking.status === 'completed') && (
-                          <Button variant="ghost" size="sm" className="w-full">
-                            <Info className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-medium">No Bookings Found</h3>
-                <p className="text-muted-foreground mt-2">
-                  No resource bookings have been made yet or match your search.
-                </p>
-                <Button onClick={() => setIsBookingDialogOpen(true)} className="mt-4">
-                  <Calendar className="mr-2 h-4 w-4" /> Book Resource
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
-  );
-};
-
-export default Resources;
+            <SelectTrigger className="w-[140px] sm:w-[18

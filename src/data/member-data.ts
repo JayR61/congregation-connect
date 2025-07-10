@@ -1,5 +1,5 @@
 
-import { Member, Volunteer } from '@/types';
+import { Member, Volunteer } from '@/types/member.types';
 
 // Sample data for testing - MEMBERS
 export const mockMembers: Member[] = [
@@ -19,12 +19,11 @@ export const mockMembers: Member[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     membershipDate: new Date(2020, 0, 1),
-    notes: "",
+    notes: [],
     city: "",
     state: "",
     zip: "",
     newMemberDate: new Date(2020, 0, 1),
-    interests: [], // Keep empty array
     category: "member" // Changed to string to match interface
   },
   {
@@ -44,12 +43,12 @@ export const mockMembers: Member[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
     membershipDate: new Date(2019, 3, 10),
-    notes: "",
+    notes: [],
     city: "",
     state: "",
     zip: "",
     newMemberDate: new Date(2019, 3, 10),
-    interests: [], // Keep empty array
+    
     category: "leadership", // Changed to string to match interface
     volunteerRoles: [{
       id: "volunteer-1",

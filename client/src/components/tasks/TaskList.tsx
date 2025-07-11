@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Clock, Flag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon, Clock, Flag, Edit, MoreHorizontal } from 'lucide-react';
 import { format, isAfter, isBefore, isToday } from 'date-fns';
 import { useAppContext } from '@/context/AppContext';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import TaskDialog from './TaskDialog';
 
 interface TaskListProps {
   tasks: Task[];
@@ -15,6 +18,14 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => {
   const { members } = useAppContext();
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  const handleEditTask = (e: React.MouseEvent, task: Task) => {
+    e.stopPropagation();
+    setEditingTask(task);
+    setShowEditDialog(true);
+  };
 
   if (tasks.length === 0) {
     return (
@@ -87,7 +98,22 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-base">{task.title}</CardTitle>
-                {getPriorityIcon(task.priority)}
+                <div className="flex items-center gap-1">
+                  {getPriorityIcon(task.priority)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleEditTask(e, task)}>
+                        <Edit className="h-3 w-3 mr-2" />
+                        Edit Task
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pb-0">
@@ -189,28 +215,56 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
             </div>
           </div>
           
-          <div className="flex -space-x-2 ml-4">
-            {task.assigneeIds && task.assigneeIds.slice(0, 3).map((id) => {
-              const member = members.find(m => m.id === id);
-              return (
-                <Avatar key={id} className="h-7 w-7 border-2 border-background">
-                  <AvatarImage src={member?.avatar || undefined} />
-                  <AvatarFallback>
-                    {member ? `${member.firstName[0]}${member.lastName[0]}` : 'U'}
+          <div className="flex items-center gap-2 ml-4">
+            <div className="flex -space-x-2">
+              {task.assigneeIds && task.assigneeIds.slice(0, 3).map((id) => {
+                const member = members.find(m => m.id === id);
+                return (
+                  <Avatar key={id} className="h-7 w-7 border-2 border-background">
+                    <AvatarImage src={member?.avatar || undefined} />
+                    <AvatarFallback>
+                      {member ? `${member.firstName[0]}${member.lastName[0]}` : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                );
+              })}
+              {task.assigneeIds && task.assigneeIds.length > 3 && (
+                <Avatar className="h-7 w-7 border-2 border-background">
+                  <AvatarFallback className="bg-muted">
+                    +{task.assigneeIds.length - 3}
                   </AvatarFallback>
                 </Avatar>
-              );
-            })}
-            {task.assigneeIds && task.assigneeIds.length > 3 && (
-              <Avatar className="h-7 w-7 border-2 border-background">
-                <AvatarFallback className="bg-muted">
-                  +{task.assigneeIds.length - 3}
-                </AvatarFallback>
-              </Avatar>
-            )}
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => handleEditTask(e, task)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Task
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       ))}
+      
+      <TaskDialog
+        open={showEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) {
+            setEditingTask(null);
+          }
+        }}
+        editMode={true}
+        taskId={editingTask?.id}
+        defaultValues={editingTask}
+      />
     </div>
   );
 };

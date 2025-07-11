@@ -3,7 +3,8 @@ import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
@@ -16,10 +17,12 @@ interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultValues?: any;
+  editMode?: boolean;
+  taskId?: string;
 }
 
-export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProps) {
-  const { addTask, currentUser, taskCategories, members } = useAppContext();
+export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false, taskId }: TaskDialogProps) {
+  const { addTask, updateTask, currentUser, taskCategories, members } = useAppContext();
   const [title, setTitle] = useState(defaultValues?.title || '');
   const [description, setDescription] = useState(defaultValues?.description || '');
   const [status, setStatus] = useState(defaultValues?.status || 'pending');
@@ -39,7 +42,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
       return; // Prevent submission if title is empty
     }
     
-    const newTask = {
+    const taskData = {
       title,
       description,
       status,
@@ -53,14 +56,24 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
       ],
       estimatedTime,
       lastModifiedById: currentUser.id,
-      lastModifiedAction: 'created'
+      lastModifiedAction: editMode ? 'updated' : 'created'
     };
     
-    // Use the fixTaskCreation helper function to add createdBy field
-    const fixedTask = fixTaskCreation(newTask, currentUser.id);
-    addTask(fixedTask);
+    if (editMode && taskId) {
+      // Update existing task
+      updateTask(taskId, taskData);
+    } else {
+      // Create new task
+      const fixedTask = fixTaskCreation(taskData, currentUser.id);
+      addTask(fixedTask);
+    }
     
     // Reset form and close dialog
+    resetForm();
+    onOpenChange(false);
+  };
+
+  const resetForm = () => {
     setTitle('');
     setDescription('');
     setStatus('pending');
@@ -70,17 +83,21 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
     setAssigneeId('');
     setAssigneeIds([]);
     setEstimatedTime('');
-    onOpenChange(false);
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle>{editMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogDescription>
+            {editMode ? 'Update task details and assignments.' : 'Fill in the details to create a new task.'}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
+          <ScrollArea className="max-h-[60vh] px-6">
+            <div className="space-y-4 pb-4">
+              <div className="space-y-2">
             <Label htmlFor="title">Task Title</Label>
             <Input
               id="title"
@@ -214,11 +231,40 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
             </div>
           </div>
           
-          <DialogFooter className="pt-4">
+          {/* Multiple Assignees Section */}
+          <div className="space-y-2">
+            <Label>Team Assignment</Label>
+            <div className="flex flex-wrap gap-2">
+              {members.map((member) => (
+                <Badge
+                  key={member.id}
+                  variant={assigneeIds.includes(member.id) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setAssigneeIds(prev => 
+                      prev.includes(member.id) 
+                        ? prev.filter(id => id !== member.id)
+                        : [...prev, member.id]
+                    );
+                  }}
+                >
+                  {member.firstName} {member.lastName}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Click to assign/unassign team members. Individual assignee above takes priority.
+            </p>
+          </div>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="p-6 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create Task</Button>
+            <Button type="submit">
+              {editMode ? 'Update Task' : 'Create Task'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

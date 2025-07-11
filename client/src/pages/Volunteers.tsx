@@ -126,92 +126,113 @@ const Volunteers = () => {
       </Card>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Volunteer</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Select
-                value={newVolunteer.memberId}
-                onValueChange={(value) => setNewVolunteer({ ...newVolunteer, memberId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.firstName} {member.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Input
-                placeholder="Ministry"
-                value={newVolunteer.ministry || ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, ministry: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Input
-                placeholder="Role"
-                value={newVolunteer.role || ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, role: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Input
-                placeholder="Department"
-                value={newVolunteer.department || ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, department: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Input
-                placeholder="Area"
-                value={newVolunteer.area || ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, area: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Input
-                placeholder="Position"
-                value={newVolunteer.position || ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, position: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <label>Join Date</label>
-              <Input
-                type="date"
-                value={newVolunteer.joinDate ? newVolunteer.joinDate.toISOString().split('T')[0] : ''}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, joinDate: new Date(e.target.value) })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Input
-                type="number"
-                placeholder="Hours per week"
-                value={newVolunteer.hours || 0}
-                onChange={(e) => setNewVolunteer({ ...newVolunteer, hours: Number(e.target.value) })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Select
-                value={newVolunteer.status || 'active'}
-                onValueChange={(value) => setNewVolunteer({ ...newVolunteer, status: value as 'active' | 'inactive' })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid gap-3 py-4">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Member *</label>
+                <Select
+                  value={newVolunteer.memberId}
+                  onValueChange={(value) => setNewVolunteer({ ...newVolunteer, memberId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.firstName} {member.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ministry</label>
+                  <Input
+                    placeholder="Ministry"
+                    value={newVolunteer.ministry || ''}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, ministry: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Role</label>
+                  <Input
+                    placeholder="Role"
+                    value={newVolunteer.role || ''}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, role: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Department</label>
+                  <Input
+                    placeholder="Department"
+                    value={newVolunteer.department || ''}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, department: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Area</label>
+                  <Input
+                    placeholder="Area"
+                    value={newVolunteer.area || ''}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, area: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Position</label>
+                <Input
+                  placeholder="Position"
+                  value={newVolunteer.position || ''}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, position: e.target.value })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Join Date</label>
+                  <Input
+                    type="date"
+                    value={newVolunteer.joinDate ? newVolunteer.joinDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, joinDate: new Date(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Hours/Week</label>
+                  <Input
+                    type="number"
+                    placeholder="Hours per week"
+                    value={newVolunteer.hours || 0}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, hours: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select
+                  value={newVolunteer.status || 'active'}
+                  onValueChange={(value) => setNewVolunteer({ ...newVolunteer, status: value as 'active' | 'inactive' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>

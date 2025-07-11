@@ -10,7 +10,7 @@ import { UpcomingEvents } from '@/components/dashboard/UpcomingEvents';
 import { TeamPerformance } from '@/components/dashboard/TeamPerformance';
 
 const Dashboard = () => {
-  const { tasks, members, transactions, documents } = useAppContext();
+  const { tasks, members, transactions, documents, programmes } = useAppContext();
 
   // Calculate task statistics
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
@@ -40,10 +40,10 @@ const Dashboard = () => {
     task.status !== 'completed'
   ).length;
 
-  // Calculate finance statistics - set to 0 as no data yet
-  const totalIncome = 0;
-  const totalExpenses = 0;
-  const currentBalance = 0;
+  // Calculate finance statistics from actual transaction data
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const currentBalance = totalIncome - totalExpenses;
   const percentChange = totalIncome > 0 ? Number(((totalIncome - totalExpenses) / totalIncome * 100).toFixed(1)) : 0;
   
   // Calculate team performance data
@@ -72,41 +72,87 @@ const Dashboard = () => {
     { name: 'Expenses', value: totalExpenses, color: '#ef4444' }
   ];
 
-  // Monthly transactions data - set to 0 as no data yet
-  const monthlyData = [
-    { name: 'Jan', income: 0, expenses: 0 },
-    { name: 'Feb', income: 0, expenses: 0 },
-    { name: 'Mar', income: 0, expenses: 0 },
-    { name: 'Apr', income: 0, expenses: 0 },
-    { name: 'May', income: 0, expenses: 0 },
-    { name: 'Jun', income: 0, expenses: 0 }
-  ];
+  // Monthly transactions data - calculate from actual transaction data
+  const monthlyData = (() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const monthlyStats = months.map(month => ({ name: month, income: 0, expenses: 0 }));
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.date);
+      if (date.getFullYear() === currentYear) {
+        const monthIndex = date.getMonth();
+        if (transaction.type === 'income') {
+          monthlyStats[monthIndex].income += transaction.amount;
+        } else {
+          monthlyStats[monthIndex].expenses += transaction.amount;
+        }
+      }
+    });
+    
+    return monthlyStats;
+  })();
   
-  // Task progress data - set to 0 as no data yet
-  const taskProgressByCategory = [
-    { category: 'Design', completed: 0, total: 0 },
-    { category: 'Development', completed: 0, total: 0 },
-    { category: 'Marketing', completed: 0, total: 0 },
-    { category: 'Research', completed: 0, total: 0 },
-    { category: 'Admin', completed: 0, total: 0 }
-  ];
+  // Task progress data - calculate from actual task data
+  const taskProgressByCategory = (() => {
+    const categories = ['Design', 'Development', 'Marketing', 'Research', 'Admin'];
+    const categoryStats = categories.map(category => ({ category, completed: 0, total: 0 }));
+    
+    tasks.forEach(task => {
+      // Map task categories to our display categories
+      const taskCategory = task.categories?.[0]?.name || 'Admin';
+      const matchedCategory = categoryStats.find(cat => 
+        cat.category.toLowerCase() === taskCategory.toLowerCase() ||
+        (cat.category === 'Admin' && !categories.some(c => c.toLowerCase() === taskCategory.toLowerCase()))
+      );
+      
+      if (matchedCategory) {
+        matchedCategory.total++;
+        if (task.status === 'completed') {
+          matchedCategory.completed++;
+        }
+      }
+    });
+    
+    return categoryStats;
+  })();
   
   // Calculate completion percentage for each category
   const taskProgressData = taskProgressByCategory.map(item => ({
     subject: item.category,
-    completion: Math.round((item.completed / item.total) * 100)
+    completion: item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0
   }));
   
-  // Weekly activity data - set to 0 as no data yet
-  const weeklyActivityData = [
-    { day: 'Mon', tasks: 0, documents: 0 },
-    { day: 'Tue', tasks: 0, documents: 0 },
-    { day: 'Wed', tasks: 0, documents: 0 },
-    { day: 'Thu', tasks: 0, documents: 0 },
-    { day: 'Fri', tasks: 0, documents: 0 },
-    { day: 'Sat', tasks: 0, documents: 0 },
-    { day: 'Sun', tasks: 0, documents: 0 }
-  ];
+  // Weekly activity data - calculate from actual data
+  const weeklyActivityData = (() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weeklyStats = days.map(day => ({ day, tasks: 0, documents: 0 }));
+    
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    // Count tasks created in the last week
+    tasks.forEach(task => {
+      const taskDate = new Date(task.createdAt);
+      if (taskDate >= oneWeekAgo) {
+        const dayIndex = taskDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1; // Convert to Mon-Sun (0-6)
+        weeklyStats[adjustedIndex].tasks++;
+      }
+    });
+    
+    // Count documents created in the last week
+    documents.forEach(doc => {
+      const docDate = new Date(doc.createdAt);
+      if (docDate >= oneWeekAgo) {
+        const dayIndex = docDate.getDay();
+        const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+        weeklyStats[adjustedIndex].documents++;
+      }
+    });
+    
+    return weeklyStats;
+  })();
 
   return (
     <div className="flex flex-col gap-6">
@@ -144,14 +190,14 @@ const Dashboard = () => {
           }}
         />
         <StatCard 
-          title="Deadlines" 
-          value={overdueTasks.toString()} 
-          description="Overdue tasks" 
-          icon={<Clock className="h-5 w-5 text-muted-foreground" />}
+          title="Programmes" 
+          value={programmes.length.toString()} 
+          description="Active programmes" 
+          icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
           trend={{ 
-            value: dueToday + dueTomorrow, 
-            label: "due soon",
-            icon: <CalendarRange className="h-3 w-3" />
+            value: programmes.filter(p => p.status === 'active').length, 
+            label: "active",
+            icon: <CheckSquare className="h-3 w-3" />
           }}
         />
       </div>
@@ -468,13 +514,23 @@ const Dashboard = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: 'Rent', value: 2000, color: '#6366f1' },
-                      { name: 'Utilities', value: 500, color: '#10b981' },
-                      { name: 'Food', value: 800, color: '#f59e0b' },
-                      { name: 'Transportation', value: 400, color: '#ef4444' },
-                      { name: 'Entertainment', value: 300, color: '#8b5cf6' }
-                    ]}
+                    data={(() => {
+                      const expensesByCategory = transactions
+                        .filter(t => t.type === 'expense')
+                        .reduce((acc, t) => {
+                          const category = t.categoryId || 'Other';
+                          acc[category] = (acc[category] || 0) + t.amount;
+                          return acc;
+                        }, {} as Record<string, number>);
+                      
+                      const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
+                      
+                      return Object.entries(expensesByCategory).map(([name, value], index) => ({
+                        name,
+                        value,
+                        color: colors[index % colors.length]
+                      }));
+                    })()}
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
@@ -482,13 +538,23 @@ const Dashboard = () => {
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {[
-                      { name: 'Rent', value: 2000, color: '#6366f1' },
-                      { name: 'Utilities', value: 500, color: '#10b981' },
-                      { name: 'Food', value: 800, color: '#f59e0b' },
-                      { name: 'Transportation', value: 400, color: '#ef4444' },
-                      { name: 'Entertainment', value: 300, color: '#8b5cf6' }
-                    ].map((entry, index) => (
+                    {(() => {
+                      const expensesByCategory = transactions
+                        .filter(t => t.type === 'expense')
+                        .reduce((acc, t) => {
+                          const category = t.categoryId || 'Other';
+                          acc[category] = (acc[category] || 0) + t.amount;
+                          return acc;
+                        }, {} as Record<string, number>);
+                      
+                      const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
+                      
+                      return Object.entries(expensesByCategory).map(([name, value], index) => ({
+                        name,
+                        value,
+                        color: colors[index % colors.length]
+                      }));
+                    })().map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>

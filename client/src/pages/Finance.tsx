@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Download, Search, Filter, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Download, Search, Filter, Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getTransactions } from '@/data/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -15,7 +15,7 @@ const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('all-time');
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const { addTransaction, deleteTransaction, transactions: contextTransactions, currentUser } = useAppContext();
+  const { addTransaction, deleteTransaction, transactions: contextTransactions, financeCategories, currentUser } = useAppContext();
   
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
@@ -43,17 +43,30 @@ const Finance = () => {
     }).format(amount);
   };
 
-  const expenseCategories = (transactions as Transaction[])
-    .filter(t => t.type === 'expense')
-    .reduce((acc, transaction) => {
-      const existingCategory = acc.find(c => c.name === transaction.categoryId);
-      if (existingCategory) {
-        existingCategory.value += transaction.amount;
-      } else {
-        acc.push({ name: transaction.categoryId, value: transaction.amount });
-      }
-      return acc;
-    }, [] as { name: string; value: number }[]);
+  // Category breakdown calculations
+  const categoryBreakdown = financeCategories.map(category => {
+    const categoryTransactions = (transactions as Transaction[]).filter(t => t.categoryId === category.id);
+    const total = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
+    return {
+      ...category,
+      total,
+      count: categoryTransactions.length,
+      transactions: categoryTransactions
+    };
+  });
+
+  const incomeCategories = categoryBreakdown.filter(cat => cat.type === 'income' && cat.total > 0);
+  const expenseCategories = categoryBreakdown.filter(cat => cat.type === 'expense' && cat.total > 0);
+
+  // Get category totals for chart
+  const categoryTotals = categoryBreakdown
+    .filter(cat => cat.total > 0)
+    .map(cat => ({
+      name: cat.name,
+      value: cat.total,
+      color: cat.color,
+      type: cat.type
+    }));
 
   const monthlyData = (transactions as Transaction[])
     .reduce((acc, transaction) => {
@@ -222,6 +235,75 @@ const Finance = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Category Breakdown */}
+      {(incomeCategories.length > 0 || expenseCategories.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {incomeCategories.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                  Income Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {incomeCategories.map((category) => (
+                    <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <div>
+                          <div className="font-medium">{category.name}</div>
+                          <div className="text-sm text-gray-500">{category.count} transactions</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-green-600">{formatCurrency(category.total)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {expenseCategories.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <TrendingDown className="h-5 w-5 mr-2 text-red-600" />
+                  Expense Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {expenseCategories.map((category) => (
+                    <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <div>
+                          <div className="font-medium">{category.name}</div>
+                          <div className="text-sm text-gray-500">{category.count} transactions</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-red-600">{formatCurrency(category.total)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>

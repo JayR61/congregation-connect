@@ -183,7 +183,10 @@ const Dashboard = () => {
         />
         <StatCard 
           title="Balance" 
-          value={`R${currentBalance.toLocaleString()}`} 
+          value={new Intl.NumberFormat('en-ZA', {
+            style: 'currency',
+            currency: 'ZAR',
+          }).format(currentBalance)} 
           description="Current balance" 
           icon={<DollarSign className="h-5 w-5 text-muted-foreground" />}
           trend={{ 

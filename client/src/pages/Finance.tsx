@@ -165,27 +165,31 @@ const Finance = () => {
       );
     }
 
-    return filteredTransactions.map((transaction) => (
-      <div key={transaction.id} className="grid grid-cols-6 px-4 py-3 hover:bg-muted/50">
-        <div>{new Date(transaction.date).toLocaleDateString()}</div>
-        <div>{transaction.categoryId}</div>
-        <div className="truncate">{transaction.description}</div>
-        <div className={transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}>
-          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+    return filteredTransactions.map((transaction) => {
+      const category = financeCategories.find(cat => cat.id === transaction.categoryId);
+      
+      return (
+        <div key={transaction.id} className="grid grid-cols-6 px-4 py-3 hover:bg-muted/50">
+          <div>{new Date(transaction.date).toLocaleDateString()}</div>
+          <div>{category?.name || 'Unknown Category'}</div>
+          <div className="truncate">{transaction.description}</div>
+          <div className={transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}>
+            {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+          </div>
+          <div className={`text-right ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
+            {formatCurrency(transaction.amount)}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => handleEditTransaction(transaction)}>
+              Edit
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-500 hover:text-red-700">
+              Delete
+            </Button>
+          </div>
         </div>
-        <div className={`text-right ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
-          {formatCurrency(transaction.amount)}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => handleEditTransaction(transaction)}>
-            Edit
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-500 hover:text-red-700">
-            Delete
-          </Button>
-        </div>
-      </div>
-    ));
+      );
+    });
   };
 
   return (

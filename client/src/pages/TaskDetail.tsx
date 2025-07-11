@@ -3,19 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, Clock, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { tasks as mockTasks } from "@/data/mockData";
+import { useAppContext } from "@/context/AppContext";
+import { useMemo } from "react";
 
 const TaskDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { tasks, members } = useAppContext();
   
-  const { data: task, isLoading, error } = useQuery({
-    queryKey: ['task', id],
-    queryFn: async () => {
-      // Using the exported tasks directly instead of getTasks function
-      return mockTasks.find(task => task.id === id) || null;
-    }
-  });
+  const task = useMemo(() => {
+    return tasks.find(t => t.id === id);
+  }, [tasks, id]);
+  
+  const isLoading = false;
+  const error = null;
 
   if (isLoading) {
     return (
@@ -133,14 +133,20 @@ const TaskDetail = () => {
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-2">Assigned To</h3>
             <div className="flex flex-wrap gap-2">
-              {task.assigneeIds?.map((assigneeId) => (
-                <div key={assigneeId} className="flex items-center space-x-2 border rounded-full px-3 py-1">
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    {assigneeId.charAt(0)}
+              {task.assigneeIds?.map((assigneeId) => {
+                const member = members.find(m => m.id === assigneeId);
+                const memberName = member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
+                const initials = member ? `${member.firstName.charAt(0)}${member.lastName.charAt(0)}` : 'U';
+                
+                return (
+                  <div key={assigneeId} className="flex items-center space-x-2 border rounded-full px-3 py-1">
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs">
+                      {initials}
+                    </div>
+                    <span>{memberName}</span>
                   </div>
-                  <span>{assigneeId}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

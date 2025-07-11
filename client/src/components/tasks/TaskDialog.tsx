@@ -87,16 +87,16 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] p-0">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
+        <DialogHeader>
           <DialogTitle>{editMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
             {editMode ? 'Update task details and assignments.' : 'Fill in the details to create a new task.'}
           </DialogDescription>
         </DialogHeader>
         <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
-          <ScrollArea className="max-h-[60vh] px-6">
-            <div className="space-y-4 pb-4">
+          <ScrollArea className="max-h-[70vh] pr-6">
+            <div className="space-y-4">
               <div className="space-y-2">
             <Label htmlFor="title">Task Title</Label>
             <Input
@@ -258,7 +258,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
           </div>
             </div>
           </ScrollArea>
-          <DialogFooter className="p-6 pt-2">
+          <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

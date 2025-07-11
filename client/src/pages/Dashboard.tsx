@@ -1,12 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useSettings } from "@/context/SettingsContext";
 import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import { CheckSquare, Clock, CalendarRange, Users, DollarSign, FileText, ArrowUpRight, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { CheckSquare, Clock, CalendarRange, Users, DollarSign, FileText, ArrowUpRight, TrendingUp, TrendingDown, Calendar, Plus } from 'lucide-react';
 import { UpcomingEvents } from '@/components/dashboard/UpcomingEvents';
 import { TeamPerformance } from '@/components/dashboard/TeamPerformance';
 

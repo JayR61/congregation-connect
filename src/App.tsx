@@ -8,6 +8,8 @@ import { AppProvider } from "./context/AppContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import Layout from "./components/layout/Layout";
+import { initializeSecurity } from "./lib/security";
+import React from "react";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -35,7 +37,13 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
+const App = () => {
+  // Initialize security on app start
+  React.useEffect(() => {
+    initializeSecurity();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider>
@@ -67,6 +75,7 @@ const App = () => (
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

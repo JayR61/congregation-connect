@@ -17,10 +17,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 84% 4.9%;
 
-    /* Vibrant primary colors - Beautiful purple/blue gradient */
-    --primary: 262 83% 58%;
+    /* Vibrant primary colors - Beautiful blue gradient */
+    --primary: 213 90% 50%;
     --primary-foreground: 210 40% 98%;
-    --primary-glow: 271 91% 65%;
+    --primary-glow: 217 85% 58%;
 
     /* Elegant secondary colors */
     --secondary: 220 14.3% 95.9%;
@@ -31,9 +31,9 @@
     --muted-foreground: 220 8.9% 46.1%;
 
     /* Vibrant accent colors */
-    --accent: 262 83% 58%;
+    --accent: 213 90% 50%;
     --accent-foreground: 220.9 39.3% 11%;
-    --accent-glow: 271 91% 65%;
+    --accent-glow: 217 85% 58%;
 
     /* Elegant destructive colors */
     --destructive: 0 84.2% 60.2%;
@@ -42,28 +42,28 @@
     /* Refined borders and inputs */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262 83% 58%;
+    --ring: 213 90% 50%;
 
     --radius: 0.75rem;
 
     /* Enhanced sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 84% 4.9%;
-    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary: 213 90% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14.3% 95.9%;
     --sidebar-accent-foreground: 222 84% 4.9%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 213 90% 50%;
     
     /* Beautiful gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(271, 91%, 65%));
+    --gradient-primary: linear-gradient(135deg, hsl(213, 90%, 50%), hsl(217, 85%, 58%));
     --gradient-secondary: linear-gradient(135deg, hsl(220, 14.3%, 95.9%), hsl(210, 40%, 98%));
     --gradient-surface: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(220, 14.3%, 97%));
     
     /* Elegant shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(262, 83%, 58%, 0.2);
-    --shadow-glow: 0 0 40px hsl(271, 91%, 65%, 0.3);
+    --shadow-elegant: 0 10px 30px -10px hsl(213, 90%, 50%, 0.2);
+    --shadow-glow: 0 0 40px hsl(217, 85%, 58%, 0.3);
     --shadow-soft: 0 4px 20px -4px hsl(220, 13%, 91%, 0.8);
     
     /* Smooth transitions */
@@ -84,9 +84,9 @@
     --popover-foreground: 210 40% 98%;
 
     /* Vibrant primary in dark mode */
-    --primary: 271 91% 65%;
+    --primary: 217 85% 58%;
     --primary-foreground: 222 84% 4.9%;
-    --primary-glow: 262 83% 58%;
+    --primary-glow: 213 90% 50%;
 
     /* Sophisticated dark secondary */
     --secondary: 217.2 32.6% 17.5%;
@@ -107,26 +107,26 @@
     /* Dark borders */
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 271 91% 65%;
+    --ring: 217 85% 58%;
     
     /* Enhanced dark sidebar */
     --sidebar-background: 222 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 271 91% 65%;
+    --sidebar-primary: 217 85% 58%;
     --sidebar-primary-foreground: 222 84% 4.9%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 271 91% 65%;
+    --sidebar-ring: 217 85% 58%;
     
     /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(271, 91%, 65%), hsl(262, 83%, 58%));
+    --gradient-primary: linear-gradient(135deg, hsl(217, 85%, 58%), hsl(213, 90%, 50%));
     --gradient-secondary: linear-gradient(135deg, hsl(217.2, 32.6%, 17.5%), hsl(222, 84%, 4.9%));
     --gradient-surface: linear-gradient(145deg, hsl(222, 84%, 4.9%), hsl(217.2, 32.6%, 15%));
     
     /* Dark shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(271, 91%, 65%, 0.3);
-    --shadow-glow: 0 0 40px hsl(262, 83%, 58%, 0.4);
+    --shadow-elegant: 0 10px 30px -10px hsl(217, 85%, 58%, 0.3);
+    --shadow-glow: 0 0 40px hsl(213, 90%, 50%, 0.4);
     --shadow-soft: 0 4px 20px -4px hsl(0, 0%, 0%, 0.5);
   }
   

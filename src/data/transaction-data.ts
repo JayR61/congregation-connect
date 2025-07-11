@@ -1,23 +1,8 @@
 
 import { Transaction, FinanceCategory } from '@/types';
 
-// TRANSACTIONS
-export const mockTransactions: Transaction[] = [
-  {
-    id: "transaction-1",
-    description: "Sunday offering",
-    amount: 1250.00,
-    type: "income",
-    category: ["Offerings"],  // Using string array instead of string
-    categoryId: "category-1",
-    date: new Date(2023, 4, 7),
-    attachments: [],
-    isRecurring: false,
-    createdById: "member-1",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
+// TRANSACTIONS - All values start at 0, users must add data
+export const mockTransactions: Transaction[] = [];
 
 // FINANCE CATEGORIES
 export const mockFinanceCategories: FinanceCategory[] = [

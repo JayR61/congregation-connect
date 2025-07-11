@@ -218,7 +218,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* File Upload Area */}
           <div className="space-y-2">
             <Label>File</Label>

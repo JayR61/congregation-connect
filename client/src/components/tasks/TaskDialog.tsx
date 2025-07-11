@@ -31,7 +31,6 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
   const [categoryId, setCategoryId] = useState(defaultValues?.categoryId || '');
   const [assigneeId, setAssigneeId] = useState(defaultValues?.assigneeId || '');
   const [assigneeIds, setAssigneeIds] = useState<string[]>(defaultValues?.assigneeIds || []);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState(defaultValues?.estimatedTime || '');
   const [dateOpen, setDateOpen] = useState(false);
   
@@ -39,7 +38,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
     e.preventDefault();
     
     if (!title.trim()) {
-      return; // Prevent submission if title is empty
+      return;
     }
     
     const taskData = {
@@ -50,7 +49,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
       dueDate,
       categoryId,
       assigneeId,
-      assigneeIds: (assigneeId && assigneeId !== 'unassigned') ? [assigneeId] : [],
+      assigneeIds: (assigneeId && assigneeId !== 'unassigned') ? [assigneeId] : assigneeIds,
       categories: [
         taskCategories.find(cat => cat.id === categoryId) || taskCategories[0]
       ],
@@ -60,15 +59,12 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
     };
     
     if (editMode && taskId) {
-      // Update existing task
       updateTask(taskId, taskData);
     } else {
-      // Create new task
       const fixedTask = fixTaskCreation(taskData, currentUser.id);
       addTask(fixedTask);
     }
     
-    // Reset form and close dialog
     resetForm();
     onOpenChange(false);
   };
@@ -87,17 +83,16 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
             {editMode ? 'Update task details and assignments.' : 'Fill in the details to create a new task.'}
           </DialogDescription>
         </DialogHeader>
-        <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
-          <ScrollArea className="max-h-[70vh] pr-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="title">Task Title</Label>
             <Input
               id="title"
@@ -231,7 +226,6 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
             </div>
           </div>
           
-          {/* Multiple Assignees Section */}
           <div className="space-y-2">
             <Label>Team Assignment</Label>
             <div className="flex flex-wrap gap-2">
@@ -256,8 +250,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
               Click to assign/unassign team members. Individual assignee above takes priority.
             </p>
           </div>
-            </div>
-          </ScrollArea>
+          
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -272,7 +265,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues, editMode = false
   );
 }
 
-// Just adding the createdBy field to the task creation to fix TS2345 error
+// Helper function to fix task creation
 export const fixTaskCreation = (task: any, currentUserId: string) => {
   return {
     ...task,

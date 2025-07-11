@@ -18,34 +18,7 @@ import { toast } from '@/lib/toast';
 const Volunteers = () => {
   const { members } = useAppContext();
   
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([
-    {
-      id: 'vol1',
-      memberId: 'member-1',
-      position: 'Greeter',
-      department: 'Hospitality',
-      startDate: new Date(2022, 0, 15),
-      status: 'active',
-      hours: 4,
-      area: 'Welcome Team',
-      ministry: 'Hospitality',
-      role: 'Greeter',
-      joinDate: new Date(2022, 0, 15),
-    },
-    {
-      id: 'vol2',
-      memberId: 'member-2',
-      position: 'Worship Leader',
-      department: 'Music',
-      startDate: new Date(2021, 6, 10),
-      status: 'active',
-      hours: 6,
-      area: 'Worship Team',
-      ministry: 'Music',
-      role: 'Worship Leader',
-      joinDate: new Date(2021, 6, 10),
-    }
-  ]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newVolunteer, setNewVolunteer] = useState<Partial<Volunteer>>({
@@ -121,24 +94,32 @@ const Volunteers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {volunteers.map(volunteer => {
-                const member = members.find(m => m.id === volunteer.memberId);
-                
-                return (
-                  <TableRow key={volunteer.id}>
-                    <TableCell>{member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}</TableCell>
-                    <TableCell>{volunteer.ministry}</TableCell>
-                    <TableCell>{volunteer.role}</TableCell>
-                    <TableCell>{volunteer.joinDate?.toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={volunteer.status === 'active' ? 'success' : 'secondary'}>
-                        {volunteer.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{volunteer.hours}</TableCell>
-                  </TableRow>
-                );
-              })}
+              {volunteers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    No volunteers registered yet. Click "Add Volunteer" to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                volunteers.map(volunteer => {
+                  const member = members.find(m => m.id === volunteer.memberId);
+                  
+                  return (
+                    <TableRow key={volunteer.id}>
+                      <TableCell>{member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}</TableCell>
+                      <TableCell>{volunteer.ministry}</TableCell>
+                      <TableCell>{volunteer.role}</TableCell>
+                      <TableCell>{volunteer.joinDate?.toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={volunteer.status === 'active' ? 'success' : 'secondary'}>
+                          {volunteer.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{volunteer.hours}</TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

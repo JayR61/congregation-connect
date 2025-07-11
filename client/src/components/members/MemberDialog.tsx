@@ -467,6 +467,29 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
             <Label htmlFor="isFullMember">Full Member</Label>
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="familyId">Family Member</Label>
+            <Select
+              value={formData.familyId || ''}
+              onValueChange={(value) => handleSelectChange('familyId', value === 'none' ? null : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select family member (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No family link</SelectItem>
+                {members
+                  .filter(member => member.id !== memberId) // Don't show current member
+                  .map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.firstName} {member.lastName}
+                    </SelectItem>
+                  ))
+                }
+              </SelectContent>
+            </Select>
+          </div>
+          
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

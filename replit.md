@@ -6,6 +6,11 @@ This is a full-stack church management system built with React (TypeScript) fron
 
 ## Recent Changes
 
+- **January 11, 2025**: Successfully migrated project from Replit Agent to Replit environment
+- **January 11, 2025**: Fixed document upload form to have single scroll element instead of two
+- **January 11, 2025**: Cleaned up volunteers section by removing sample data - only users can now add/edit volunteers
+- **January 11, 2025**: Added family member linking functionality to member forms
+- **January 11, 2025**: Added empty states for volunteers section when no data exists
 - **January 11, 2025**: Completely cleaned up mentorship section by removing all sample data
 - **January 11, 2025**: Added functional "New Program" button with full CRUD operations for mentorship programs
 - **January 11, 2025**: Created comprehensive MentorshipProgramDialog component with mentor/mentee assignment, goals, resources, and progress tracking

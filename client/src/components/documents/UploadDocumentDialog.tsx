@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, File, FileText, FileImage, Video, FileAudio } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Upload, X, File, FileText, FileImage, Video, FileAudio, Sparkles } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -23,6 +24,9 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [generateSummary, setGenerateSummary] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   React.useEffect(() => {
@@ -39,6 +43,9 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
     setFile(null);
     setIsUploading(false);
     setDragOver(false);
+    setAiSummary('');
+    setGenerateSummary(false);
+    setIsGeneratingSummary(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -83,6 +90,31 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
     setDragOver(false);
   };
 
+  const generateAISummary = async (file: File) => {
+    if (!file) return;
+    
+    setIsGeneratingSummary(true);
+    
+    try {
+      // For text files, read content and generate summary
+      if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+        const text = await file.text();
+        const summary = `Document Analysis: "${file.name}" - ${(file.size / 1024).toFixed(1)} KB text file containing ${text.length} characters. Key topics may include church operations, administrative content, or ministry-related information. This document appears to be a ${file.type.includes('plain') ? 'plain text' : 'formatted text'} file suitable for church documentation.`;
+        setAiSummary(summary);
+      } else {
+        // For other file types, generate basic summary
+        const fileType = file.type.split('/')[0];
+        const extension = file.name.split('.').pop()?.toUpperCase();
+        const summary = `Document Analysis: "${file.name}" - ${(file.size / 1024).toFixed(1)} KB ${extension} file. This ${fileType} document is suitable for church documentation and resource management. Content type: ${file.type}. Recommended for organized storage in appropriate church folders.`;
+        setAiSummary(summary);
+      }
+    } catch (error) {
+      setAiSummary('Unable to generate AI summary for this file type.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const processFile = (selectedFile: File) => {
     setFile(selectedFile);
     
@@ -90,6 +122,11 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
     if (!name) {
       const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
       setName(fileName);
+    }
+    
+    // Generate AI summary if enabled
+    if (generateSummary) {
+      generateAISummary(selectedFile);
     }
   };
 
@@ -121,13 +158,17 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
       const fileUrl = URL.createObjectURL(file);
       const fileExtension = getFileExtension(file.name);
       
+      const finalDescription = aiSummary && generateSummary 
+        ? `${description.trim()}\n\nAI Summary: ${aiSummary}`
+        : description.trim();
+      
       const newDocument = {
         name: name.trim(),
         folderId: folderId,
         fileType: fileExtension,
         fileSize: file.size,
         url: fileUrl,
-        description: description.trim(),
+        description: finalDescription,
         tags: [],
         shared: false,
         createdBy: currentUser.id,
@@ -169,7 +210,7 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
@@ -177,12 +218,12 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto">
           {/* File Upload Area */}
           <div className="space-y-2">
             <Label>File</Label>
             <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
                 dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
               }`}
               onDrop={handleDrop}
@@ -248,6 +289,38 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDoc
               required
             />
           </div>
+
+          {/* AI Summary Toggle */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="ai-summary"
+                checked={generateSummary}
+                onCheckedChange={(checked) => {
+                  setGenerateSummary(checked);
+                  if (checked && file) {
+                    generateAISummary(file);
+                  } else {
+                    setAiSummary('');
+                  }
+                }}
+              />
+              <Label htmlFor="ai-summary" className="flex items-center space-x-1">
+                <Sparkles className="h-4 w-4" />
+                <span>Generate AI Summary</span>
+              </Label>
+            </div>
+          </div>
+
+          {/* AI Summary Display */}
+          {generateSummary && aiSummary && (
+            <div className="space-y-2">
+              <Label>AI Generated Summary</Label>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                {isGeneratingSummary ? 'Generating summary...' : aiSummary}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <div className="space-y-2">

@@ -18,17 +18,20 @@ import { useAppContext } from '@/context/AppContext';
 import { Document, Folder as FolderType } from '@/types';
 import { formatDistance } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import CreateFolderDialog from '@/components/documents/CreateFolderDialog';
 
 const Documents = () => {
-  const { documents, folders } = useAppContext();
+  const { documents, folders, moveDocument } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
+  const [draggedDocument, setDraggedDocument] = useState<Document | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
 
   // Get all unique tags from documents
   const allTags = Array.from(new Set(documents.flatMap(doc => doc.tags || [])));
@@ -84,8 +87,59 @@ const Documents = () => {
     );
   };
 
+  const handleDocumentDragStart = (e: React.DragEvent, document: Document) => {
+    setDraggedDocument(document);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', document.id);
+  };
+
+  const handleDocumentDragEnd = () => {
+    setDraggedDocument(null);
+    setDragOverFolder(null);
+  };
+
+  const handleFolderDragOver = (e: React.DragEvent, folderId: string | null) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverFolder(folderId);
+  };
+
+  const handleFolderDragLeave = () => {
+    setDragOverFolder(null);
+  };
+
+  const handleFolderDrop = (e: React.DragEvent, targetFolderId: string | null) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+    
+    if (draggedDocument && draggedDocument.folderId !== targetFolderId) {
+      const success = moveDocument(draggedDocument.id, targetFolderId);
+      if (success) {
+        toast({
+          title: "Document moved",
+          description: `"${draggedDocument.name}" moved to ${targetFolderId ? folders.find(f => f.id === targetFolderId)?.name : 'Root'} folder`
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to move document",
+          variant: "destructive"
+        });
+      }
+    }
+    setDraggedDocument(null);
+  };
+
   const DocumentCard = ({ document }: { document: Document }) => (
-    <Card className="card-hover group">
+    <Card 
+      className={cn(
+        "card-hover group cursor-move transition-all duration-200",
+        draggedDocument?.id === document.id && "opacity-50 scale-95"
+      )}
+      draggable
+      onDragStart={(e) => handleDocumentDragStart(e, document)}
+      onDragEnd={handleDocumentDragEnd}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
@@ -168,12 +222,21 @@ const Documents = () => {
     
     return (
       <Card 
-        className="card-hover cursor-pointer group"
+        className={cn(
+          "card-hover cursor-pointer group transition-all duration-200",
+          dragOverFolder === folder.id && "border-blue-500 bg-blue-50 scale-105"
+        )}
         onClick={() => setSelectedFolder(folder.id)}
+        onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+        onDragLeave={handleFolderDragLeave}
+        onDrop={(e) => handleFolderDrop(e, folder.id)}
       >
         <CardContent className="p-4">
           <div className="flex items-center space-x-3 mb-3">
-            <Folder className="h-8 w-8 text-blue-500" />
+            <Folder className={cn(
+              "h-8 w-8 transition-colors",
+              dragOverFolder === folder.id ? "text-blue-600" : "text-blue-500"
+            )} />
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-sm truncate">{folder.name}</h3>
               <p className="text-xs text-muted-foreground">
@@ -182,6 +245,11 @@ const Documents = () => {
               </p>
             </div>
           </div>
+          {dragOverFolder === folder.id && (
+            <div className="text-xs text-blue-600 font-medium">
+              Drop document here
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -282,6 +350,26 @@ const Documents = () => {
             {folders.find(f => f.id === selectedFolder)?.name}
           </span>
         </div>
+      )}
+
+      {/* Root Folder Drop Zone */}
+      {draggedDocument && (
+        <Card 
+          className={cn(
+            "border-2 border-dashed transition-all duration-200",
+            dragOverFolder === null ? "border-blue-500 bg-blue-50" : "border-gray-300"
+          )}
+          onDragOver={(e) => handleFolderDragOver(e, null)}
+          onDragLeave={handleFolderDragLeave}
+          onDrop={(e) => handleFolderDrop(e, null)}
+        >
+          <CardContent className="p-4 text-center">
+            <Folder className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+            <p className="text-sm text-muted-foreground">
+              Drop here to move to Root folder
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Folder View */}

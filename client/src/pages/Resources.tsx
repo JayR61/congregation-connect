@@ -60,6 +60,7 @@ import ResourceAttendanceTracker from '@/components/resources/ResourceAttendance
 import ResourceHealthMonitor from '@/components/resources/ResourceHealthMonitor';
 import ResourceCategoryManager from '@/components/resources/ResourceCategoryManager';
 import ResourceCheckInSystem from '@/components/resources/ResourceCheckInSystem';
+import { EmptyResourcesState } from '@/components/resources/EmptyResourcesState';
 
 // Import mock data from our new file
 import { 
@@ -490,7 +491,7 @@ const Resources = () => {
                 <Plus className="mr-2 h-4 w-4" /> Add Resource
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Resource</DialogTitle>
                 <DialogDescription>
@@ -709,7 +710,7 @@ const Resources = () => {
                 <Calendar className="mr-2 h-4 w-4" /> Book Resource
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Book a Resource</DialogTitle>
                 <DialogDescription>
@@ -874,6 +875,60 @@ const Resources = () => {
               <Image className="h-4 w-4" />
               <span className="ml-1 hidden sm:inline">Gallery</span>
             </Button>
+            <Button 
+              variant={resourceView === 'health' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('health')}
+            >
+              <Thermometer className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Health</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'attendance' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('attendance')}
+            >
+              <Users className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Attendance</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'categories' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('categories')}
+            >
+              <Tag className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Categories</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'checkin' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('checkin')}
+            >
+              <QrCode className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Check-in</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'approval' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('approval')}
+            >
+              <Shield className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Approval</span>
+            </Button>
+            <Button 
+              variant={resourceView === 'reports' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="px-2"
+              onClick={() => setResourceView('reports')}
+            >
+              <Download className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Reports</span>
+            </Button>
           </div>
           
           {/* Type filter */}
@@ -925,8 +980,15 @@ const Resources = () => {
       
       {/* Main content area - conditionally render based on view mode */}
       {resourceView === 'grid' ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredResources.map(resource => (
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="grid"
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredResources.map(resource => (
             <Card key={resource.id} className="overflow-hidden">
               {resource.imageUrl && (
                 <div className="aspect-w-16 aspect-h-9 overflow-hidden">
@@ -988,58 +1050,334 @@ const Resources = () => {
                 </Button>
               </CardFooter>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       ) : resourceView === 'calendar' ? (
-        <ResourceCalendar 
-          resources={resources} 
-          bookings={bookings} 
-          members={members}
-        />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="calendar"
+          />
+        ) : (
+          <ResourceCalendar 
+            resources={resources} 
+            bookings={bookings} 
+            members={members}
+          />
+        )
       ) : resourceView === 'stats' ? (
-        <ResourceStatistics 
-          resources={resources} 
-          bookings={bookings} 
-        />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="stats"
+          />
+        ) : (
+          <ResourceStatistics 
+            resources={resources} 
+            bookings={bookings} 
+          />
+        )
       ) : resourceView === 'gallery' ? (
-        <ResourceImageGallery resources={resources} />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="gallery"
+          />
+        ) : (
+          <ResourceImageGallery resources={resources} />
+        )
       ) : resourceView === 'attendance' ? (
-        <ResourceAttendanceTracker 
-          resources={resources}
-          bookings={bookings}
-          members={members}
-          attendance={attendance}
-          onRecordAttendance={handleRecordAttendance}
-        />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="attendance"
+          />
+        ) : (
+          <ResourceAttendanceTracker 
+            resources={resources}
+            bookings={bookings}
+            members={members}
+            attendance={attendance}
+            onRecordAttendance={handleRecordAttendance}
+          />
+        )
       ) : resourceView === 'health' ? (
-        <ResourceHealthMonitor 
-          resources={resources}
-          healthLogs={healthLogs}
-          onLogHealth={handleLogHealth}
-          onUpdateMaintenanceDate={handleUpdateMaintenanceDate}
-        />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="health"
+          />
+        ) : (
+          <ResourceHealthMonitor 
+            resources={resources}
+            healthLogs={healthLogs}
+            onLogHealth={handleLogHealth}
+            onUpdateMaintenanceDate={handleUpdateMaintenanceDate}
+          />
+        )
       ) : resourceView === 'categories' ? (
-        <ResourceCategoryManager 
-          categories={categories}
-          resources={resources}
-          onAddCategory={handleAddCategory}
-          onEditCategory={handleEditCategory}
-          onDeleteCategory={handleDeleteCategory}
-          onAssignCategory={handleAssignCategory}
-        />
+        categories.length === 0 && resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="categories"
+          />
+        ) : (
+          <ResourceCategoryManager 
+            categories={categories}
+            resources={resources}
+            onAddCategory={handleAddCategory}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onAssignCategory={handleAssignCategory}
+          />
+        )
       ) : resourceView === 'checkin' ? (
-        <ResourceCheckInSystem 
-          resources={resources}
-          bookings={bookings}
-          members={members}
-          onCheckIn={handleCheckIn}
-          onCheckOut={handleCheckOut}
-        />
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="checkin"
+          />
+        ) : (
+          <ResourceCheckInSystem 
+            resources={resources}
+            bookings={bookings}
+            members={members}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+          />
+        )
+      ) : resourceView === 'approval' ? (
+        pendingBookings.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="approval"
+          />
+        ) : (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Pending Approvals</h3>
+            {pendingBookings.map((booking) => {
+              const resource = resources.find(r => r.id === booking.resourceId);
+              const member = members.find(m => m.id === booking.memberId);
+              
+              return (
+                <Card key={booking.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{resource?.name || 'Unknown Resource'}</CardTitle>
+                        <CardDescription>
+                          Requested by {member?.firstName} {member?.lastName}
+                        </CardDescription>
+                      </div>
+                      {getStatusBadge(booking.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p><strong>Purpose:</strong> {booking.purpose}</p>
+                      <p><strong>Start:</strong> {formatDateTime(booking.startDate)}</p>
+                      <p><strong>End:</strong> {formatDateTime(booking.endDate)}</p>
+                      {booking.notes && <p><strong>Notes:</strong> {booking.notes}</p>}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => rejectBooking(booking.id)}
+                      className="flex-1"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject
+                    </Button>
+                    <Button 
+                      onClick={() => approveBooking(booking.id)}
+                      className="flex-1"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        )
+      ) : resourceView === 'reports' ? (
+        resources.length === 0 ? (
+          <EmptyResourcesState 
+            onAddResource={() => setIsResourceDialogOpen(true)}
+            onBookResource={() => setIsBookingDialogOpen(true)}
+            currentView="reports"
+          />
+        ) : (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Resource Reports</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Usage Report</CardTitle>
+                  <CardDescription>Resource utilization and booking statistics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => {
+                      setReportType('usage');
+                      setIsReportDialogOpen(true);
+                    }}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Usage Report
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Inventory Report</CardTitle>
+                  <CardDescription>Current inventory levels and alerts</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => {
+                      setReportType('inventory');
+                      setIsReportDialogOpen(true);
+                    }}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Inventory Report
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Maintenance Report</CardTitle>
+                  <CardDescription>Maintenance schedules and health status</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => {
+                      setReportType('maintenance');
+                      setIsReportDialogOpen(true);
+                    }}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Maintenance Report
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Report</CardTitle>
+                  <CardDescription>Resource values and depreciation</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => {
+                      setReportType('financial');
+                      setIsReportDialogOpen(true);
+                    }}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Financial Report
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )
       ) : (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Select a view from above to continue</p>
         </div>
       )}
+
+      {/* Report Generation Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Generate Report</DialogTitle>
+            <DialogDescription>
+              Generate a detailed report for your resources
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Report Type</Label>
+              <RadioGroup value={reportType} onValueChange={(value) => setReportType(value as any)}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="usage" id="usage" />
+                  <Label htmlFor="usage">Usage Report - Resource utilization and booking statistics</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="inventory" id="inventory" />
+                  <Label htmlFor="inventory">Inventory Report - Current inventory levels and alerts</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="maintenance" id="maintenance" />
+                  <Label htmlFor="maintenance">Maintenance Report - Schedules and health status</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="financial" id="financial" />
+                  <Label htmlFor="financial">Financial Report - Resource values and depreciation</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Date Range</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-sm">From</Label>
+                  <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+                </div>
+                <div>
+                  <Label className="text-sm">To</Label>
+                  <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Include Options</Label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="includeImages" defaultChecked />
+                  <Label htmlFor="includeImages">Include resource images</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="includeCharts" defaultChecked />
+                  <Label htmlFor="includeCharts">Include charts and graphs</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="includeSummary" defaultChecked />
+                  <Label htmlFor="includeSummary">Include executive summary</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleGeneratePDF}>
+              <Download className="h-4 w-4 mr-2" />
+              Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

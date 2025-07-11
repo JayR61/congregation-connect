@@ -333,7 +333,7 @@ const Programmes = () => {
       </Tabs>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Programme' : 'Add Programme'}</DialogTitle>
           </DialogHeader>

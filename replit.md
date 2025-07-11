@@ -2,7 +2,15 @@
 
 ## Overview
 
-This is a full-stack church management system built with React (TypeScript) frontend and Express.js backend. The application provides comprehensive tools for managing church operations including member management, task tracking, financial records, document storage, programmes, and more.
+This is a full-stack church management system built with React (TypeScript) frontend and Express.js backend. The application provides comprehensive tools for managing church operations including member management, task tracking, financial records, document storage, programmes, and mentorship programs.
+
+## Recent Changes
+
+- **January 11, 2025**: Completely cleaned up mentorship section by removing all sample data
+- **January 11, 2025**: Added functional "New Program" button with full CRUD operations for mentorship programs
+- **January 11, 2025**: Created comprehensive MentorshipProgramDialog component with mentor/mentee assignment, goals, resources, and progress tracking
+- **January 11, 2025**: Implemented edit and delete functionality for mentorship programs
+- **January 11, 2025**: Added empty states for sections with no data to improve user experience
 
 ## User Preferences
 

@@ -13,17 +13,21 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { getMentorshipPrograms, getMentorshipSessions } from '@/data/mentorship-data';
+import { getMentorshipPrograms, getMentorshipSessions, addMentorshipProgram, updateMentorshipProgram, deleteMentorshipProgram } from '@/data/mentorship-data';
 import { useAppContext } from '@/context/AppContext';
 import { MentorshipProgram, MentorshipSession } from '@/types/mentorship.types';
 import { formatDistance, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import MentorshipProgramDialog from '@/components/mentorship/MentorshipProgramDialog';
 
 const Mentorship = () => {
   const { members } = useAppContext();
   const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
-  const programs = getMentorshipPrograms();
-  const allSessions = getMentorshipSessions();
+  const [showProgramDialog, setShowProgramDialog] = useState(false);
+  const [editingProgram, setEditingProgram] = useState<MentorshipProgram | null>(null);
+  const [programs, setPrograms] = useState(() => getMentorshipPrograms());
+  const [allSessions, setAllSessions] = useState(() => getMentorshipSessions());
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,6 +60,50 @@ const Mentorship = () => {
   const getMemberName = (memberId: string) => {
     const member = members.find(m => m.id === memberId);
     return member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
+  };
+
+  const handleCreateProgram = (programData: Omit<MentorshipProgram, 'id'>) => {
+    const newProgram = addMentorshipProgram(programData);
+    setPrograms(getMentorshipPrograms());
+    toast({
+      title: "Success",
+      description: "Mentorship program created successfully"
+    });
+  };
+
+  const handleUpdateProgram = (programData: Omit<MentorshipProgram, 'id'>) => {
+    if (editingProgram) {
+      const updatedProgram = updateMentorshipProgram(editingProgram.id, programData);
+      if (updatedProgram) {
+        setPrograms(getMentorshipPrograms());
+        setEditingProgram(null);
+        toast({
+          title: "Success",
+          description: "Mentorship program updated successfully"
+        });
+      }
+    }
+  };
+
+  const handleDeleteProgram = (programId: string) => {
+    const success = deleteMentorshipProgram(programId);
+    if (success) {
+      setPrograms(getMentorshipPrograms());
+      toast({
+        title: "Success",
+        description: "Mentorship program deleted successfully"
+      });
+    }
+  };
+
+  const handleEditProgram = (program: MentorshipProgram) => {
+    setEditingProgram(program);
+    setShowProgramDialog(true);
+  };
+
+  const handleNewProgram = () => {
+    setEditingProgram(null);
+    setShowProgramDialog(true);
   };
 
   const ProgramCard = ({ program }: { program: MentorshipProgram }) => (
@@ -91,9 +139,14 @@ const Mentorship = () => {
                 Schedule Session
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Edit Program</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
-                Archive Program
+              <DropdownMenuItem onClick={() => handleEditProgram(program)}>
+                Edit Program
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => handleDeleteProgram(program.id)}
+              >
+                Delete Program
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -239,7 +292,7 @@ const Mentorship = () => {
             Guide and support members through structured mentorship programs
           </p>
         </div>
-        <Button className="btn-primary">
+        <Button className="btn-primary" onClick={handleNewProgram}>
           <Plus className="h-4 w-4 mr-2" />
           New Program
         </Button>
@@ -318,11 +371,27 @@ const Mentorship = () => {
           {/* Active Programs */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Active Programs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activePrograms.map(program => (
-                <ProgramCard key={program.id} program={program} />
-              ))}
-            </div>
+            {activePrograms.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activePrograms.map(program => (
+                  <ProgramCard key={program.id} program={program} />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Active Programs</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first mentorship program to get started
+                  </p>
+                  <Button onClick={handleNewProgram}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Program
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Completed Programs */}
@@ -390,17 +459,24 @@ const Mentorship = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Array.from(new Set(activePrograms.flatMap(p => p.mentors))).map(mentorId => (
-                    <div key={mentorId} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{getMemberName(mentorId)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {activePrograms.filter(p => p.mentors.includes(mentorId)).length} programs
-                        </p>
+                  {Array.from(new Set(activePrograms.flatMap(p => p.mentors))).length > 0 ? (
+                    Array.from(new Set(activePrograms.flatMap(p => p.mentors))).map(mentorId => (
+                      <div key={mentorId} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{getMemberName(mentorId)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {activePrograms.filter(p => p.mentors.includes(mentorId)).length} programs
+                          </p>
+                        </div>
+                        <Badge variant="outline">Mentor</Badge>
                       </div>
-                      <Badge variant="outline">Mentor</Badge>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <User className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No active mentors</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -415,23 +491,38 @@ const Mentorship = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Array.from(new Set(activePrograms.flatMap(p => p.mentees))).map(menteeId => (
-                    <div key={menteeId} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{getMemberName(menteeId)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {activePrograms.filter(p => p.mentees.includes(menteeId)).length} programs
-                        </p>
+                  {Array.from(new Set(activePrograms.flatMap(p => p.mentees))).length > 0 ? (
+                    Array.from(new Set(activePrograms.flatMap(p => p.mentees))).map(menteeId => (
+                      <div key={menteeId} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{getMemberName(menteeId)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {activePrograms.filter(p => p.mentees.includes(menteeId)).length} programs
+                          </p>
+                        </div>
+                        <Badge variant="secondary">Mentee</Badge>
                       </div>
-                      <Badge variant="secondary">Mentee</Badge>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No active mentees</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Program Dialog */}
+      <MentorshipProgramDialog
+        open={showProgramDialog}
+        onOpenChange={setShowProgramDialog}
+        program={editingProgram}
+        onSave={editingProgram ? handleUpdateProgram : handleCreateProgram}
+      />
     </div>
   );
 };

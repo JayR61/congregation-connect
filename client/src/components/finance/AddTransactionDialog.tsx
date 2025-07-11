@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,11 @@ interface AddTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'createdById'>) => void;
+  editingTransaction?: Transaction | null;
 }
 
-export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: AddTransactionDialogProps) {
-  const { financeCategories, addFinanceCategory } = useAppContext();
+export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, editingTransaction }: AddTransactionDialogProps) {
+  const { financeCategories, addFinanceCategory, updateTransaction } = useAppContext();
   
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -25,6 +26,19 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
+
+  // Set form values when editing
+  React.useEffect(() => {
+    if (editingTransaction) {
+      setDescription(editingTransaction.description);
+      setAmount(editingTransaction.amount.toString());
+      setCategory(editingTransaction.categoryId);
+      setType(editingTransaction.type);
+      setDate(new Date(editingTransaction.date).toISOString().split('T')[0]);
+    } else {
+      resetForm();
+    }
+  }, [editingTransaction, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +65,11 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
       paymentMethod: "cash"
     };
     
-    onAddTransaction(newTransaction);
+    if (editingTransaction) {
+      updateTransaction(editingTransaction.id, newTransaction);
+    } else {
+      onAddTransaction(newTransaction);
+    }
     resetForm();
     onOpenChange(false);
   };
@@ -95,9 +113,9 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}</DialogTitle>
           <DialogDescription>
-            Create a new financial transaction and categorize it.
+            {editingTransaction ? 'Update the transaction details.' : 'Create a new financial transaction and categorize it.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -206,7 +224,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction }: A
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Transaction</Button>
+            <Button type="submit">{editingTransaction ? 'Update Transaction' : 'Add Transaction'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

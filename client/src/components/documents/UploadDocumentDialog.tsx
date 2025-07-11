@@ -1,45 +1,59 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, X, FileText, FileImage, Video, FileAudio, File } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, X, File, FileText, FileImage, Video, FileAudio } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
-import { toast } from '@/lib/toast';
+import { toast } from '@/hooks/use-toast';
 
 interface UploadDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentFolder: string | null;
+  currentFolderId: string | null;
 }
 
-const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocumentDialogProps) => {
-  const { addDocument, folders } = useAppContext();
+const UploadDocumentDialog = ({ open, onOpenChange, currentFolderId }: UploadDocumentDialogProps) => {
+  const { addDocument, folders, currentUser } = useAppContext();
   const [name, setName] = useState('');
-  const [content, setContent] = useState('');
-  const [folderId, setFolderId] = useState<string | null>(currentFolder);
+  const [description, setDescription] = useState('');
+  const [folderId, setFolderId] = useState<string | null>(currentFolderId);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Reset form when dialog opens with the current folder
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) {
-      setFolderId(currentFolder);
+      setFolderId(currentFolderId);
     } else {
-      // Only reset form when dialog closes
       resetForm();
     }
-  }, [open, currentFolder]);
+  }, [open, currentFolderId]);
 
   const resetForm = () => {
     setName('');
-    setContent('');
+    setDescription('');
     setFile(null);
-    setFileContent(null);
+    setIsUploading(false);
+    setDragOver(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <FileImage className="h-8 w-8" />;
+    if (fileType.startsWith('video/')) return <Video className="h-8 w-8" />;
+    if (fileType.startsWith('audio/')) return <FileAudio className="h-8 w-8" />;
+    if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('text')) return <FileText className="h-8 w-8" />;
+    return <File className="h-8 w-8" />;
+  };
+
+  const getFileExtension = (filename: string) => {
+    return filename.split('.').pop()?.toLowerCase() || '';
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,16 +62,27 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       processFile(selectedFile);
     }
   };
-  
-  const handleDrop = useCallback((e: React.DragEvent) => {
+
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setDragOver(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
       processFile(droppedFile);
     }
-  }, []);
-  
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
   const processFile = (selectedFile: File) => {
     setFile(selectedFile);
     
@@ -66,234 +91,185 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
       const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
       setName(fileName);
     }
-    
-    // For text files, try to read content for preview
-    // Only read small text files to prevent memory issues
-    if (
-      (selectedFile.type.startsWith('text/') || 
-      ['application/json', 'application/javascript', 'application/xml'].includes(selectedFile.type)) &&
-      selectedFile.size < 1024 * 1024 // 1MB size limit for text content loading
-    ) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          setFileContent(event.target.result);
-        }
-      };
-      reader.readAsText(selectedFile);
-    } else {
-      setFileContent(null);
-    }
   };
-  
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  }, []);
-  
-  const detectFileType = (file: File): string => {
-    const types: Record<string, string> = {
-      'application/pdf': 'pdf',
-      'application/msword': 'doc',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-      'application/vnd.ms-excel': 'xls',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-      'application/vnd.ms-powerpoint': 'ppt',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
-      'text/plain': 'txt',
-      'text/html': 'html',
-      'text/css': 'css',
-      'text/javascript': 'js',
-      'application/json': 'json',
-    };
     
-    // Check if it's an image
-    if (file.type.startsWith('image/')) {
-      return 'image';
-    }
-    
-    // Check if it's a video
-    if (file.type.startsWith('video/')) {
-      return 'video';
-    }
-    
-    // Check if it's an audio
-    if (file.type.startsWith('audio/')) {
-      return 'audio';
-    }
-    
-    // Return the specific type or the mime type if not in our list
-    return types[file.type] || file.type;
-  };
-  
-  const getFileIcon = (file: File) => {
-    const fileType = detectFileType(file);
-    
-    switch (fileType) {
-      case 'image':
-        return <FileImage className="h-10 w-10 text-blue-500" />;
-      case 'video':
-        return <Video className="h-10 w-10 text-purple-500" />;
-      case 'audio':
-        return <FileAudio className="h-10 w-10 text-green-500" />;
-      case 'pdf':
-        return <FileText className="h-10 w-10 text-red-500" />;
-      default:
-        return <File className="h-10 w-10 text-gray-500" />;
-    }
-  };
-  
-  const handleSubmit = async () => {
     if (!file) {
-      toast.error('Please select a file to upload');
+      toast({
+        title: "Error",
+        description: "Please select a file to upload",
+        variant: "destructive"
+      });
       return;
     }
-    
-    if (!name) {
-      toast.error('Please enter a document name');
+
+    if (!name.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please enter a document name",
+        variant: "destructive"
+      });
       return;
     }
-    
+
+    setIsUploading(true);
+
     try {
-      setIsUploading(true);
-      
-      // In a real application, this would upload to a cloud storage service
-      // For now, we'll create an object URL in an optimized way
+      // Simulate file upload - in a real app, this would upload to a server
       const fileUrl = URL.createObjectURL(file);
-      const fileType = detectFileType(file);
+      const fileExtension = getFileExtension(file.name);
       
-      // Process thumbnail only for images to improve performance
-      let thumbnailUrl = null;
-      if (fileType === 'image') {
-        thumbnailUrl = fileUrl;
-      }
-      
-      // Only include content for text files and limit size
-      const docContent = fileType.match(/txt|html|css|js|json/) && fileContent && file.size < 500000 
-        ? fileContent 
-        : undefined;
-      
-      // Add the document with all required fields
-      addDocument({
-        name,
-        fileType,
+      const newDocument = {
+        name: name.trim(),
+        folderId: folderId,
+        fileType: fileExtension,
         fileSize: file.size,
         url: fileUrl,
-        folderId,
-        createdBy: 'current-user',
+        description: description.trim(),
         tags: [],
-        title: name,
-        thumbnailUrl,
         shared: false,
-        content: docContent,
+        createdBy: currentUser.id,
         versions: [{
           id: `version-${Date.now()}`,
           documentId: `doc-${Date.now()}`,
           version: 1,
           createdAt: new Date(),
-          createdBy: 'current-user',
+          createdBy: currentUser.id,
           fileSize: file.size,
-          url: fileUrl,
-          notes: 'Initial version'
+          url: fileUrl
         }]
+      };
+
+      addDocument(newDocument);
+      
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully"
       });
       
-      // Close the dialog - form will be reset in the useEffect
       onOpenChange(false);
     } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Failed to upload document');
+      toast({
+        title: "Error",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
   };
-  
-  
+
+  const handleClose = () => {
+    if (!isUploading) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
-            Upload a new document to your church management system.
+            Upload a new document to the church document library.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          {file ? (
-            <div className="flex items-center p-3 border rounded-md">
-              <div className="mr-2">
-                {getFileIcon(file)}
-              </div>
-              <div className="flex-1 truncate">
-                <p className="font-medium truncate">{file.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(2)} KB • {file.type || 'Unknown type'}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFile(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* File Upload Area */}
+          <div className="space-y-2">
+            <Label>File</Label>
             <div
-              className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+              }`}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
             >
-              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-              <p className="font-medium">Click to select a file</p>
-              <p className="text-sm text-muted-foreground">
-                or drag and drop here
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Support for images, videos, audio, PDFs, documents, and more
-              </p>
-              <input
-                type="file"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/html,text/css,text/javascript,application/json"
-              />
+              {file ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center text-blue-600">
+                    {getFileIcon(file.type)}
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium">{file.name}</p>
+                    <p className="text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                  <div className="text-sm">
+                    <p>Drag and drop a file here, or click to select</p>
+                    <p className="text-gray-500">Supports PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, images</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Select File
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-          
-          <div className="grid gap-2">
-            <Label htmlFor="name">Document Name</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.bmp,.svg"
+            />
+          </div>
+
+          {/* Document Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Document Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter document name"
               required
             />
           </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="content">Description</Label>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
             <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter document description (optional)"
               rows={3}
             />
           </div>
-          
-          <div className="grid gap-2">
+
+          {/* Folder Selection */}
+          <div className="space-y-2">
             <Label htmlFor="folder">Folder</Label>
-            <Select
-              value={folderId || "root"}
-              onValueChange={(value) => setFolderId(value === "root" ? null : value)}
-            >
+            <Select value={folderId || 'root'} onValueChange={(value) => setFolderId(value === 'root' ? null : value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a folder" />
+                <SelectValue placeholder="Select folder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="root">Root</SelectItem>
+                <SelectItem value="root">Root Folder</SelectItem>
                 {folders.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>
                     {folder.name}
@@ -302,16 +278,16 @@ const UploadDocumentDialog = ({ open, onOpenChange, currentFolder }: UploadDocum
               </SelectContent>
             </Select>
           </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isUploading}>
-            {isUploading ? 'Uploading...' : 'Upload'}
-          </Button>
-        </DialogFooter>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isUploading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isUploading}>
+              {isUploading ? 'Uploading...' : 'Upload Document'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

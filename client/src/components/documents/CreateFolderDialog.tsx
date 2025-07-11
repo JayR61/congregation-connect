@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/AppContext';
 import { Folder } from '@/types';
-import { toast } from '@/lib/toast';
+import { toast } from '@/hooks/use-toast';
 
 interface CreateFolderDialogProps {
   open: boolean;
@@ -22,7 +22,11 @@ const CreateFolderDialog = ({ open, onOpenChange, currentFolder }: CreateFolderD
   
   const handleSubmit = () => {
     if (!name.trim()) {
-      toast.error('Please enter a folder name');
+      toast({
+        title: "Error",
+        description: "Please enter a folder name",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -30,6 +34,11 @@ const CreateFolderDialog = ({ open, onOpenChange, currentFolder }: CreateFolderD
       name: name.trim(),
       parentId,
       createdById: currentUser?.id || 'default-user-1'
+    });
+    
+    toast({
+      title: "Success",
+      description: "Folder created successfully"
     });
     
     // Reset the form

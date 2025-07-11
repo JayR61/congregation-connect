@@ -122,10 +122,17 @@ const Finance = () => {
     return matchesSearch && matchesDate;
   });
 
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  
   const handleDeleteTransaction = (id: string) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       deleteTransaction(id);
     }
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsAddTransactionOpen(true);
   };
 
   const handleAddTransaction = (newTransaction: Omit<Transaction, "id" | "createdAt" | "updatedAt" | "createdById">) => {
@@ -170,8 +177,11 @@ const Finance = () => {
           {formatCurrency(transaction.amount)}
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleDeleteTransaction(transaction.id)}>
-            <TrendingDown className="h-4 w-4 text-red-500" />
+          <Button variant="ghost" size="sm" onClick={() => handleEditTransaction(transaction)}>
+            Edit
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleDeleteTransaction(transaction.id)} className="text-red-500 hover:text-red-700">
+            Delete
           </Button>
         </div>
       </div>
@@ -401,8 +411,12 @@ const Finance = () => {
 
       <AddTransactionDialog 
         open={isAddTransactionOpen} 
-        onOpenChange={setIsAddTransactionOpen}
+        onOpenChange={(open) => {
+          setIsAddTransactionOpen(open);
+          if (!open) setEditingTransaction(null);
+        }}
         onAddTransaction={handleAddTransaction}
+        editingTransaction={editingTransaction}
       />
     </div>
   );

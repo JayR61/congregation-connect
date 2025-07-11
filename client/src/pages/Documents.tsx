@@ -18,6 +18,8 @@ import { useAppContext } from '@/context/AppContext';
 import { Document, Folder as FolderType } from '@/types';
 import { formatDistance } from 'date-fns';
 import { cn } from '@/lib/utils';
+import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
+import CreateFolderDialog from '@/components/documents/CreateFolderDialog';
 
 const Documents = () => {
   const { documents, folders } = useAppContext();
@@ -25,6 +27,8 @@ const Documents = () => {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
 
   // Get all unique tags from documents
   const allTags = Array.from(new Set(documents.flatMap(doc => doc.tags || [])));
@@ -194,11 +198,11 @@ const Documents = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Upload
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setShowCreateFolderDialog(true)}>
             <FolderPlus className="h-4 w-4 mr-2" />
             New Folder
           </Button>
@@ -327,7 +331,7 @@ const Documents = () => {
                 }
               </p>
               {!searchTerm && selectedTags.length === 0 && (
-                <Button>
+                <Button onClick={() => setShowUploadDialog(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Document
                 </Button>
@@ -336,6 +340,17 @@ const Documents = () => {
           </Card>
         )}
       </div>
+      {/* Dialog Components */}
+      <UploadDocumentDialog 
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+        currentFolderId={selectedFolder}
+      />
+      <CreateFolderDialog 
+        open={showCreateFolderDialog}
+        onOpenChange={setShowCreateFolderDialog}
+        currentFolder={selectedFolder}
+      />
     </div>
   );
 };

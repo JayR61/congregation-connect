@@ -25,7 +25,7 @@ const ResourceAttendanceTracker: React.FC<ResourceAttendanceTrackerProps> = ({
   members,
   onRecordAttendance = () => {}
 }) => {
-  const [selectedResourceId, setSelectedResourceId] = useState<string>('');
+  const [selectedResourceId, setSelectedResourceId] = useState<string>('all');
   const [selectedBookingId, setSelectedBookingId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
@@ -39,7 +39,7 @@ const ResourceAttendanceTracker: React.FC<ResourceAttendanceTrackerProps> = ({
     return bookingDate.getTime() === today.getTime() && booking.status === 'approved';
   });
   
-  const resourceBookings = selectedResourceId 
+  const resourceBookings = (selectedResourceId && selectedResourceId !== 'all')
     ? todaysBookings.filter(b => b.resourceId === selectedResourceId)
     : todaysBookings;
   
@@ -107,7 +107,7 @@ const ResourceAttendanceTracker: React.FC<ResourceAttendanceTrackerProps> = ({
                   <SelectValue placeholder="Select a resource" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Resources</SelectItem>
+                  <SelectItem value="all">All Resources</SelectItem>
                   {resources.map(resource => (
                     <SelectItem key={resource.id} value={resource.id}>{resource.name}</SelectItem>
                   ))}

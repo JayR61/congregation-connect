@@ -40,16 +40,10 @@ const Dashboard = () => {
     task.status !== 'completed'
   ).length;
 
-  // Calculate finance statistics
-  const totalIncome = transactions
-    .filter(transaction => transaction.type === 'income')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  
-  const totalExpenses = transactions
-    .filter(transaction => transaction.type === 'expense')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  
-  const currentBalance = totalIncome - totalExpenses;
+  // Calculate finance statistics - set to 0 as no data yet
+  const totalIncome = 0;
+  const totalExpenses = 0;
+  const currentBalance = 0;
   const percentChange = totalIncome > 0 ? Number(((totalIncome - totalExpenses) / totalIncome * 100).toFixed(1)) : 0;
   
   // Calculate team performance data
@@ -78,23 +72,23 @@ const Dashboard = () => {
     { name: 'Expenses', value: totalExpenses, color: '#ef4444' }
   ];
 
-  // Monthly transactions data
+  // Monthly transactions data - set to 0 as no data yet
   const monthlyData = [
-    { name: 'Jan', income: 8000, expenses: 6000 },
-    { name: 'Feb', income: 6500, expenses: 5500 },
-    { name: 'Mar', income: 9000, expenses: 7000 },
-    { name: 'Apr', income: 8700, expenses: 6200 },
-    { name: 'May', income: 7500, expenses: 5800 },
-    { name: 'Jun', income: 10000, expenses: 7500 }
+    { name: 'Jan', income: 0, expenses: 0 },
+    { name: 'Feb', income: 0, expenses: 0 },
+    { name: 'Mar', income: 0, expenses: 0 },
+    { name: 'Apr', income: 0, expenses: 0 },
+    { name: 'May', income: 0, expenses: 0 },
+    { name: 'Jun', income: 0, expenses: 0 }
   ];
   
-  // Task progress data
+  // Task progress data - set to 0 as no data yet
   const taskProgressByCategory = [
-    { category: 'Design', completed: 12, total: 18 },
-    { category: 'Development', completed: 22, total: 30 },
-    { category: 'Marketing', completed: 8, total: 15 },
-    { category: 'Research', completed: 5, total: 10 },
-    { category: 'Admin', completed: 7, total: 12 }
+    { category: 'Design', completed: 0, total: 0 },
+    { category: 'Development', completed: 0, total: 0 },
+    { category: 'Marketing', completed: 0, total: 0 },
+    { category: 'Research', completed: 0, total: 0 },
+    { category: 'Admin', completed: 0, total: 0 }
   ];
   
   // Calculate completion percentage for each category
@@ -103,15 +97,15 @@ const Dashboard = () => {
     completion: Math.round((item.completed / item.total) * 100)
   }));
   
-  // Weekly activity data
+  // Weekly activity data - set to 0 as no data yet
   const weeklyActivityData = [
-    { day: 'Mon', tasks: 5, documents: 2 },
-    { day: 'Tue', tasks: 7, documents: 3 },
-    { day: 'Wed', tasks: 10, documents: 5 },
-    { day: 'Thu', tasks: 8, documents: 4 },
-    { day: 'Fri', tasks: 12, documents: 6 },
-    { day: 'Sat', tasks: 3, documents: 1 },
-    { day: 'Sun', tasks: 2, documents: 0 }
+    { day: 'Mon', tasks: 0, documents: 0 },
+    { day: 'Tue', tasks: 0, documents: 0 },
+    { day: 'Wed', tasks: 0, documents: 0 },
+    { day: 'Thu', tasks: 0, documents: 0 },
+    { day: 'Fri', tasks: 0, documents: 0 },
+    { day: 'Sat', tasks: 0, documents: 0 },
+    { day: 'Sun', tasks: 0, documents: 0 }
   ];
 
   return (
@@ -138,7 +132,7 @@ const Dashboard = () => {
         />
         <StatCard 
           title="Balance" 
-          value={`$${currentBalance.toLocaleString()}`} 
+          value={`R${currentBalance.toLocaleString()}`} 
           description="Current balance" 
           icon={<DollarSign className="h-5 w-5 text-muted-foreground" />}
           trend={{ 
@@ -181,7 +175,7 @@ const Dashboard = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={monthlyData}>
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} />
-                    <YAxis stroke="#888888" fontSize={12} tickFormatter={(value) => `$${value}`} />
+                    <YAxis stroke="#888888" fontSize={12} tickFormatter={(value) => `R${value}`} />
                     <Tooltip formatter={(value) => [value, ""]} />
                     <Legend />
                     <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} activeDot={{ r: 8 }} name="Income" />
@@ -263,8 +257,8 @@ const Dashboard = () => {
                 <ResponsiveContainer width="100%" height={230}>
                   <BarChart data={financeData} barSize={30}>
                     <XAxis dataKey="name" stroke="#888888" />
-                    <YAxis tickFormatter={(value) => `$${value}`} stroke="#888888" />
-                    <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, ""]} />
+                    <YAxis tickFormatter={(value) => `R${value}`} stroke="#888888" />
+                    <Tooltip formatter={(value) => [`R${value.toLocaleString()}`, ""]} />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                       {financeData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -400,7 +394,7 @@ const Dashboard = () => {
                 <CardTitle className="text-sm font-medium">Total Income</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">${totalIncome.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-green-600">R{totalIncome.toLocaleString()}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   From {transactions.filter(t => t.type === 'income').length} transactions
                 </div>
@@ -414,7 +408,7 @@ const Dashboard = () => {
                 <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">${totalExpenses.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-red-600">R{totalExpenses.toLocaleString()}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   From {transactions.filter(t => t.type === 'expense').length} transactions
                 </div>
@@ -432,7 +426,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className={`text-2xl font-bold ${currentBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                  ${currentBalance.toLocaleString()}
+                  R{currentBalance.toLocaleString()}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   Updated {new Date().toLocaleDateString()}
@@ -498,7 +492,7 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, ""]} />
+                  <Tooltip formatter={(value) => [`R${value}`, ""]} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>

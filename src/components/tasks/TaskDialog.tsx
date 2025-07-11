@@ -47,7 +47,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
       dueDate,
       categoryId,
       assigneeId,
-      assigneeIds: assigneeId ? [assigneeId] : [],
+      assigneeIds: (assigneeId && assigneeId !== 'unassigned') ? [assigneeId] : [],
       categories: [
         taskCategories.find(cat => cat.id === categoryId) || taskCategories[0]
       ],
@@ -203,7 +203,7 @@ export function TaskDialog({ open, onOpenChange, defaultValues }: TaskDialogProp
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.firstName} {member.lastName}

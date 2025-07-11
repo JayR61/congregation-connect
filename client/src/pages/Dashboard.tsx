@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppContext } from "@/context/AppContext";
+import { useSettings } from "@/context/SettingsContext";
 import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -11,6 +12,7 @@ import { TeamPerformance } from '@/components/dashboard/TeamPerformance';
 
 const Dashboard = () => {
   const { tasks, members, transactions, documents, programmes } = useAppContext();
+  const { churchInfo } = useSettings();
 
   // Calculate task statistics
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
@@ -156,7 +158,10 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-lg text-muted-foreground">{churchInfo.name}</p>
+      </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 

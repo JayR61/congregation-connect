@@ -1,5 +1,5 @@
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,17 +17,28 @@ export function ChurchInfoSettings() {
   } = useSettings();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [formData, setFormData] = useState({
+    name: churchInfo.name,
+    address: churchInfo.address,
+    phone: churchInfo.phone,
+    email: churchInfo.email,
+    website: churchInfo.website,
+  });
 
-  const handleChurchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real application, this would save to the backend
-    updateChurchInfo({
+  // Update form data when church info changes
+  useEffect(() => {
+    setFormData({
       name: churchInfo.name,
       address: churchInfo.address,
       phone: churchInfo.phone,
       email: churchInfo.email,
       website: churchInfo.website,
     });
+  }, [churchInfo]);
+
+  const handleChurchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateChurchInfo(formData);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,8 +77,8 @@ export function ChurchInfoSettings() {
                 <Label htmlFor="church-name">Church Name</Label>
                 <Input
                   id="church-name"
-                  value={churchInfo.name}
-                  onChange={(e) => updateChurchInfo({ name: e.target.value })}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -78,8 +89,8 @@ export function ChurchInfoSettings() {
                   </span>
                   <Input
                     id="church-website"
-                    value={churchInfo.website}
-                    onChange={(e) => updateChurchInfo({ website: e.target.value })}
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                     className="rounded-l-none"
                   />
                 </div>
@@ -90,8 +101,8 @@ export function ChurchInfoSettings() {
               <Label htmlFor="church-address">Address</Label>
               <Textarea
                 id="church-address"
-                value={churchInfo.address}
-                onChange={(e) => updateChurchInfo({ address: e.target.value })}
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
             </div>
 
@@ -103,8 +114,8 @@ export function ChurchInfoSettings() {
                   <Input
                     id="church-email"
                     type="email"
-                    value={churchInfo.email}
-                    onChange={(e) => updateChurchInfo({ email: e.target.value })}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
               </div>
@@ -114,8 +125,8 @@ export function ChurchInfoSettings() {
                   <Phone className="mr-2 h-4 w-4 mt-3 text-muted-foreground" />
                   <Input
                     id="church-phone"
-                    value={churchInfo.phone}
-                    onChange={(e) => updateChurchInfo({ phone: e.target.value })}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
               </div>

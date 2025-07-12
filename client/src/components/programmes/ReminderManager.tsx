@@ -51,14 +51,15 @@ export const ReminderManager = ({
   const handleCreateReminder = () => {
     if (!reminderData.programmeId || !reminderData.title || !reminderData.message) return;
 
-    const newReminder = {
+    const newReminder: Omit<ProgrammeReminder, 'id' | 'status' | 'sent'> = {
       programmeId: reminderData.programmeId,
       type: reminderData.type,
       title: reminderData.title,
       message: reminderData.message,
       scheduledFor: reminderData.scheduledFor,
       targetAudience: reminderData.targetAudience,
-      recipients: reminderData.recipients
+      recipients: reminderData.recipients,
+      date: reminderData.scheduledFor
     };
 
     onCreateReminder(newReminder);

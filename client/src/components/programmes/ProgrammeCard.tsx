@@ -73,10 +73,10 @@ export const ProgrammeCard = ({
         <div className="flex justify-between items-start">
           <CardTitle className="truncate">{programme.name}</CardTitle>
           <div className="flex items-center gap-2 shrink-0">
-            <Badge className={cn("ml-2", getTypeBadgeColor(programme.type))}>
+            <Badge className={cn("ml-2", getTypeBadgeColor(programme.type || 'other'))}>
               <span className="flex items-center">
-                {getTypeIcon(programme.type)}
-                <span className="ml-1 capitalize">{programme.type}</span>
+                {getTypeIcon(programme.type || 'other')}
+                <span className="ml-1 capitalize">{programme.type || 'other'}</span>
               </span>
             </Badge>
             <AlertDialog>

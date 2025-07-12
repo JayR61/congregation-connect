@@ -224,7 +224,7 @@ const ProgrammeForm = ({ programme, onSubmit, onCancel }: ProgrammeFormProps) =>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.endDate}
+                  selected={formData.endDate || undefined}
                   onSelect={(date) => handleDateChange('endDate', date)}
                   initialFocus
                 />

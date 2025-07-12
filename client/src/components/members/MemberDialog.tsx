@@ -475,7 +475,7 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
             <Label htmlFor="familyId">Family Member</Label>
             <Select
               value={formData.familyId || ''}
-              onValueChange={(value) => handleSelectChange('familyId', value === 'none' ? null : value)}
+              onValueChange={(value) => handleSelectChange('familyId', value === 'none' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select family member (optional)" />

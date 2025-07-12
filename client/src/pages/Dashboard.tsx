@@ -51,7 +51,7 @@ const Dashboard = () => {
   
   // Calculate team performance data
   const memberPerformance = members.map(member => {
-    const memberTasks = tasks.filter(task => task.assigneeIds.includes(member.id));
+    const memberTasks = tasks.filter(task => task.assigneeIds && task.assigneeIds.includes(member.id));
     const completedMemberTasks = memberTasks.filter(task => task.status === 'completed').length;
     const totalMemberTasks = memberTasks.length;
     

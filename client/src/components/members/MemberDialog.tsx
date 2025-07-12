@@ -46,6 +46,7 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
     isLeadership: false,
     isFullMember: true,
     familyId: null,
+    category: '',
   });
   
   const [newSkill, setNewSkill] = useState('');
@@ -53,18 +54,26 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
   
   // Load member data if editing
   useEffect(() => {
-    if (memberId && open) {
-      const member = members.find(m => m.id === memberId);
-      if (member) {
+    if (member && open) {
+      setFormData({
+        ...member,
+        // Ensure arrays are initialized
+        skills: member.skills || [],
+        roles: member.roles || [],
+        ministries: member.ministries || [],
+      });
+    } else if (memberId && open) {
+      const foundMember = members.find(m => m.id === memberId);
+      if (foundMember) {
         setFormData({
-          ...member,
+          ...foundMember,
           // Ensure arrays are initialized
-          skills: member.skills || [],
-          roles: member.roles || [],
-          ministries: member.ministries || [],
+          skills: foundMember.skills || [],
+          roles: foundMember.roles || [],
+          ministries: foundMember.ministries || [],
         });
       }
-    } else if (open) {
+    } else if (open && !member && !memberId) {
       // Reset form when opening for a new member
       setFormData({
         firstName: '',
@@ -85,11 +94,12 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
         isLeadership: false,
         isFullMember: true,
         familyId: null,
+        category: '',
       });
       setNewSkill('');
       setNewMinistry('');
     }
-  }, [memberId, open, members]);
+  }, [member, memberId, open, members]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -155,9 +165,12 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
       return;
     }
     
-    if (memberId) {
+    if (memberId || member) {
       // Update existing member - partial update is fine
-      updateMember(memberId, formData);
+      const memberToUpdate = member || members.find(m => m.id === memberId);
+      if (memberToUpdate) {
+        updateMember(memberToUpdate.id, formData);
+      }
     } else if (onSave) {
       // Use the onSave callback if provided
       const newMemberData = {
@@ -179,6 +192,7 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
         isLeadership: formData.isLeadership,
         isFullMember: formData.isFullMember,
         familyId: formData.familyId,
+        category: formData.category,
       };
       onSave(newMemberData);
     } else {
@@ -202,6 +216,7 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
         isLeadership: formData.isLeadership,
         isFullMember: formData.isFullMember,
         familyId: formData.familyId,
+        category: formData.category,
       };
       addMember(newMemberData);
     }
@@ -290,57 +305,46 @@ export const MemberDialog: React.FC<MemberDialogProps> = ({ open, onOpenChange, 
             </div>
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="category">Member Category</Label>
+            <Input
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              placeholder="e.g., Visitor, Sponsor, Volunteer, Admin, etc."
+            />
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.dateOfBirth && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.dateOfBirth}
-                    onSelect={(date) => handleDateChange('dateOfBirth', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="dateOfBirth"
+                name="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth ? format(formData.dateOfBirth, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  const date = e.target.value ? new Date(e.target.value) : undefined;
+                  handleDateChange('dateOfBirth', date);
+                }}
+                max={format(new Date(), "yyyy-MM-dd")}
+              />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="joinDate">Join Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.joinDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.joinDate ? format(formData.joinDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.joinDate}
-                    onSelect={(date) => handleDateChange('joinDate', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="joinDate"
+                name="joinDate"
+                type="date"
+                value={formData.joinDate ? format(formData.joinDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  const date = e.target.value ? new Date(e.target.value) : undefined;
+                  handleDateChange('joinDate', date);
+                }}
+                max={format(new Date(), "yyyy-MM-dd")}
+              />
             </div>
           </div>
           

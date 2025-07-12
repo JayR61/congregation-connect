@@ -23,7 +23,12 @@ const Members = () => {
   
   const [filteredMembers, setFilteredMembers] = useState<Member[]>(members);
   const activeMembers = members.filter(member => member.status === 'active');
-  const newMembers = members.filter(member => member.newMemberDate && new Date(member.newMemberDate).getTime() > Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const newMembers = members.filter(member => {
+    const joinDate = new Date(member.joinDate);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return joinDate > oneMonthAgo;
+  });
   const visitorsProspects = members.filter(member => member.status === 'visitor' || member.status === 'prospect');
   const inactiveMembers = members.filter(member => member.status === 'inactive');
 
@@ -34,10 +39,12 @@ const Members = () => {
     if (currentTab === 'active') {
       filtered = filtered.filter(member => member.status === 'active');
     } else if (currentTab === 'newMembers') {
-      filtered = filtered.filter(member => 
-        member.newMemberDate && 
-        new Date(member.newMemberDate).getTime() > Date.now() - 90 * 24 * 60 * 60 * 1000
-      );
+      filtered = filtered.filter(member => {
+        const joinDate = new Date(member.joinDate);
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        return joinDate > oneMonthAgo;
+      });
     } else if (currentTab === 'visitorsProspects') {
       filtered = filtered.filter(member => member.status === 'visitor' || member.status === 'prospect');
     } else if (currentTab === 'inactive') {
@@ -80,13 +87,113 @@ const Members = () => {
     setDialogOpen(true);
   };
 
+  const exportMembersToCSV = () => {
+    const csvContent = [
+      ['Name', 'Email', 'Phone', 'Status', 'Join Date', 'Category', 'City', 'Occupation'],
+      ...filteredMembers.map(member => [
+        `${member.firstName} ${member.lastName}`,
+        member.email,
+        member.phone || '',
+        member.status,
+        member.joinDate ? new Date(member.joinDate).toLocaleDateString() : '',
+        member.category || '',
+        member.city || '',
+        member.occupation || ''
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `members_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const printMemberDirectory = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Member Directory</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .member-row { page-break-inside: avoid; }
+              @media print { 
+                body { margin: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Member Directory</h1>
+            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Join Date</th>
+                  <th>Category</th>
+                  <th>City</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredMembers.map(member => `
+                  <tr class="member-row">
+                    <td>${member.firstName} ${member.lastName}</td>
+                    <td>${member.email}</td>
+                    <td>${member.phone || ''}</td>
+                    <td>${member.status}</td>
+                    <td>${member.joinDate ? new Date(member.joinDate).toLocaleDateString() : ''}</td>
+                    <td>${member.category || ''}</td>
+                    <td>${member.city || ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Members</h1>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Member
-        </Button>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={exportMembersToCSV}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printMemberDirectory}>
+                Print Directory
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Member
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -174,20 +281,7 @@ const Members = () => {
                 </SelectContent>
               </Select>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Export as CSV</DropdownMenuItem>
-                  <DropdownMenuItem>Export as PDF</DropdownMenuItem>
-                  <DropdownMenuItem>Print Member Directory</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
             </div>
           </div>
           
@@ -216,8 +310,8 @@ const Members = () => {
       <MemberDialog 
         open={dialogOpen} 
         onOpenChange={setDialogOpen}
-        onSave={handleAddMember}
         member={editingMember}
+        onSave={handleAddMember}
       />
     </div>
   );

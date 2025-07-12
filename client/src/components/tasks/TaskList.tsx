@@ -4,11 +4,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Clock, Flag, Edit, MoreHorizontal } from 'lucide-react';
+import { CalendarIcon, Clock, Flag, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 import { format, isAfter, isBefore, isToday } from 'date-fns';
 import { useAppContext } from '@/context/AppContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import TaskDialog from './TaskDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface TaskListProps {
   tasks: Task[];
@@ -17,14 +18,27 @@ interface TaskListProps {
 }
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => {
-  const { members } = useAppContext();
+  const { members, deleteTask } = useAppContext();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const handleEditTask = (e: React.MouseEvent, task: Task) => {
     e.stopPropagation();
     setEditingTask(task);
     setShowEditDialog(true);
+  };
+
+  const handleDeleteTask = (e: React.MouseEvent, task: Task) => {
+    e.stopPropagation();
+    setTaskToDelete(task);
+  };
+
+  const confirmDelete = () => {
+    if (taskToDelete) {
+      deleteTask(taskToDelete.id);
+      setTaskToDelete(null);
+    }
   };
 
   if (tasks.length === 0) {
@@ -111,6 +125,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
                         <Edit className="h-3 w-3 mr-2" />
                         Edit Task
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleDeleteTask(e, task)} className="text-red-600">
+                        <Trash2 className="h-3 w-3 mr-2" />
+                        Delete Task
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -162,6 +180,33 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
             </CardFooter>
           </Card>
         ))}
+        
+        {editingTask && (
+          <TaskDialog 
+            open={showEditDialog} 
+            onOpenChange={setShowEditDialog}
+            defaultValues={editingTask}
+            editMode={true}
+            taskId={editingTask.id}
+          />
+        )}
+        
+        <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Task</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{taskToDelete?.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -247,24 +292,47 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, viewMode, onTaskClick }) => 
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Task
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => handleDeleteTask(e, task)} className="text-red-600">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Task
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       ))}
       
-      <TaskDialog
-        open={showEditDialog}
-        onOpenChange={(open) => {
-          setShowEditDialog(open);
-          if (!open) {
-            setEditingTask(null);
-          }
-        }}
-        editMode={true}
-        taskId={editingTask?.id}
-        defaultValues={editingTask}
-      />
+      {editingTask && (
+        <TaskDialog
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open);
+            if (!open) {
+              setEditingTask(null);
+            }
+          }}
+          editMode={true}
+          taskId={editingTask?.id}
+          defaultValues={editingTask}
+        />
+      )}
+      
+      <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{taskToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

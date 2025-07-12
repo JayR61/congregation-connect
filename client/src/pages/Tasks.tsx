@@ -45,9 +45,10 @@ const Tasks = () => {
   });
 
   // Calculate task statistics
+  const { currentUser } = useAppContext();
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
-  const myTasks = tasks.filter(task => task.assigneeIds.includes('user-1')).length;
+  const myTasks = tasks.filter(task => task.assigneeIds.includes(currentUser.id)).length;
   const overdueTasks = tasks.filter(task => 
     task.status !== 'completed' && task.dueDate && new Date(task.dueDate) < new Date()
   ).length;
@@ -273,40 +274,31 @@ const Tasks = () => {
         </TabsContent>
         <TabsContent value="my">
           <TaskList 
-            tasks={filteredTasks.filter(task => task.assigneeIds.includes('user-1'))} 
+            tasks={tasks.filter(task => task.assigneeIds.includes(currentUser.id))} 
             viewMode={viewMode} 
             onTaskClick={handleViewTask}
           />
         </TabsContent>
         <TabsContent value="upcoming">
           <TaskList 
-            tasks={filteredTasks.filter(task => {
-              if (!task.dueDate) return false;
-              const dueDate = new Date(task.dueDate);
-              const today = new Date();
-              const oneWeekFromNow = new Date();
-              oneWeekFromNow.setDate(today.getDate() + 7);
-              return (task.status !== 'completed') && 
-                    ((dueDate <= oneWeekFromNow) || 
-                    (dueDate < today)); // Fixed the type error by removing redundant status check
-            })} 
-            viewMode={viewMode}
+            tasks={tasks.filter(task => 
+              task.dueDate && new Date(task.dueDate) > new Date() && task.status !== 'completed'
+            )} 
+            viewMode={viewMode} 
             onTaskClick={handleViewTask}
           />
         </TabsContent>
         <TabsContent value="recent">
           <TaskList 
-            tasks={[...filteredTasks].sort((a, b) => 
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-            ).slice(0, 10)} 
-            viewMode={viewMode}
+            tasks={[...tasks].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 20)} 
+            viewMode={viewMode} 
             onTaskClick={handleViewTask}
           />
         </TabsContent>
       </Tabs>
-      
-      <TaskDialog
-        open={showTaskDialog}
+
+      <TaskDialog 
+        open={showTaskDialog} 
         onOpenChange={setShowTaskDialog}
       />
     </div>

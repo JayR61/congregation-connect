@@ -245,24 +245,29 @@ const Dashboard = () => {
                 <CardDescription>Current task distribution</CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <ResponsiveContainer width="100%" height={230}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={taskStatusData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={80}
+                      outerRadius={90}
                       fill="#8884d8"
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={false}
                     >
                       {taskStatusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => [value, "Tasks"]} />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value, entry) => `${value}: ${entry.payload.value}`}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>

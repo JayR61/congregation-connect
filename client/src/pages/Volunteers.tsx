@@ -24,20 +24,14 @@ const Volunteers = () => {
   const [newVolunteer, setNewVolunteer] = useState<Partial<Volunteer>>({
     memberId: '',
     position: '',
-    department: '',
     startDate: new Date(),
     status: 'active',
-    hours: 0,
-    area: '',
-    ministry: '',
-    role: '',
-    joinDate: new Date(),
-    availability: []
+    hours: 0
   });
   
   const handleAddVolunteer = () => {
-    if (!newVolunteer.memberId || !newVolunteer.position || !newVolunteer.area) {
-      toast.error('Please fill in all required fields');
+    if (!newVolunteer.memberId || !newVolunteer.position) {
+      toast.error('Please select a member and enter a position');
       return;
     }
     
@@ -49,7 +43,7 @@ const Volunteers = () => {
       startDate: newVolunteer.startDate || new Date(),
       status: newVolunteer.status || 'active',
       hours: newVolunteer.hours || 0,
-      area: newVolunteer.area,
+      area: newVolunteer.area || '',
       ministry: newVolunteer.ministry || '',
       role: newVolunteer.role || '',
       joinDate: newVolunteer.joinDate || new Date(),
@@ -60,7 +54,6 @@ const Volunteers = () => {
     setNewVolunteer({
       memberId: '',
       position: '',
-      department: '',
       startDate: new Date(),
       status: 'active',
       hours: 0
@@ -151,50 +144,21 @@ const Volunteers = () => {
                 </Select>
               </div>
               
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Ministry</label>
-                  <Input
-                    placeholder="Ministry"
-                    value={newVolunteer.ministry || ''}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, ministry: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Role</label>
-                  <Input
-                    placeholder="Role"
-                    value={newVolunteer.role || ''}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, role: e.target.value })}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Department</label>
-                  <Input
-                    placeholder="Department"
-                    value={newVolunteer.department || ''}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, department: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Area</label>
-                  <Input
-                    placeholder="Area"
-                    value={newVolunteer.area || ''}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, area: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Position/Role *</label>
+                <Input
+                  placeholder="e.g., Youth Leader, Sound Technician, Greeter"
+                  value={newVolunteer.position || ''}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, position: e.target.value })}
+                />
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Position</label>
+                <label className="text-sm font-medium">Ministry/Department</label>
                 <Input
-                  placeholder="Position"
-                  value={newVolunteer.position || ''}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, position: e.target.value })}
+                  placeholder="e.g., Youth Ministry, Technical Team, Hospitality"
+                  value={newVolunteer.ministry || ''}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, ministry: e.target.value })}
                 />
               </div>
               

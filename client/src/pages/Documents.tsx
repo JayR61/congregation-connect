@@ -136,9 +136,20 @@ const Documents = () => {
   };
 
   // Document action handlers
-  const handlePreviewDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setShowPreviewDialog(true);
+  const handleViewDocument = (document: Document) => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+      toast({
+        title: "Document opened",
+        description: `Opening "${document.name}" in new tab`
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Document URL not available",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadDocument = (document: Document) => {
@@ -165,10 +176,7 @@ const Documents = () => {
     }
   };
 
-  const handleShareDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setShowShareDialog(true);
-  };
+
 
   const handleDeleteDocument = (documentId: string) => {
     const document = documents.find(d => d.id === documentId);
@@ -211,17 +219,13 @@ const Documents = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
+              <DropdownMenuItem onClick={() => handleViewDocument(document)}>
                 <Eye className="h-4 w-4 mr-2" />
-                Preview
+                View Document
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDownloadDocument(document)}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleShareDocument(document)}>
-                <Share className="h-4 w-4 mr-2" />
-                Share
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 

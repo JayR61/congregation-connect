@@ -209,7 +209,7 @@ export const ProgrammeCard = ({
             onAttendance();
           }}
         >
-          {programme.endDate && new Date(programme.endDate) < new Date() ? "View Attendance" : "Record Attendance"}
+          Record Attendance
         </Button>
       </CardFooter>
     </Card>

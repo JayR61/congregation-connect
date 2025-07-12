@@ -23,6 +23,7 @@ import TemplateManager from '@/components/programmes/TemplateManager';
 import KPIManager from '@/components/programmes/KPIManager';
 import { toast } from '@/lib/toast';
 import BulkAttendanceRecorder from '@/components/programmes/BulkAttendanceRecorder';
+import EnhancedAttendanceDialog from '@/components/programmes/EnhancedAttendanceDialog';
 
 const Programmes = () => {
   const { 
@@ -69,6 +70,8 @@ const Programmes = () => {
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const [isBulkAttendanceDialogOpen, setIsBulkAttendanceDialogOpen] = useState(false);
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null);
+  const [isEnhancedAttendanceOpen, setIsEnhancedAttendanceOpen] = useState(false);
+  const [selectedProgrammeForAttendance, setSelectedProgrammeForAttendance] = useState<Programme | null>(null);
   
   const filteredProgrammes = programmes.filter(programme => {
     const searchRegex = new RegExp(searchTerm, 'i');
@@ -114,6 +117,18 @@ const Programmes = () => {
   const exportToCSV = () => {
     // Implement CSV export logic here
     console.log('Exporting programmes to CSV');
+  };
+
+  const handleAttendance = (programme: Programme) => {
+    setSelectedProgrammeForAttendance(programme);
+    setIsEnhancedAttendanceOpen(true);
+  };
+
+  const handleSaveAttendance = (attendanceData: any) => {
+    // Record attendance through context
+    console.log('Saving attendance:', attendanceData);
+    toast.success('Attendance recorded successfully!');
+    // Refresh the programmes data if needed
   };
 
   return (
@@ -385,6 +400,17 @@ const Programmes = () => {
             </DialogContent>
           </Dialog>
         </>
+      )}
+      
+      {/* Enhanced Attendance Dialog */}
+      {selectedProgrammeForAttendance && (
+        <EnhancedAttendanceDialog
+          open={isEnhancedAttendanceOpen}
+          onOpenChange={setIsEnhancedAttendanceOpen}
+          programme={selectedProgrammeForAttendance}
+          members={members}
+          onSaveAttendance={handleSaveAttendance}
+        />
       )}
     </div>
   );

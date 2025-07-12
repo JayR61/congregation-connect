@@ -13,6 +13,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { getMentorshipPrograms, getMentorshipSessions, addMentorshipProgram, updateMentorshipProgram, deleteMentorshipProgram } from '@/data/mentorship-data';
 import { useAppContext } from '@/context/AppContext';
 import { MentorshipProgram, MentorshipSession } from '@/types/mentorship.types';
@@ -99,20 +103,18 @@ const Mentorship = () => {
     }
   };
 
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [selectedProgramForAction, setSelectedProgramForAction] = useState<MentorshipProgram | null>(null);
+
   const handleViewDetails = (program: MentorshipProgram) => {
-    setSelectedProgram(program.id);
-    toast({
-      title: "Program Details",
-      description: `Viewing details for "${program.name}"`
-    });
+    setSelectedProgramForAction(program);
+    setShowDetailsDialog(true);
   };
 
   const handleScheduleSession = (program: MentorshipProgram) => {
-    toast({
-      title: "Schedule Session",
-      description: `Scheduling session for "${program.name}"`
-    });
-    // This would typically open a scheduling dialog
+    setSelectedProgramForAction(program);
+    setShowScheduleDialog(true);
   };
 
   const handleEditProgram = (program: MentorshipProgram) => {
@@ -542,6 +544,139 @@ const Mentorship = () => {
         program={editingProgram}
         onSave={editingProgram ? handleUpdateProgram : handleCreateProgram}
       />
+
+      {/* Program Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Program Details</DialogTitle>
+          </DialogHeader>
+          {selectedProgramForAction && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">{selectedProgramForAction.name}</h3>
+                <p className="text-muted-foreground">{selectedProgramForAction.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium">Status</h4>
+                  <Badge className={cn('text-white', getStatusColor(selectedProgramForAction.status))}>
+                    {selectedProgramForAction.status}
+                  </Badge>
+                </div>
+                <div>
+                  <h4 className="font-medium">Progress</h4>
+                  <span>{selectedProgramForAction.progress || 0}% complete</span>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium">Duration</h4>
+                <p>{format(selectedProgramForAction.startDate, 'MMM dd, yyyy')} - {selectedProgramForAction.endDate ? format(selectedProgramForAction.endDate, 'MMM dd, yyyy') : 'Ongoing'}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium">Mentors ({selectedProgramForAction.mentors.length})</h4>
+                  <ul className="text-sm space-y-1">
+                    {selectedProgramForAction.mentors.map(mentorId => (
+                      <li key={mentorId}>{getMemberName(mentorId)}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium">Mentees ({selectedProgramForAction.mentees.length})</h4>
+                  <ul className="text-sm space-y-1">
+                    {selectedProgramForAction.mentees.map(menteeId => (
+                      <li key={menteeId}>{getMemberName(menteeId)}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              
+              {selectedProgramForAction.goals && selectedProgramForAction.goals.length > 0 && (
+                <div>
+                  <h4 className="font-medium">Goals</h4>
+                  <ul className="text-sm space-y-1">
+                    {selectedProgramForAction.goals.map((goal, index) => (
+                      <li key={index} className="flex items-start">
+                        <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-green-500 flex-shrink-0" />
+                        {goal}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {selectedProgramForAction.notes && (
+                <div>
+                  <h4 className="font-medium">Notes</h4>
+                  <p className="text-sm text-muted-foreground">{selectedProgramForAction.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Session Dialog */}
+      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule Session</DialogTitle>
+          </DialogHeader>
+          {selectedProgramForAction && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium">Program: {selectedProgramForAction.name}</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="session-title">Session Title</Label>
+                  <Input id="session-title" placeholder="Enter session title" />
+                </div>
+                
+                <div>
+                  <Label htmlFor="session-date">Date & Time</Label>
+                  <Input id="session-date" type="datetime-local" />
+                </div>
+                
+                <div>
+                  <Label htmlFor="session-duration">Duration (minutes)</Label>
+                  <Input id="session-duration" type="number" placeholder="60" />
+                </div>
+                
+                <div>
+                  <Label htmlFor="session-location">Location</Label>
+                  <Input id="session-location" placeholder="Meeting room, online, etc." />
+                </div>
+                
+                <div>
+                  <Label htmlFor="session-description">Description</Label>
+                  <Textarea id="session-description" placeholder="Session agenda or notes" />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  toast({
+                    title: "Session Scheduled",
+                    description: "The mentorship session has been scheduled successfully"
+                  });
+                  setShowScheduleDialog(false);
+                }}>
+                  Schedule Session
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

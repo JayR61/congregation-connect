@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/lib/toast';
 import { Member, Programme, ProgrammeAttendance } from '@/types';
 import { useAppContext } from '@/context/AppContext';
@@ -93,35 +94,37 @@ const BulkAttendanceRecorder = ({ programmeId, onSaveComplete }: BulkAttendanceR
           <div className="text-center">Present</div>
         </div>
         
-        <div className="max-h-[400px] overflow-y-auto">
+        <ScrollArea className="max-h-[400px]">
           {availableMembers.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground">
               No members to display
             </div>
           )}
           
-          {availableMembers.map((member, index) => (
-            <React.Fragment key={member.id}>
-              {index > 0 && <Separator />}
-              <div className="grid grid-cols-[1fr_1fr_100px] px-4 py-3 items-center">
-                <div className="flex items-center gap-2">
-                  <div className="font-medium">
-                    {member.firstName} {member.lastName}
+          <div className="pr-4">
+            {availableMembers.map((member, index) => (
+              <React.Fragment key={member.id}>
+                {index > 0 && <Separator />}
+                <div className="grid grid-cols-[1fr_1fr_100px] px-4 py-3 items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium">
+                      {member.firstName} {member.lastName}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {member.email}
+                  </div>
+                  <div className="flex justify-center">
+                    <Checkbox 
+                      checked={attendanceData.get(member.id) || false}
+                      onCheckedChange={(checked) => handleToggleAttendance(member.id, !!checked)}
+                    />
                   </div>
                 </div>
-                <div className="text-muted-foreground">
-                  {member.email}
-                </div>
-                <div className="flex justify-center">
-                  <Checkbox 
-                    checked={attendanceData.get(member.id) || false}
-                    onCheckedChange={(checked) => handleToggleAttendance(member.id, !!checked)}
-                  />
-                </div>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
       
       <DialogFooter className="mt-4">

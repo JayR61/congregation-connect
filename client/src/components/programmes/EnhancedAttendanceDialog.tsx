@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, Users, UserPlus, Hash } from 'lucide-react';
 import { Member, Programme } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EnhancedAttendanceDialogProps {
   open: boolean;
@@ -149,7 +150,7 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="attendance-dialog-description">
+      <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby="attendance-dialog-description">
         <DialogHeader>
           <DialogTitle>Record Attendance - {programme.name}</DialogTitle>
           <p id="attendance-dialog-description" className="text-sm text-muted-foreground">
@@ -179,27 +180,29 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-              {members.map(member => (
-                <Card key={member.id} className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        checked={memberAttendance.get(member.id) || false}
-                        onCheckedChange={(checked) => handleMemberToggle(member.id, checked as boolean)}
-                      />
-                      <div>
-                        <p className="font-medium">{member.firstName} {member.lastName}</p>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+            <ScrollArea className="max-h-96">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
+                {members.map(member => (
+                  <Card key={member.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={memberAttendance.get(member.id) || false}
+                          onCheckedChange={(checked) => handleMemberToggle(member.id, checked as boolean)}
+                        />
+                        <div>
+                          <p className="font-medium">{member.firstName} {member.lastName}</p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                        </div>
                       </div>
+                      <Badge variant={memberAttendance.get(member.id) ? "default" : "secondary"}>
+                        {memberAttendance.get(member.id) ? "Present" : "Absent"}
+                      </Badge>
                     </div>
-                    <Badge variant={memberAttendance.get(member.id) ? "default" : "secondary"}>
-                      {memberAttendance.get(member.id) ? "Present" : "Absent"}
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
@@ -238,21 +241,23 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
               </CardContent>
             </Card>
 
-            <div className="space-y-2">
-              {manualAttendees.map((name, index) => (
-                <Card key={index} className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{name}</p>
-                      <p className="text-sm text-muted-foreground">Manual entry</p>
+            <ScrollArea className="max-h-60">
+              <div className="space-y-2 pr-4">
+                {manualAttendees.map((name, index) => (
+                  <Card key={index} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{name}</p>
+                        <p className="text-sm text-muted-foreground">Manual entry</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeManualAttendee(index)}>
+                        Remove
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeManualAttendee(index)}>
-                      Remove
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="visitors" className="space-y-4">
@@ -306,23 +311,25 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
               </CardContent>
             </Card>
 
-            <div className="space-y-2">
-              {visitors.map((visitor, index) => (
-                <Card key={index} className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{visitor.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {visitor.email} {visitor.phone && `• ${visitor.phone}`}
-                      </p>
+            <ScrollArea className="max-h-60">
+              <div className="space-y-2 pr-4">
+                {visitors.map((visitor, index) => (
+                  <Card key={index} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{visitor.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {visitor.email} {visitor.phone && `• ${visitor.phone}`}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeVisitor(index)}>
+                        Remove
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeVisitor(index)}>
-                      Remove
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="newsouls" className="space-y-4">
@@ -376,23 +383,25 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
               </CardContent>
             </Card>
 
-            <div className="space-y-2">
-              {newSouls.map((soul, index) => (
-                <Card key={index} className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{soul.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {soul.email} {soul.phone && `• ${soul.phone}`}
-                      </p>
+            <ScrollArea className="max-h-60">
+              <div className="space-y-2 pr-4">
+                {newSouls.map((soul, index) => (
+                  <Card key={index} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{soul.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {soul.email} {soul.phone && `• ${soul.phone}`}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeNewSoul(index)}>
+                        Remove
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeNewSoul(index)}>
-                      Remove
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="summary" className="space-y-4">

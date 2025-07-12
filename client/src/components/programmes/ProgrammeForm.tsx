@@ -12,6 +12,7 @@ import { CalendarIcon, X, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/AppContext';
 
 export interface ProgrammeFormProps {
@@ -131,8 +132,8 @@ const ProgrammeForm = ({ programme, onSubmit, onCancel }: ProgrammeFormProps) =>
   };
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <ScrollArea className="max-h-[70vh]">
+      <form onSubmit={handleSubmit} className="space-y-4 pr-4">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -410,7 +411,7 @@ const ProgrammeForm = ({ programme, onSubmit, onCancel }: ProgrammeFormProps) =>
           </Button>
         </div>
       </form>
-    </div>
+    </ScrollArea>
   );
 };
 

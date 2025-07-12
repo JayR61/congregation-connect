@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -84,7 +85,8 @@ export const AttendanceReportDialog = ({
   };
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto space-y-6">
+    <ScrollArea className="max-h-[70vh]">
+      <div className="space-y-6 pr-4">
       {/* Programme Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Programme</label>
@@ -234,7 +236,8 @@ export const AttendanceReportDialog = ({
           Close
         </Button>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 };
 

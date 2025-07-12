@@ -51,10 +51,13 @@ export const useTransactionActions = ({
 
   const deleteTransaction = (id: string) => {
     let deleted = false;
+    let transactionToDelete: Transaction | null = null;
+    
     setTransactions(prev => {
       const filtered = prev.filter(t => {
         if (t.id === id) {
           deleted = true;
+          transactionToDelete = t;
           return false;
         }
         return true;
@@ -62,8 +65,25 @@ export const useTransactionActions = ({
       return filtered;
     });
     
-    if (deleted) {
-      toast.success("Transaction deleted successfully");
+    if (deleted && transactionToDelete) {
+      const deletionInfo = {
+        deletedAt: new Date(),
+        deletedById: currentUser.id,
+        deletedByName: `${currentUser.firstName} ${currentUser.lastName}`,
+        amount: transactionToDelete.amount,
+        description: transactionToDelete.description,
+        type: transactionToDelete.type
+      };
+      
+      // Log deletion for audit trail
+      console.log(`Transaction deleted by ${deletionInfo.deletedByName} at ${deletionInfo.deletedAt}:`, {
+        id,
+        amount: deletionInfo.amount,
+        description: deletionInfo.description,
+        type: deletionInfo.type
+      });
+      
+      toast.success(`Transaction deleted successfully by ${deletionInfo.deletedByName}`);
     }
     return deleted;
   };

@@ -4,8 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Download, Search, Filter, Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { getTransactions } from '@/data/mockData';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Transaction } from '@/types';
 import { useAppContext } from '@/context/AppContext';
@@ -15,15 +14,7 @@ const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('all-time');
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const { addTransaction, deleteTransaction, transactions: contextTransactions, financeCategories, currentUser } = useAppContext();
-  
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: async () => {
-      const data = await getTransactions();
-      return data.length > 0 ? data : contextTransactions;
-    }
-  });
+  const { addTransaction, deleteTransaction, transactions, financeCategories, currentUser } = useAppContext();
 
   const summary = (transactions as Transaction[]).reduce((acc, transaction) => {
     if (transaction.type === 'income') {
@@ -144,18 +135,32 @@ const Finance = () => {
     setIsAddTransactionOpen(false);
   };
 
+  const exportFinanceReport = () => {
+    const csvContent = [
+      ['Date', 'Category', 'Description', 'Type', 'Amount', 'Notes'],
+      ...filteredTransactions.map(transaction => {
+        const category = financeCategories.find(cat => cat.id === transaction.categoryId);
+        return [
+          new Date(transaction.date).toLocaleDateString(),
+          category?.name || 'Unknown Category',
+          transaction.description,
+          transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1),
+          transaction.amount.toString(),
+          transaction.notes || ''
+        ];
+      })
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance_report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const renderTransactionList = () => {
-    if (isLoading) {
-      return Array(3).fill(0).map((_, index) => (
-        <div key={`loading-${index}`} className="grid grid-cols-5 px-4 py-5 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-          <div className="h-4 bg-gray-200 rounded w-20"></div>
-          <div className="h-4 bg-gray-200 rounded w-32"></div>
-          <div className="h-4 bg-gray-200 rounded w-16"></div>
-          <div className="h-4 bg-gray-200 rounded w-20 ml-auto"></div>
-        </div>
-      ));
-    }
 
     if (filteredTransactions.length === 0) {
       return (
@@ -172,7 +177,14 @@ const Finance = () => {
         <div key={transaction.id} className="grid grid-cols-6 px-4 py-3 hover:bg-muted/50">
           <div>{new Date(transaction.date).toLocaleDateString()}</div>
           <div>{category?.name || 'Unknown Category'}</div>
-          <div className="truncate">{transaction.description}</div>
+          <div className="truncate">
+            <div>{transaction.description}</div>
+            {transaction.notes && (
+              <div className="text-sm text-muted-foreground mt-1">
+                {transaction.notes}
+              </div>
+            )}
+          </div>
           <div className={transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}>
             {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
           </div>
@@ -203,7 +215,7 @@ const Finance = () => {
           <Button onClick={() => setIsAddTransactionOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add Transaction
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={exportFinanceReport}>
             <Download className="mr-2 h-4 w-4" /> Export Report
           </Button>
         </div>
@@ -401,7 +413,7 @@ const Finance = () => {
             <div className="grid grid-cols-6 border-b px-4 py-3 font-medium">
               <div>Date</div>
               <div>Category</div>
-              <div>Description</div>
+              <div>Description & Notes</div>
               <div>Type</div>
               <div className="text-right">Amount</div>
               <div className="text-right">Actions</div>

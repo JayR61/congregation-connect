@@ -18,6 +18,9 @@ export interface Transaction {
   createdById?: string;
   isRecurring?: boolean; // Used in some components
   categoryId?: string; // Used in some forms
+  deletedAt?: Date;
+  deletedById?: string;
+  deletedByName?: string;
 }
 
 export interface FinanceCategory {

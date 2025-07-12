@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Transaction, FinanceCategory } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppContext } from '@/context/AppContext';
@@ -24,6 +25,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
   const [category, setCategory] = useState("");
   const [type, setType] = useState<"income" | "expense">("income");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
 
@@ -35,6 +37,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
       setCategory(editingTransaction.categoryId);
       setType(editingTransaction.type);
       setDate(new Date(editingTransaction.date).toISOString().split('T')[0]);
+      setNotes(editingTransaction.notes || "");
     } else {
       resetForm();
     }
@@ -60,6 +63,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
       type,
       categoryId: category,
       date: new Date(date),
+      notes: notes,
       attachments: [],
       recurring: false,
       paymentMethod: "cash"
@@ -80,6 +84,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
     setCategory("");
     setType("income");
     setDate(new Date().toISOString().split('T')[0]);
+    setNotes("");
     setNewCategoryName("");
     setShowNewCategory(false);
   };
@@ -217,6 +222,17 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any additional notes or details about this transaction"
+              rows={3}
             />
           </div>
           

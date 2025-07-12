@@ -32,11 +32,11 @@ const Tasks = () => {
     
     // Search query filter
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         task.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         (task.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     // Category filter
     const matchesCategory = selectedCategories.length === 0 || 
-                           task.categories.some(category => selectedCategories.includes(category.id));
+                           (task.categories || []).some(category => selectedCategories.includes(category.id));
     
     // Priority filter
     const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
@@ -48,7 +48,7 @@ const Tasks = () => {
   const { currentUser } = useAppContext();
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
-  const myTasks = tasks.filter(task => task.assigneeIds.includes(currentUser.id)).length;
+  const myTasks = tasks.filter(task => task.assigneeIds && task.assigneeIds.includes(currentUser.id)).length;
   const overdueTasks = tasks.filter(task => 
     task.status !== 'completed' && task.dueDate && new Date(task.dueDate) < new Date()
   ).length;
@@ -274,7 +274,7 @@ const Tasks = () => {
         </TabsContent>
         <TabsContent value="my">
           <TaskList 
-            tasks={tasks.filter(task => task.assigneeIds.includes(currentUser.id))} 
+            tasks={tasks.filter(task => task.assigneeIds && task.assigneeIds.includes(currentUser.id))} 
             viewMode={viewMode} 
             onTaskClick={handleViewTask}
           />

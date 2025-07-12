@@ -35,7 +35,7 @@ const MemberDetail = () => {
       if (daysSinceNewMember >= 60) {
         updateMember(member.id, { 
           category: 'regular',
-          newMemberDate: null
+          newMemberDate: undefined
         });
         toast.success(`${member.firstName} ${member.lastName} is now a regular member`);
       }
@@ -417,7 +417,7 @@ const MemberDetail = () => {
                 <div className="flex justify-between py-2">
                   <span className="text-muted-foreground">Last Updated</span>
                   <span className="font-medium">
-                    {formatDate(member.updatedAt)}
+                    {member.updatedAt ? formatDate(member.updatedAt) : 'Not available'}
                   </span>
                 </div>
               </div>

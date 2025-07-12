@@ -150,7 +150,7 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {task.categories?.length > 0 && (
+          {task.categories && task.categories.length > 0 && (
             <div>
               <h3 className="text-lg font-medium mb-2">Categories</h3>
               <div className="flex flex-wrap gap-2">

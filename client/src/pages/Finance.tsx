@@ -93,7 +93,7 @@ const Finance = () => {
     // Apply search filter
     const searchFilter = searchQuery.toLowerCase();
     const matchesSearch = transaction.description.toLowerCase().includes(searchFilter) ||
-                          transaction.categoryId.toLowerCase().includes(searchFilter) ||
+                          (transaction.categoryId || '').toLowerCase().includes(searchFilter) ||
                           transaction.type.toLowerCase().includes(searchFilter);
     
     // Apply date filter

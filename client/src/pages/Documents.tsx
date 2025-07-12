@@ -21,15 +21,20 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import CreateFolderDialog from '@/components/documents/CreateFolderDialog';
+import DocumentPreviewDialog from '@/components/documents/DocumentPreviewDialog';
+import ShareDocumentDialog from '@/components/documents/ShareDocumentDialog';
 
 const Documents = () => {
-  const { documents, folders, moveDocument } = useAppContext();
+  const { documents, folders, moveDocument, deleteDocument, shareDocument } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [draggedDocument, setDraggedDocument] = useState<Document | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
 
@@ -130,6 +135,54 @@ const Documents = () => {
     setDraggedDocument(null);
   };
 
+  // Document action handlers
+  const handlePreviewDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setShowPreviewDialog(true);
+  };
+
+  const handleDownloadDocument = (document: Document) => {
+    if (document.url) {
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = document.url;
+      link.download = document.name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Download started",
+        description: `Downloading "${document.name}"`
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Download link not available",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleShareDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setShowShareDialog(true);
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    const document = documents.find(d => d.id === documentId);
+    if (document) {
+      if (window.confirm(`Are you sure you want to delete "${document.name}"? This action cannot be undone.`)) {
+        deleteDocument(documentId);
+        toast({
+          title: "Document deleted",
+          description: `"${document.name}" has been deleted successfully`
+        });
+      }
+    }
+  };
+
   const DocumentCard = ({ document }: { document: Document }) => (
     <Card 
       className={cn(
@@ -158,20 +211,23 @@ const Documents = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePreviewDocument(document)}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadDocument(document)}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleShareDocument(document)}>
                 <Share className="h-4 w-4 mr-2" />
                 Share
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => handleDeleteDocument(document.id)}
+              >
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -438,6 +494,18 @@ const Documents = () => {
         open={showCreateFolderDialog}
         onOpenChange={setShowCreateFolderDialog}
         currentFolder={selectedFolder}
+      />
+
+      <DocumentPreviewDialog
+        open={showPreviewDialog}
+        onOpenChange={setShowPreviewDialog}
+        document={selectedDocument}
+      />
+
+      <ShareDocumentDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        document={selectedDocument}
       />
     </div>
   );

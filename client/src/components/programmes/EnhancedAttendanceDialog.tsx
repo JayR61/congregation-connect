@@ -27,6 +27,7 @@ interface AttendanceRecord {
   absentMembers: string[];
   visitors: VisitorRecord[];
   newSouls: NewSoulRecord[];
+  manualAttendees: string[];
   totalAttendance: number;
   notes?: string;
 }
@@ -55,10 +56,12 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
   const [memberAttendance, setMemberAttendance] = useState<Map<string, boolean>>(new Map());
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [newSouls, setNewSouls] = useState<NewSoulRecord[]>([]);
+  const [manualAttendees, setManualAttendees] = useState<string[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
   const [newVisitor, setNewVisitor] = useState<VisitorRecord>({ name: '' });
   const [newSoul, setNewSoul] = useState<NewSoulRecord>({ name: '' });
+  const [newManualName, setNewManualName] = useState<string>('');
 
   const handleMemberToggle = (memberId: string, isPresent: boolean) => {
     setMemberAttendance(prev => {
@@ -98,9 +101,20 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
     setNewSouls(prev => prev.filter((_, i) => i !== index));
   };
 
+  const addManualAttendee = () => {
+    if (newManualName.trim()) {
+      setManualAttendees(prev => [...prev, newManualName.trim()]);
+      setNewManualName('');
+    }
+  };
+
+  const removeManualAttendee = (index: number) => {
+    setManualAttendees(prev => prev.filter((_, i) => i !== index));
+  };
+
   const calculateTotalAttendance = () => {
     const presentMembers = Array.from(memberAttendance.values()).filter(v => v).length;
-    return presentMembers + visitors.length + newSouls.length + totalCount;
+    return presentMembers + visitors.length + newSouls.length + manualAttendees.length + totalCount;
   };
 
   const handleSave = () => {
@@ -119,6 +133,7 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
       absentMembers,
       visitors,
       newSouls,
+      manualAttendees,
       totalAttendance: calculateTotalAttendance(),
       notes
     };
@@ -134,14 +149,18 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="attendance-dialog-description">
         <DialogHeader>
           <DialogTitle>Record Attendance - {programme.name}</DialogTitle>
+          <p id="attendance-dialog-description" className="text-sm text-muted-foreground">
+            Record attendance for {programme.name}. Select registered members, add manual entries, or record visitors and new souls.
+          </p>
         </DialogHeader>
 
         <Tabs defaultValue="members" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
             <TabsTrigger value="visitors">Visitors</TabsTrigger>
             <TabsTrigger value="newsouls">New Souls</TabsTrigger>
             <TabsTrigger value="summary">Summary</TabsTrigger>
@@ -177,6 +196,59 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
                     <Badge variant={memberAttendance.get(member.id) ? "default" : "secondary"}>
                       {memberAttendance.get(member.id) ? "Present" : "Absent"}
                     </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="manual" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Manual Entry</h3>
+              <Badge variant="outline">
+                <Users className="h-4 w-4 mr-1" />
+                {manualAttendees.length}
+              </Badge>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Add Attendee Name</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    value={newManualName}
+                    onChange={(e) => setNewManualName(e.target.value)}
+                    placeholder="Enter attendee name"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        addManualAttendee();
+                      }
+                    }}
+                  />
+                  <Button onClick={addManualAttendee}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Use this for people who are not registered members in the system
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-2">
+              {manualAttendees.map((name, index) => (
+                <Card key={index} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{name}</p>
+                      <p className="text-sm text-muted-foreground">Manual entry</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => removeManualAttendee(index)}>
+                      Remove
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -326,7 +398,7 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
           <TabsContent value="summary" className="space-y-4">
             <h3 className="text-lg font-semibold">Attendance Summary</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -337,6 +409,18 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
                       </p>
                     </div>
                     <Users className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Manual Entry</p>
+                      <p className="text-2xl font-bold">{manualAttendees.length}</p>
+                    </div>
+                    <Users className="h-8 w-8 text-cyan-500" />
                   </div>
                 </CardContent>
               </Card>
@@ -384,16 +468,17 @@ const EnhancedAttendanceDialog: React.FC<EnhancedAttendanceDialogProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Label htmlFor="total-count">Manual Count (if needed)</Label>
+                  <Label htmlFor="total-count">Extra Count (if needed)</Label>
                   <Input
                     id="total-count"
                     type="number"
+                    min="0"
                     value={totalCount}
                     onChange={(e) => setTotalCount(parseInt(e.target.value) || 0)}
                     placeholder="Enter additional count"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Use this if you have additional attendees not recorded above
+                    Use this only if you have additional attendees not recorded in the tabs above
                   </p>
                 </div>
               </CardContent>

@@ -81,6 +81,9 @@ export interface ProgrammeFeedback {
   date: Date;
   anonymous?: boolean;
   comment?: string;
+  suggestions?: string;
+  wouldRecommend?: boolean;
+  submittedAt?: Date;
 }
 
 export interface ProgrammeKPI {
@@ -137,6 +140,11 @@ export interface ProgrammeReminder {
   schedule?: 'day_before' | 'hour_before' | 'week_before' | 'custom';
   customTime?: Date;
   status?: 'scheduled' | 'sent' | 'failed';
+  type?: 'email' | 'push' | 'sms';
+  title?: string;
+  scheduledFor?: Date;
+  targetAudience?: 'all' | 'registered' | 'waitlist';
+  recipients?: string[];
 }
 
 export interface ProgrammeStatistics {

@@ -119,7 +119,8 @@ export const AnalyticsDashboard: React.FC = () => {
   // Programme analytics
   const programmeAnalytics = useMemo(() => {
     const typeCounts = programmes.reduce((acc, programme) => {
-      acc[programme.type] = (acc[programme.type] || 0) + 1;
+      const type = programme.type || 'other';
+      acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 

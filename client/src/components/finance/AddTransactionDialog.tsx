@@ -34,7 +34,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
     if (editingTransaction) {
       setDescription(editingTransaction.description);
       setAmount(editingTransaction.amount.toString());
-      setCategory(editingTransaction.categoryId);
+      setCategory(editingTransaction.categoryId || "");
       setType(editingTransaction.type);
       setDate(new Date(editingTransaction.date).toISOString().split('T')[0]);
       setNotes(editingTransaction.notes || "");
@@ -61,6 +61,7 @@ export function AddTransactionDialog({ open, onOpenChange, onAddTransaction, edi
       description,
       amount: parsedAmount,
       type,
+      category: [category],
       categoryId: category,
       date: new Date(date),
       notes: notes,

@@ -11,11 +11,12 @@ export const ProgrammesAnalytics = ({ programmes }: ProgrammesAnalyticsProps) =>
   // Calculate statistics
   const activeProgrammes = programmes.filter(p => !p.endDate || p.endDate > new Date()).length;
   const completedProgrammes = programmes.filter(p => p.endDate && p.endDate < new Date()).length;
-  const totalParticipants = programmes.reduce((acc, curr) => acc + curr.currentAttendees, 0);
+  const totalParticipants = programmes.reduce((acc, curr) => acc + (curr.currentAttendees || 0), 0);
 
   // Calculate programme distribution by type
   const programmesByType = programmes.reduce((acc, programme) => {
-    acc[programme.type] = (acc[programme.type] || 0) + 1;
+    const type = programme.type || 'other';
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -26,11 +27,11 @@ export const ProgrammesAnalytics = ({ programmes }: ProgrammesAnalyticsProps) =>
 
   // Participant data for each programme (top 5 by attendance)
   const participantData = programmes
-    .sort((a, b) => b.currentAttendees - a.currentAttendees)
+    .sort((a, b) => (b.currentAttendees || 0) - (a.currentAttendees || 0))
     .slice(0, 5)
     .map(programme => ({
       name: programme.name.length > 15 ? programme.name.substring(0, 15) + '...' : programme.name,
-      participants: programme.currentAttendees
+      participants: programme.currentAttendees || 0
     }));
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];

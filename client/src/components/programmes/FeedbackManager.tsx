@@ -58,14 +58,15 @@ export const FeedbackManager = ({
   const handleAddFeedback = () => {
     if (!feedbackData.programmeId || !feedbackData.memberId) return;
 
-    const newFeedback = {
+    const newFeedback: Omit<ProgrammeFeedback, 'id'> = {
       programmeId: feedbackData.programmeId,
       memberId: feedbackData.memberId,
       rating: feedbackData.rating,
       comments: feedbackData.comments,
       suggestions: feedbackData.suggestions,
       wouldRecommend: feedbackData.wouldRecommend,
-      submittedAt: new Date()
+      submittedAt: new Date(),
+      date: new Date()
     };
 
     onAddFeedback(newFeedback);
@@ -247,14 +248,14 @@ export const FeedbackManager = ({
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
-                              {getRecommendationIcon(feedbackItem.wouldRecommend)}
+                              {getRecommendationIcon(feedbackItem.wouldRecommend || false)}
                               <span className="text-sm">
                                 {feedbackItem.wouldRecommend ? 'Yes' : 'No'}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            {format(new Date(feedbackItem.submittedAt), 'MMM dd, yyyy')}
+                            {format(new Date(feedbackItem.submittedAt || feedbackItem.date), 'MMM dd, yyyy')}
                           </TableCell>
                         </TableRow>
                       );

@@ -46,9 +46,9 @@ const DocumentHeader = ({
     
     while (currentFolderId) {
       const folder = folders.find(f => f.id === currentFolderId);
-      if (folder) {
+      if (folder && folder.parentId) {
         breadcrumbs.unshift(folder);
-        currentFolderId = folder.parentId || null;
+        currentFolderId = folder.parentId;
       } else {
         break;
       }

@@ -178,7 +178,7 @@ const ShareDocumentDialog = ({ open, onOpenChange, document }: ShareDocumentDial
               <Checkbox
                 id="share-by-email"
                 checked={shareByEmail}
-                onCheckedChange={setShareByEmail}
+                onCheckedChange={(checked) => setShareByEmail(!!checked)}
               />
               <Label htmlFor="share-by-email" className="flex items-center space-x-2 cursor-pointer">
                 <Mail className="h-4 w-4" />

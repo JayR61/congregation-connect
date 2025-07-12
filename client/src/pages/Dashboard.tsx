@@ -266,7 +266,7 @@ const Dashboard = () => {
                     <Legend 
                       verticalAlign="bottom" 
                       height={36}
-                      formatter={(value, entry) => `${value}: ${entry.payload.value}`}
+                      formatter={(value, entry) => `${value}: ${entry.payload?.value || 0}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>

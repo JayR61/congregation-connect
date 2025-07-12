@@ -542,7 +542,7 @@ const Projects = () => {
                     <CalendarComponent
                       mode="single"
                       selected={newProject.endDate || undefined}
-                      onSelect={(date) => setNewProject({...newProject, endDate: date})}
+                      onSelect={(date) => setNewProject({...newProject, endDate: date || null})}
                       initialFocus
                       disabled={(date) => date < (newProject.startDate || new Date())}
                     />

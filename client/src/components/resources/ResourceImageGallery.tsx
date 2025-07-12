@@ -86,7 +86,7 @@ const ResourceImageGallery: React.FC<ResourceImageGalleryProps> = ({ resources }
           <DialogHeader>
             <DialogTitle>{selectedImage?.name}</DialogTitle>
             <DialogDescription>
-              {selectedImage?.type.charAt(0).toUpperCase() + selectedImage?.type.slice(1)} • {selectedImage?.location}
+              {selectedImage && selectedImage.type ? selectedImage.type.charAt(0).toUpperCase() + selectedImage.type.slice(1) : ''} {selectedImage?.location ? ` • ${selectedImage.location}` : ''}
             </DialogDescription>
           </DialogHeader>
           

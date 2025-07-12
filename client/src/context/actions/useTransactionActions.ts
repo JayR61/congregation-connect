@@ -51,7 +51,7 @@ export const useTransactionActions = ({
 
   const deleteTransaction = (id: string) => {
     let deleted = false;
-    let transactionToDelete: Transaction | null = null;
+    let transactionToDelete: Transaction | undefined;
     
     setTransactions(prev => {
       const filtered = prev.filter(t => {

@@ -144,13 +144,13 @@ const Documents = () => {
   const handleDownloadDocument = (document: Document) => {
     if (document.url) {
       // Create a download link
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = document.url;
       link.download = document.name;
       link.target = '_blank';
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       
       toast({
         title: "Download started",
@@ -197,8 +197,8 @@ const Documents = () => {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             {getFileIcon(document.fileType)}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm truncate">{document.name}</h3>
+            <div className="flex-1 min-w-0 max-w-[140px]">
+              <h3 className="font-medium text-sm truncate break-words">{document.name}</h3>
               <p className="text-xs text-muted-foreground">
                 {formatFileSize(document.fileSize)}
               </p>

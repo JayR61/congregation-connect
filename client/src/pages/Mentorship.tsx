@@ -86,14 +86,33 @@ const Mentorship = () => {
   };
 
   const handleDeleteProgram = (programId: string) => {
-    const success = deleteMentorshipProgram(programId);
-    if (success) {
-      setPrograms(getMentorshipPrograms());
-      toast({
-        title: "Success",
-        description: "Mentorship program deleted successfully"
-      });
+    if (window.confirm('Are you sure you want to delete this mentorship program? This action cannot be undone.')) {
+      const success = deleteMentorshipProgram(programId);
+      if (success) {
+        // Immediately update the state to refresh the UI
+        setPrograms(prev => prev.filter(p => p.id !== programId));
+        toast({
+          title: "Success",
+          description: "Mentorship program deleted successfully"
+        });
+      }
     }
+  };
+
+  const handleViewDetails = (program: MentorshipProgram) => {
+    setSelectedProgram(program.id);
+    toast({
+      title: "Program Details",
+      description: `Viewing details for "${program.name}"`
+    });
+  };
+
+  const handleScheduleSession = (program: MentorshipProgram) => {
+    toast({
+      title: "Schedule Session",
+      description: `Scheduling session for "${program.name}"`
+    });
+    // This would typically open a scheduling dialog
   };
 
   const handleEditProgram = (program: MentorshipProgram) => {
@@ -130,11 +149,11 @@ const Mentorship = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleViewDetails(program)}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleScheduleSession(program)}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Session
               </DropdownMenuItem>

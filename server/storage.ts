@@ -69,7 +69,8 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       role: insertUser.role || 'member',
-      password: insertUser.password
+      password: insertUser.password,
+      email: insertUser.email || null
     };
     
     this.users.set(id, user);

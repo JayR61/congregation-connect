@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     validatePassword,
     body('role').optional().isIn(['admin', 'pastor', 'member', 'volunteer']).withMessage('Invalid role'),
     handleValidationErrors
-  ], async (req, res) => {
+  ], async (req: any, res: any) => {
     try {
       const { username, email, password, role = 'member' } = req.body;
 
@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     body('username').notEmpty().withMessage('Username is required'),
     body('password').notEmpty().withMessage('Password is required'),
     handleValidationErrors
-  ], async (req, res) => {
+  ], async (req: any, res: any) => {
     try {
       const { username, password } = req.body;
 
@@ -196,12 +196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/protected', authenticateToken);
 
   // Admin-only routes
-  app.get('/api/admin/users', [
+  app.get('/api/admin/users', 
     authenticateToken,
     requireRole(['admin']),
     validatePagination,
-    handleValidationErrors
-  ], async (req: AuthenticatedRequest, res) => {
+    handleValidationErrors,
+    async (req: AuthenticatedRequest, res: any) => {
     try {
       // This would fetch users with pagination in a real implementation
       res.json({ 
@@ -217,11 +217,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search endpoint with rate limiting
-  app.get('/api/search', [
+  app.get('/api/search', 
     authenticateToken,
     validateSearch,
-    handleValidationErrors
-  ], async (req: AuthenticatedRequest, res) => {
+    handleValidationErrors,
+    async (req: AuthenticatedRequest, res: any) => {
     try {
       const { q, type } = req.query;
       
@@ -259,12 +259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/members', [
+  app.post('/api/members', 
     authenticateToken,
     requireRole(['admin', 'pastor']),
-    ...validateMember,
-    handleValidationErrors
-  ], async (req: AuthenticatedRequest, res) => {
+    validateMember,
+    handleValidationErrors,
+    async (req: AuthenticatedRequest, res: any) => {
     try {
       const memberData = req.body;
       
@@ -298,11 +298,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tasks', [
+  app.post('/api/tasks', 
     authenticateToken,
-    ...validateTask,
-    handleValidationErrors
-  ], async (req: AuthenticatedRequest, res) => {
+    validateTask,
+    handleValidationErrors,
+    async (req: AuthenticatedRequest, res: any) => {
     try {
       const taskData = req.body;
       

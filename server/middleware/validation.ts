@@ -194,8 +194,8 @@ export const validateSearch = [
     .withMessage('Invalid search type')
 ];
 
-// File upload validation
-export const validateFileUpload = (req: Request, res: Response, next: NextFunction) => {
+// File upload validation  
+export const validateFileUpload = (req: any, res: Response, next: NextFunction) => {
   if (!req.file && !req.files) {
     return res.status(400).json({
       error: 'No file uploaded',

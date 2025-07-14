@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 export interface AuthenticatedRequest extends Request {
@@ -97,7 +97,7 @@ export const verifyPassword = async (password: string, hashedPassword: string): 
 
 // JWT token generation
 export const generateToken = (payload: object, expiresIn: string = '24h'): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn } as SignOptions);
 };
 
 // Session-based authentication middleware (alternative to JWT)

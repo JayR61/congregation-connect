@@ -12,6 +12,7 @@ import { initializeSecurity } from "./lib/security";
 import React from "react";
 
 // Pages
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import TaskDetail from "./pages/TaskDetail";
@@ -53,7 +54,8 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Layout><Dashboard /></Layout>} />
+                <Route path="/" element={<Layout><Index /></Layout>} />
+                <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
                 <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
                 <Route path="/tasks/:id" element={<Layout><TaskDetail /></Layout>} />
                 <Route path="/members" element={<Layout><Members /></Layout>} />

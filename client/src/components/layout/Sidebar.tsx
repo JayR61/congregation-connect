@@ -67,6 +67,16 @@ const Sidebar = () => {
               cn("sidebar-item", isActive && "active")
             }
           >
+            <Home size={20} />
+            {!collapsed && <span>Home</span>}
+          </NavLink>
+          
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              cn("sidebar-item", isActive && "active")
+            }
+          >
             <LayoutDashboard size={20} />
             {!collapsed && <span>Dashboard</span>}
           </NavLink>
